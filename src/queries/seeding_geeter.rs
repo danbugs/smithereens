@@ -1,5 +1,4 @@
 #![allow(non_snake_case)]
-#![allow(dead_code)]
 
 use crate::startgg::{Phase, Seed, StartGG};
 use anyhow::Result;
@@ -40,7 +39,7 @@ pub struct SeedingGetterVars {
 
 impl SeedingGetterVars {
     pub fn new(phaseId: i32, page: i32, perPage: Option<i32>) -> Self {
-        let perPage = if let None = perPage {
+        let perPage = if perPage.is_none() {
             Some(500)
         } else {
             perPage

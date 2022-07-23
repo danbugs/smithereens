@@ -19,3 +19,7 @@ anyhow = "1"
 tokio = { version = "1.1", features = ["full"] }
 clap = { version = "3.2", features = ["derive"] }
 url = "2.2"
+diesel = { version = "1.4.4", features = ["postgres"] }
+ctrlc = "3.2"
+tracing = "0.1"
+tracing-subscriber = "0.3"

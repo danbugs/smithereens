@@ -35,6 +35,18 @@ pub struct Event {
     pub phases: Vec<Phase>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct Player {
+    pub prefix: String,
+    pub gamerTag: String,
+    pub user: User,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct User {
+    slug: String,
+}
+
 pub struct StartGG {
     gql_client: gql_client::Client,
 }
