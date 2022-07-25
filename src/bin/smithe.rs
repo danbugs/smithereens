@@ -2,10 +2,10 @@ use anyhow::Result;
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
-use simple_smash_stats::event::handle_event;
+use smithereens::event::handle_event;
 use url::Url;
 
-/// Simple Smash Stats, or SSS, is a digested open-source data visualizer tool for your Smash results.
+/// Smithereens (or, smithe) is a digested open-source data visualizer tool for your Smash results.
 #[derive(Parser)]
 #[clap(author, version, about)]
 struct Cli {
