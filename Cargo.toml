@@ -1,15 +1,15 @@
 [package]
-name = "simple-smash-stats"
+name = "smithereens"
 version = "0.1.0"
 edition = "2021"
-default-run = "sss"
+default-run = "smithe"
 authors = [ "Dan Chiarlone" ]
 
 [lib]
 doctest = false
 
 [[bin]]
-name = "sss"
+name = "smithe"
 test = false
 
 [dependencies]
