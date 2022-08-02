@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub const PIDGTM_PLAYER_GETTER_QUERY: &str = r#"
 query PIDGTM_PlayerGetter($playerId: ID!) {
     player(id: $playerId) {
+        id
         prefix
         gamerTag
         user {
@@ -20,7 +21,7 @@ query PIDGTM_PlayerGetter($playerId: ID!) {
 
 #[derive(Debug, Deserialize)]
 pub struct PIDGTM_PlayerGetterData {
-    player: Player,
+    pub player: Player,
 }
 
 #[derive(Serialize)]
@@ -44,4 +45,19 @@ pub async fn make_pidgtm_player_getter_query(player_id: i32) -> Result<PIDGTM_Pl
         .await
         .map_err(|_| anyhow::anyhow!("no player under id: '{}'", player_id))?
         .ok_or_else(|| anyhow::anyhow!("no player found for specified playerId: '{}'", player_id))
+}
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Result;
+
+    use crate::queries::player_getter::make_pidgtm_player_getter_query;
+
+    const DANTOTTO_PLAYER_ID: i32 = 1178271;
+
+    #[tokio::test]
+    async fn player_getter() -> Result<()> {
+        dbg!(make_pidgtm_player_getter_query(DANTOTTO_PLAYER_ID).await?);
+        Ok(())
+    }
 }

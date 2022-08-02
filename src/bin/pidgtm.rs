@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
 
     let cli = Cli::parse();
     match &cli.commands {
-        Commands::Map => handle_map(),
+        Commands::Map => handle_map().await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
     }
 }

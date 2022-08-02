@@ -37,6 +37,7 @@ pub struct Event {
 
 #[derive(Debug, Deserialize)]
 pub struct Player {
+    pub id: i32,
     pub prefix: String,
     pub gamerTag: String,
     pub user: User,
@@ -44,7 +45,7 @@ pub struct Player {
 
 #[derive(Debug, Deserialize)]
 pub struct User {
-    slug: String,
+    pub slug: String,
 }
 
 pub struct StartGG {

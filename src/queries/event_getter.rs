@@ -21,13 +21,15 @@ pub struct EventGetterData {
 }
 
 #[derive(Serialize)]
-pub struct EventGetterVars<'tegv> {
-    slug: &'tegv str,
+pub struct EventGetterVars {
+    slug: String,
 }
 
-impl<'tegv> EventGetterVars<'tegv> {
-    pub fn new(slug: &'tegv str) -> Self {
-        Self { slug }
+impl EventGetterVars {
+    pub fn new(slug: &str) -> Self {
+        Self {
+            slug: slug.to_string(),
+        }
     }
 }
 

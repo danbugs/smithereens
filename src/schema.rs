@@ -1,3 +1,5 @@
+use diesel::table;
+
 table! {
     players (player_id) {
         player_id -> Int4,
