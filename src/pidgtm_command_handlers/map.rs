@@ -32,7 +32,7 @@ pub async fn handle_map() -> Result<()> {
         }
     })?;
 
-    tracing::info!("querying pidgtm db to get the latest appended player id...");
+    tracing::info!("❗ querying pidgtm db to get the latest appended player id...");
     let db_connection = db::connect()?;
     let mut curr_player_id = if let Some(last_appended_player_id) =
         players
@@ -48,22 +48,40 @@ pub async fn handle_map() -> Result<()> {
         let mut num_requests = 0;
         let now = Instant::now();
         while num_requests < MAX_NUM_REQS_PER_60_SECS {
-            tracing::info!("querying startgg api to get player based on curr_player id...");
-            let player_to_insert = make_pidgtm_player_getter_query(curr_player_id).await?;
-
-            tracing::info!("appending player to pidgtm db...");
-            insert_into(players)
-                .values(Player::from(player_to_insert))
-                .execute(&db_connection)?;
-
+            tracing::info!("🤔 querying startgg api to get player based on curr_player id...");
+            let player_to_insert = make_pidgtm_player_getter_query(curr_player_id).await;
             num_requests += 1;
+
+            if let Some(pti) = player_to_insert {
+                tracing::info!(
+                    "💫 appending player (id: '{}') to pidgtm db...",
+                    curr_player_id
+                );
+                insert_into(players)
+                    .values(Player::from(pti))
+                    .execute(&db_connection)?;
+            } else {
+                tracing::info!("⛔ no player under id '{}', moving on...", curr_player_id);
+            }
+
             curr_player_id += 1;
         }
 
-        // vvv time until we're well within safe margins of the StartGG rate limit (i.e., 80 reqs / 60 secs)
-        let time_until_ok = Duration::from_secs(60) - now.elapsed();
-        if time_until_ok.as_secs() > 0 {
-            sleep(time_until_ok);
+        let elapsed_time = now.elapsed();
+        let one_minute = Duration::from_secs(60);
+        if elapsed_time >= one_minute {
+            sleep(Duration::from_secs(20))
+            // ^^^ sleeping for 20s just to be safe
+        } else {
+            // vvv time until we're well within safe margins of the StartGG rate limit (i.e., 80 reqs / 60 secs)
+            let time_until_ok = one_minute - elapsed_time;
+            if time_until_ok.as_secs() > 0 {
+                tracing::info!(
+                    "😴 sleeping for {:?} to avoid hitting the StartGG API's rate limit...",
+                    time_until_ok
+                );
+                sleep(time_until_ok);
+            }
         }
 
         if running.load(Ordering::SeqCst) > 0 {

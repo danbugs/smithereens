@@ -1,25 +1,25 @@
 INSTALL_DIR ?= /usr/local
 PIDGTM ?= target/release/pidgtm
-SSS ?= target/release/sss
+SMITHE ?= target/release/smithe
 
 # CARGO
-.PHONY: build
-build:
-	cargo build --release
+.PHONY: improve
+improve:
+	cargo clippy --all --all-targets --all-features -- -D warnings
+	cargo fmt --all
 
 .PHONY: test
 test:
 	cargo test -- --show-output
 
-.PHONY: improve
-improve:
-	cargo clippy --all --all-targets --all-features -- -D warnings
-	cargo fmt
+.PHONY: build
+build:
+	cargo build --release
 
 #INSTALL
 .PHONY: install
 install:
-	install target/release/sss $(INSTALL_DIR)/bin
+	install target/release/smithe $(INSTALL_DIR)/bin
 	install target/release/pidgtm $(INSTALL_DIR)/bin
 
 # MIGRATIONS

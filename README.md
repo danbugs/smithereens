@@ -1,6 +1,8 @@
-# Simple Smash Stats (SSS)
+<img align="right" src="assets/favicon.png" width="150px" />
 
-Simple Smash Stats, or SSS, is a digested open-source data visualizer tool for your Smash results. 
+# Smithereens
+
+Smithereens is a digested open-source data visualizer tool for your Smash results. 
 
 ## What Is the Plan for It?
 
@@ -14,7 +16,7 @@ The platform will make use of the [StartGG API](https://developer.smash.gg/docs/
 - placements, and
 - what competitor type you are (e.g., 0-2er, 1-2er, 2-2er, etc.).
 
-Aside from player stats, SSS also allows you to see the hidden seeding for an event.
+Aside from player stats, Smithereens also allows you to see the hidden seeding for an event.
 
 In the future, I hope to make it possible for you to claim your profile (i.e., via matching Twitch, Discord, or Twitter credentials from your StartGG account) to allow you to customize your profile and make it truly your own.
 
@@ -28,7 +30,6 @@ Smithereens is not yet available as a website, only as a command-line tool. With
 
 > Note:
 >> ✅: means that the feature has already been implemented.
->
 >> ❎: means that the feature is yet to be implemented.
 
 ## Getting Started
