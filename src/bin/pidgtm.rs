@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use simple_smash_stats::pidgtm_command_handlers::{inspect::handle_inspect, map::handle_map};
+use smithereens::pidgtm_command_handlers::{inspect::handle_inspect, map::handle_map};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -27,7 +27,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
+        .with_max_level(Level::INFO)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)?;

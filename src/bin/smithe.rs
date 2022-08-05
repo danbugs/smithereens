@@ -4,10 +4,10 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 use clap::{Parser, Subcommand};
-use simple_smash_stats::sss_command_handlers::{event::handle_event, player::handle_player};
+use smithereens::smithe_command_handlers::{event::handle_event, player::handle_player};
 use url::Url;
 
-/// Simple Smash Stats, or SSS, is a digested open-source data visualizer tool for your Smash results.
+/// Smithereens, or Smithe, is a digested open-source data visualizer tool for your Smash results.
 #[derive(Parser)]
 #[clap(author, version, about)]
 struct Cli {
@@ -33,7 +33,7 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
+        .with_max_level(Level::INFO)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)?;
