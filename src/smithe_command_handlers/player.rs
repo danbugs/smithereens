@@ -1,20 +1,24 @@
 use anyhow::Result;
 
 use crate::{db, db_models::player::Player, schema::players::dsl::*};
+use dialoguer::{theme::ColorfulTheme, Select};
 use diesel::prelude::*;
 
 pub fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("querying pidgtm db for players with tag similar to the provided ones...");
     let db_connection = db::connect()?;
-    let res = players
+    let matching_players = players
         .filter(gamer_tag_with_prefix.ilike(format!("%{}%", tag)))
         .get_results::<Player>(&db_connection)?;
-    dbg!(res);
-    // query db to get player, get vector of players matching tag
-    // ^^^ ILIKE '%PLAYER_TAG%'
 
-    // display dialoguer prompt to select the desired player
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("These players matched your search:")
+        .default(0)
+        .items(&matching_players[..])
+        .interact()?;
 
+    dbg!(selection);
+    
     // check if user is in cache, if yes, get 'completedAt' int.
 
     // do a for-loop going through pagination of set data
