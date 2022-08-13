@@ -14,8 +14,12 @@ pub struct Player {
 
 impl From<PIDGTM_PlayerGetterData> for Player {
     fn from(ppgd: PIDGTM_PlayerGetterData) -> Self {
-        let gamer_tag_with_prefix = format!("{} | {}", ppgd.player.prefix, ppgd.player.gamerTag);
-
+        let gamer_tag_with_prefix = if ppgd.player.prefix.is_empty() {
+            ppgd.player.gamerTag
+        } else {
+            format!("{} | {}", ppgd.player.prefix, ppgd.player.gamerTag)
+        };
+        
         Self {
             player_id: ppgd.player.id,
             gamer_tag_with_prefix,
