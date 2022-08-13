@@ -31,6 +31,10 @@ migration-run:
 migration-redo:
 	diesel migration redo --database-url ${PIDGTM_DATABASE_URL}
 
+.PHONY: migration-revert
+migration-revert:
+	diesel migration revert --database-url ${PIDGTM_DATABASE_URL}
+
 .PHONY: pidgtm
 pidgtm-map:
 	$(PIDGTM) map
