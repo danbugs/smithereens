@@ -16,7 +16,10 @@ use std::{thread::sleep, time::Duration};
 use crate::{db, schema};
 
 pub async fn handle_map() -> Result<()> {
-    tracing::info!("❗ creating cache files at '{}'...", env::temp_dir().display());
+    tracing::info!(
+        "❗ creating cache files at '{}'...",
+        env::temp_dir().display()
+    );
     let mut smithereens_emptyplayerid_cache_file = OpenOptions::new()
         .read(true)
         .append(true)
@@ -45,7 +48,8 @@ pub async fn handle_map() -> Result<()> {
         let prev = r.fetch_add(1, Ordering::SeqCst);
         if prev == 0 {
             tracing::info!("❗ updating last checked player id cache, and exiting...");
-            writeln!(smithereens_playerid_cache_file, "{}" ,curr_player_id).expect("❌ failed to update smithereens playerid cache...");
+            writeln!(smithereens_playerid_cache_file, "{}", curr_player_id)
+                .expect("❌ failed to update smithereens playerid cache...");
         } else {
             process::exit(0);
         }
@@ -95,7 +99,7 @@ pub async fn handle_map() -> Result<()> {
             }
         } else {
             tracing::info!("⛔ no player under id '{}', moving on...", curr_player_id);
-            writeln!(smithereens_emptyplayerid_cache_file, "{}" ,curr_player_id)?;
+            writeln!(smithereens_emptyplayerid_cache_file, "{}", curr_player_id)?;
         }
 
         curr_player_id += 1;

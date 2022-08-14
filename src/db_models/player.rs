@@ -19,7 +19,11 @@ impl From<PIDGTM_PlayerGetterData> for Player {
                 // ^^^ it is ok to unwrap here due to the first conditional
                 ppgd.player.gamerTag
             } else {
-                format!("{} | {}", ppgd.player.prefix.as_ref().unwrap(), ppgd.player.gamerTag)
+                format!(
+                    "{} | {}",
+                    ppgd.player.prefix.as_ref().unwrap(),
+                    ppgd.player.gamerTag
+                )
                 // ^^^ it is ok to unwrap here because already we know it is not none
             };
 
