@@ -89,7 +89,7 @@ pub async fn handle_map() -> Result<()> {
         }
 
         if let Some(pti) = player_to_insert.player {
-            if pti.user.is_none() {
+            if pti.user.is_none() || pti.user.as_ref().unwrap().slug.is_none() {
                 tracing::info!(
                     "🧪 caught a test account (id: '{}'), skipping addition to pidgtm db...",
                     curr_player_id

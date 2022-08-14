@@ -26,7 +26,7 @@ impl From<startgg::Player> for Player {
         Self {
             player_id: p.id,
             gamer_tag_with_prefix,
-            user_slug: p.user.unwrap().slug,
+            user_slug: p.user.unwrap().slug.unwrap(),
             // ^^^ ok to be unwrapping, afaik, only test account don't have a user slug
             // associated with them, and we should be catching those before we get here
         }

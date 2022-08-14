@@ -52,7 +52,7 @@ pub struct Player {
 
 #[derive(Debug, Deserialize)]
 pub struct User {
-    pub slug: String,
+    pub slug: Option<String>,
 }
 
 pub struct StartGG {
