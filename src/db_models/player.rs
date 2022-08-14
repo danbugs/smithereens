@@ -1,8 +1,8 @@
 #![allow(clippy::extra_unused_lifetimes)]
 // ^^^ this is needed because Insertable introduces a lifetime we don't use
 // — an auto fix for this exists only in Diesel v2.
-use crate::queries::player_getter::PIDGTM_PlayerGetterData;
 use crate::schema::players;
+use crate::startgg;
 
 #[derive(Debug, Insertable, Queryable)]
 #[table_name = "players"]
@@ -12,18 +12,23 @@ pub struct Player {
     pub user_slug: String,
 }
 
-impl From<PIDGTM_PlayerGetterData> for Player {
-    fn from(ppgd: PIDGTM_PlayerGetterData) -> Self {
-        let gamer_tag_with_prefix = if ppgd.player.prefix.is_empty() {
-            ppgd.player.gamerTag
+impl From<startgg::Player> for Player {
+    fn from(p: startgg::Player) -> Self {
+        // ^^^ if we got here, player is guaranteed to be Ok(..)
+        let gamer_tag_with_prefix = if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
+            // ^^^ it is ok to unwrap here due to the first conditional
+            p.gamerTag
         } else {
-            format!("{} | {}", ppgd.player.prefix, ppgd.player.gamerTag)
+            format!("{} | {}", p.prefix.unwrap(), p.gamerTag)
+            // ^^^ it is ok to unwrap here because already we know it is not None
         };
-        
+
         Self {
-            player_id: ppgd.player.id,
+            player_id: p.id,
             gamer_tag_with_prefix,
-            user_slug: ppgd.player.user.slug,
+            user_slug: p.user.unwrap().slug,
+            // ^^^ ok to be unwrapping, afaik, only test account don't have a user slug
+            // associated with them, and we should be catching those before we get here
         }
     }
 }
