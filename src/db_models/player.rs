@@ -14,16 +14,27 @@ pub struct Player {
 
 impl From<PIDGTM_PlayerGetterData> for Player {
     fn from(ppgd: PIDGTM_PlayerGetterData) -> Self {
-        let gamer_tag_with_prefix = if ppgd.player.prefix.is_empty() {
-            ppgd.player.gamerTag
-        } else {
-            format!("{} | {}", ppgd.player.prefix, ppgd.player.gamerTag)
-        };
-        
+        let gamer_tag_with_prefix =
+            if ppgd.player.prefix.is_none() || ppgd.player.prefix.as_ref().unwrap().is_empty() {
+                // ^^^ it is ok to unwrap here due to the first conditional
+                ppgd.player.gamerTag
+            } else {
+                format!("{} | {}", ppgd.player.prefix.as_ref().unwrap(), ppgd.player.gamerTag)
+                // ^^^ it is ok to unwrap here because already we know it is not none
+            };
+
         Self {
             player_id: ppgd.player.id,
             gamer_tag_with_prefix,
-            user_slug: ppgd.player.user.slug,
+            user_slug: ppgd.player.user.unwrap().slug,
+            // ^^^ ok to be unwrapping, afaik, only test account don't have a user slug
+            // associated with them, and we should be catching those before we get here
         }
+    }
+}
+
+impl std::fmt::Display for Player {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.gamer_tag_with_prefix)
     }
 }
