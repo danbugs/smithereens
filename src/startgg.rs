@@ -38,14 +38,21 @@ pub struct Event {
 #[derive(Debug, Deserialize)]
 pub struct Player {
     pub id: i32,
-    pub prefix: String,
+    pub prefix: Option<String>,
+    // ^^^ if the player never changed their
+    // prefix before, it will be null.
+    // If the player changed it but removed it,
+    // it will be an empty string.
     pub gamerTag: String,
-    pub user: User,
+    pub user: Option<User>,
+    // ^^^ test accounts are not associated
+    // to a user, they have a null user ~
+    // we don't want to fail here.
 }
 
 #[derive(Debug, Deserialize)]
 pub struct User {
-    pub slug: String,
+    pub slug: Option<String>,
 }
 
 pub struct StartGG {
