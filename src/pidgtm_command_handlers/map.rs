@@ -1,43 +1,33 @@
 use anyhow::Result;
+use diesel::dsl::max;
 
+use crate::db_models::empty_player_ids::EmptyPlayerId;
+use crate::db_models::last_checked_player_id::LastCheckedPlayerId;
 use crate::db_models::player::Player;
 use crate::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData};
+use crate::schema::last_checked_player_id;
 use diesel::{insert_into, prelude::*};
+use schema::empty_player_ids::dsl::*;
+use schema::last_checked_player_id::dsl::*;
 use schema::players::dsl::*;
 
-use std::fs::OpenOptions;
-use std::io::{self, BufRead, BufReader, Seek, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use std::{env, process};
+use std::process;
 use std::{thread::sleep, time::Duration};
 
 use crate::{db, schema};
 
 pub async fn handle_map() -> Result<()> {
-    tracing::info!(
-        "❗ creating cache files at '{}'...",
-        env::temp_dir().display()
-    );
-    let mut smithereens_emptyplayerid_cache_file = OpenOptions::new()
-        .read(true)
-        .append(true)
-        .create(true)
-        .open(env::temp_dir().join(".smithereens_emptyplayerid_cache"))?;
-
-    let mut smithereens_playerid_cache_file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .open(env::temp_dir().join(".smithereens_playerid_cache"))?;
+    let db_connection = db::connect()?;
 
     tracing::info!("❗ checking cache for last checked player id...");
-    let mut curr_player_id = if let Some(line) = BufReader::new(&smithereens_playerid_cache_file)
-        .lines()
-        .next()
-    {
-        line?.trim().parse::<i32>()?
+    let max_checked_player_id = last_checked_player_id
+        .select(max(last_checked_player_id::player_id))
+        .first::<Option<i32>>(&db_connection)?;
+    let mut curr_player_id = if let Some(val) = max_checked_player_id {
+        val
     } else {
         1
         // ^^^ don't start at 0 because it is uniquely populated
@@ -55,7 +45,6 @@ pub async fn handle_map() -> Result<()> {
         }
     })?;
 
-    let db_connection = db::connect()?;
     let mut now = Instant::now();
     loop {
         tracing::info!("🤔 querying startgg api to get player based on curr_player id...");
@@ -105,19 +94,18 @@ pub async fn handle_map() -> Result<()> {
             }
         } else {
             tracing::info!("⛔ no player under id '{}', moving on...", curr_player_id);
-            writeln!(smithereens_emptyplayerid_cache_file, "{}", curr_player_id)?;
+            insert_into(empty_player_ids)
+                .values(EmptyPlayerId::from(curr_player_id))
+                .execute(&db_connection)?;
         }
 
         curr_player_id += 1;
 
         if running.load(Ordering::SeqCst) > 0 {
             tracing::info!("❗ updating smithereens player id cache file...");
-            smithereens_playerid_cache_file.seek(io::SeekFrom::Start(0))?;
-            // ^^^ move cursor back to the beginning of the file
-
-            smithereens_playerid_cache_file
-                .write_all(curr_player_id.to_string().as_bytes())
-                .expect("❌ failed to update smithereens playerid cache...");
+            insert_into(last_checked_player_id)
+                .values(LastCheckedPlayerId::from(curr_player_id))
+                .execute(&db_connection)?;
             break;
         }
     }
