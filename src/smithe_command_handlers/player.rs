@@ -1,14 +1,21 @@
 use anyhow::Result;
 
-use crate::{db, db_models::player::Player, schema::players::dsl::*};
+use crate::{
+    db,
+    db_models::{player::Player, set::Set},
+    schema::{players::dsl::*, sets::dsl::*},
+};
 use dialoguer::{theme::ColorfulTheme, Select};
 use diesel::prelude::*;
 
 pub fn handle_player(tag: &str) -> Result<()> {
+    let processed_tag = tag.replace(" ", "%");
+    // ^^^ transform spaces into wildcards to make search most inclusive
+
     tracing::info!("querying pidgtm db for players with tag similar to the provided ones...");
     let db_connection = db::connect()?;
-    let matching_players = players
-        .filter(gamer_tag_with_prefix.ilike(format!("%{}%", tag)))
+    let matching_players: Vec<Player> = players
+        .filter(gamer_tag_with_prefix.ilike(format!("%{}%", processed_tag)))
         .get_results::<Player>(&db_connection)?;
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -17,16 +24,19 @@ pub fn handle_player(tag: &str) -> Result<()> {
         .items(&matching_players[..])
         .interact()?;
 
-    dbg!(selection);
-    
-    // check if user is in cache, if yes, get 'completedAt' int.
+    let selected_player = &matching_players[selection];
+
+    tracing::info!("checking if player is cached...");
+    let db_connection = db::connect()?;
+    let cache = sets
+        .filter(requester_id.eq(selected_player.player_id))
+        .load::<Set>(&db_connection)?;
 
     // do a for-loop going through pagination of set data
     // each query will look somewhat like this:
     // query PlayerGetter($playerId: ID!) {
     // 	    player(id: $playerId) {
     // 		    prefix
-    // 	        gamerTag
     // 		    sets(page: 1, perPage: 150) { # 150 is about the max we can do
     //   	    nodes {
     //              displayScore
@@ -39,7 +49,6 @@ pub fn handle_player(tag: &str) -> Result<()> {
     //                      > +2: win
     //                  - 'games_won', and
     //                  - 'games_lost'.
-    //              state
     //              completedAt
     //              phaseGroup {
     //                  bracketType # we want DOUBLE_ELIMINATION
