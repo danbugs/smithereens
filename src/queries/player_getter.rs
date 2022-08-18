@@ -37,7 +37,7 @@ pub struct PIDGTM_PlayerGetterVars {
 
 impl PIDGTM_PlayerGetterVars {
     pub fn new(playerId: i32) -> Self {
-        PIDGTM_PlayerGetterVars { playerId }
+        Self { playerId }
     }
 }
 

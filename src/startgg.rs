@@ -31,8 +31,17 @@ pub struct Entrant {
 
 #[derive(Debug, Deserialize)]
 pub struct Event {
-    pub slug: String,
-    pub phases: Vec<Phase>,
+    pub slug: Option<String>,
+    pub phases: Option<Vec<Phase>>,
+    pub name: String,
+    pub isOnline: bool,
+    pub videogame: Videogame,
+    pub tournament: Tournament
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Videogame {
+    pub name: String
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,6 +57,30 @@ pub struct Player {
     // ^^^ test accounts are not associated
     // to a user, they have a null user ~
     // we don't want to fail here.
+    pub sets: Option<Sets>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Sets {
+    pub nodes: Vec<Set>
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Tournament {
+    pub name: String
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Set {
+    pub displayScore: String,
+    pub completedAt: i64,
+    pub phaseGroup: PhaseGroup,
+    pub event: Event
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PhaseGroup {
+    pub bracketType: String
 }
 
 #[derive(Debug, Deserialize)]
