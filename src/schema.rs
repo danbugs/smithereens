@@ -19,7 +19,7 @@ table! {
 }
 
 table! {
-    sets (id) {
+    sets (id, requester_id) {
         id -> Int4,
         completed_at -> Int8,
         requester_id -> Int4,

@@ -6,6 +6,7 @@ use crate::{
     queries::set_getter::make_set_getter_query,
     schema::{players::dsl::*, sets::dsl::*},
 };
+
 use dialoguer::{theme::ColorfulTheme, Select};
 use diesel::prelude::*;
 
@@ -63,7 +64,17 @@ pub async fn handle_player(tag: &str) -> Result<()> {
                 if s.event.videogame.name == "Super Smash Bros. Ultimate"
                     && s.phaseGroup.bracketType == "DOUBLE_ELIMINATION"
                 {
-                    dbg!(s);
+                    let lexed_set = Set::new(
+                        s.id,
+                        s.completedAt,
+                        selected_player.player_id,
+                        &selected_player.gamer_tag_with_prefix,
+                        &s.displayScore,
+                        &s.event.name,
+                        &s.event.tournament.name,
+                        s.event.isOnline,
+                    );
+                    dbg!(lexed_set);
                 }
             }
 

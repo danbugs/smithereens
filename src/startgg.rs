@@ -72,6 +72,7 @@ pub struct Tournament {
 
 #[derive(Debug, Deserialize)]
 pub struct Set {
+    pub id: i32,
     pub displayScore: String,
     pub completedAt: i64,
     pub phaseGroup: PhaseGroup,

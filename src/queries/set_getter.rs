@@ -14,6 +14,7 @@ query SetGetter($playerId: ID!, $page: Int!) {
         gamerTag
     	sets(page: $page, perPage: 150) {
       	    nodes {
+                id
                 displayScore
                 completedAt
                 phaseGroup {
