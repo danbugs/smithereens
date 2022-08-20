@@ -61,18 +61,38 @@ pub async fn handle_map() -> Result<()> {
                 player_to_insert = res;
                 break;
             } else {
-                let elapsed_time = Instant::now() - now;
-                let time_until_ok = Duration::from_secs(66) - elapsed_time;
-                // ^^^ time until we're well within safe margins of the
-                // StartGG rate limit 1 minute + 10% of a minute for safety
+                let err_msg = req.err().unwrap().to_string();
+                // fine to unwrap, we know we've hit an error
+                if err_msg.contains("429")
+                    || err_msg.contains("Our services aren't available right now")
+                {
+                    // 429 (too many reqs) or outage, want to wait it out
+                    let elapsed_time = Instant::now() - now;
+                    let a_bit_over_1m = Duration::from_secs(66);
+                    let time_until_ok = if elapsed_time < a_bit_over_1m {
+                        a_bit_over_1m - elapsed_time
+                    } else {
+                        a_bit_over_1m
+                    };
+                    // ^^^ time until we're well within safe margins of the
+                    // StartGG rate limit 1 minute + 10% of a minute for safety
 
-                if time_until_ok.as_secs() > 0 {
-                    tracing::info!(
+                    if time_until_ok.as_secs() > 0 {
+                        tracing::info!(
                         "😴 sleeping for {:?} to ease off of the StartGG API's rate limit ({:?})...",
-                        time_until_ok, req
+                        time_until_ok, &err_msg
                     );
-                    sleep(time_until_ok);
-                    now = Instant::now();
+                        sleep(time_until_ok);
+                        now = Instant::now();
+                    }
+                } else {
+                    tracing::info!(
+                        "🙃 an oddity happened on player id '{}', skipping for now...",
+                        curr_player_id
+                    );
+                    curr_player_id += 1;
+                    // some oddity happened, we can skip this player
+                    // e.g., id exists, but all fields are null (231798)
                 }
             }
         }
