@@ -1,14 +1,17 @@
+#![allow(unused)]
+use std::{thread, time::Duration};
+
 use anyhow::Result;
 
 use crate::{
     db,
     db_models::{player::Player, set::Set},
     queries::set_getter::make_set_getter_query,
-    schema::{players::dsl::*, sets::dsl::*},
+    schema::{player_sets::dsl::*, players::dsl::*},
 };
 
 use dialoguer::{theme::ColorfulTheme, Select};
-use diesel::prelude::*;
+use diesel::{insert_into, prelude::*};
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     let processed_tag = tag.replace(" ", "%");
@@ -30,53 +33,86 @@ pub async fn handle_player(tag: &str) -> Result<()> {
 
     tracing::info!("checking if player is cached...");
     let db_connection = db::connect()?;
-    let cache = sets
+    let cache = player_sets
         .filter(requester_id.eq(selected_player.player_id))
         .load::<Set>(&db_connection)?;
-    dbg!(cache);
+
+    let updated_after = if !cache.is_empty() {
+        Some(
+            cache
+                .iter()
+                .max_by_key(|s| s.completed_at)
+                .unwrap()
+                .completed_at,
+        )
+    } else {
+        None
+    };
 
     let mut curr_page = 1;
     loop {
-        let player = make_set_getter_query(selected_player.player_id, curr_page)
-            .await?
-            .player
-            .unwrap();
-        // ^^^ ok to unwrap, due to constrained player selection
+        let mut player = None;
+        loop {
+            match make_set_getter_query(
+                selected_player.player_id,
+                curr_page,
+                updated_after,
+                &selected_player.gamer_tag_with_prefix,
+            )
+            .await
+            {
+                Ok(sgd) => {
+                    player = Some(sgd.player);
+                    break;
+                }
+                Err(e) => {
+                    tracing::error!("🐌 hit a snag, backing off: '{:?}'", e);
+                    thread::sleep(Duration::from_secs(60));
+                }
+            }
+        }
 
-        let ss = player.sets.unwrap().nodes;
+        let ss = player.unwrap().sets.unwrap().nodes;
         // ^^^ guaranteed to have sets in this context, ok to unwrap
 
         if ss.is_empty() {
             break;
         } else {
+            let mut curated_sets = vec![];
+            // TODO: make curated_games (pre-req games db model)
+            // TODO: make curated_tournaments (pre-req tournaments db model)
             for s in ss {
-                // add each set to cache
-                // get the following fields:
-                // - completed_at: i64,
-                // - requester_id: i32,
-                // - requester_tag_with_prefix: String,
-                // - requester_score: i32,
-                // - opponent_tag_with_prefix: String,
-                // - opponent_score: i32,
-                // - result_type: i32,
-                // - event_at_tournament: String,
-                // - is_event_online: bool
-                if s.event.videogame.name == "Super Smash Bros. Ultimate"
+                if s.event.videogame.as_ref().unwrap().name == "Super Smash Bros. Ultimate"
                     && s.phaseGroup.bracketType == "DOUBLE_ELIMINATION"
                 {
-                    let lexed_set = Set::new(
+                    let gids = if let Some(gs) = s.games {
+                        Some(gs.iter().map(|g| g.id).collect::<Vec<i32>>())
+                    } else {
+                        None
+                    };
+
+                    // TODO: pass new fields to get requester_tag_with_prefix, requester_score, opponent_tag_with_prefix, opponent_score, and result_type
+                    curated_sets.push(Set::new(
                         s.id,
                         s.completedAt,
                         selected_player.player_id,
-                        &selected_player.gamer_tag_with_prefix,
-                        &s.displayScore,
-                        &s.event.name,
-                        &s.event.tournament.name,
-                        s.event.isOnline,
-                    );
-                    dbg!(lexed_set);
+                        s.event.isOnline.unwrap(),
+                        s.event.id.unwrap(),
+                        s.event.tournament.unwrap().id,
+                        gids,
+                    ));
                 }
+                // ^^^ unwrapping in these instances is fine due to the query context that we are in, if an error occurs,
+                // we want to panic regardless
             }
+
+            // TODO: insert into tournaments
+
+            // insert_into(sets)
+            //     .values(curated_sets)
+            //     .execute(&db_connection)?;
+
+            // TODO: insert into games
 
             curr_page += 1;
         }

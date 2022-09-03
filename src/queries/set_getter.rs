@@ -7,68 +7,107 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 pub const SET_GETTER_QUERY: &str = r#"
-query SetGetter($playerId: ID!, $page: Int!) {
-    player(id: $playerId) {
-        id
-    	prefix
-        gamerTag
-    	sets(page: $page, perPage: 150) {
-      	    nodes {
-                id
-                displayScore
-                completedAt
-                phaseGroup {
-                    bracketType
-                }
-                event {
-                    name
-                    isOnline
-                    videogame {
-                        name
-                    }
-                    tournament {
-                        name
-                    }
-                }
-            }
+query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag: String) {
+	player(id: $playerId) {
+		id
+		sets(page: $page, perPage: 10, filters: {updatedAfter: $updatedAfter}) {
+			nodes {
+				id
+				games {
+   	   		id
+					orderNum
+          selections {
+            selectionValue
+          }
+          stage {
+            name
+          }
         }
+        slots {
+          entrant {
+            name
+          }
+          seed {
+            seedNum
+          }
+          standing {
+            stats {
+              score {
+                value
+              }
+            }
+          }
+        }
+        completedAt
+        phaseGroup {
+          bracketType
+        }
+        event {
+          id
+          name
+          numEntrants
+          isOnline
+          videogame {
+            name
+          }
+          tournament {
+            id
+            name
+          }
+          standings(query: { filter: { search: { searchString: $gamerTag}}}) {
+            nodes {
+              player {
+                id
+              }
+              placement
+            }
+          }
+        }
+      }
     }
+  }
 }
 "#;
-// ^^^ 
-// - 150 per page is about the max we can do
-// - wanna filter videogame for Super Smash Bros. Ultimate 
+// ^^^
+// - 40 per page is about the max we can do
+// - wanna filter videogame for Super Smash Bros. Ultimate
 // - wanna filter bracket type for DOUBLE_ELIMINATION
 
 #[derive(Debug, Deserialize)]
 pub struct SetGetterData {
-    pub player: Option<Player>,
-}
-
-impl SetGetterData {
-    pub fn empty() -> Self {
-        Self { player: None }
-    }
+    pub player: Player,
 }
 
 #[derive(Serialize)]
 pub struct SetGetterVars {
     playerId: i32,
     page: i32,
+    updatedAfter: Option<i64>,
+    gamerTag: String,
 }
 
 impl SetGetterVars {
-    pub fn new(playerId: i32, page: i32) -> Self {
-        Self { playerId, page }
+    pub fn new(playerId: i32, page: i32, updatedAfter: Option<i64>, gamerTag: &str) -> Self {
+        Self {
+            playerId,
+            page,
+            updatedAfter,
+            gamerTag: gamerTag.to_string(),
+        }
     }
 }
 
-pub async fn make_set_getter_query(player_id: i32, page: i32) -> Result<SetGetterData> {
+pub async fn make_set_getter_query(
+    player_id: i32,
+    page: i32,
+    updated_after: Option<i64>,
+    gamer_tag: &str,
+) -> Result<SetGetterData> {
     let sgg = StartGG::connect();
     sgg.gql_client()
         .query_with_vars::<SetGetterData, SetGetterVars>(
             SET_GETTER_QUERY,
-            SetGetterVars::new(player_id, page),
+            SetGetterVars::new(player_id, page, updated_after, gamer_tag),
         )
         .await
         .transpose()
@@ -86,7 +125,7 @@ mod tests {
 
     #[tokio::test]
     async fn set_getter() -> Result<()> {
-        dbg!(make_set_getter_query(DANTOTTO_PLAYER_ID, 1).await?);
+        dbg!(make_set_getter_query(DANTOTTO_PLAYER_ID, 1, None, "Dantotto").await?);
         Ok(())
     }
 }
