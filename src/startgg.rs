@@ -20,13 +20,14 @@ pub struct SeedConnection {
 
 #[derive(Debug, Deserialize)]
 pub struct Seed {
-    seedNum: i32,
-    entrant: Option<Entrant>
+    pub seedNum: i32,
+    entrant: Option<Entrant>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Entrant {
-    name: String,
+    pub id: Option<i32>,
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,6 +41,12 @@ pub struct Event {
     pub videogame: Option<Videogame>,
     pub tournament: Option<Tournament>,
     pub standings: Option<StandingConnection>,
+    pub teamRosterSize: Option<TeamRosterSize>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TeamRosterSize {
+    maxPlayers: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -98,6 +105,7 @@ pub struct SetSlot {
 
 #[derive(Debug, Deserialize)]
 pub struct Standing {
+    pub entrant: Option<Entrant>,
     pub player: Option<Player>,
     pub stats: Option<StandingStats>,
     pub placement: Option<i32>,
@@ -116,6 +124,7 @@ pub struct Score {
 #[derive(Debug, Deserialize)]
 pub struct Game {
     pub id: i32,
+    pub winnerId: i32,
     pub orderNum: i32,
     pub selections: Option<Vec<GameSelection>>,
     pub stage: Option<Stage>,
@@ -123,6 +132,7 @@ pub struct Game {
 
 #[derive(Debug, Deserialize)]
 pub struct GameSelection {
+    pub entrant: Entrant,
     pub selectionValue: i32, // this will be an i32 that represents the character
 }
 

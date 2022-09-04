@@ -45,7 +45,11 @@ pub async fn make_event_getter_query(event_slug: &str) -> Result<EventGetterData
 
 pub async fn get_phase_id_from_event_slug(event_slug: &str) -> Result<i32> {
     // vvv fine to unwrap given context
-    make_event_getter_query(event_slug).await?.event.phases.unwrap()[0]
+    make_event_getter_query(event_slug)
+        .await?
+        .event
+        .phases
+        .unwrap()[0]
         .id
         .ok_or_else(|| {
             anyhow::anyhow!(

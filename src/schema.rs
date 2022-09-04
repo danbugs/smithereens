@@ -14,10 +14,11 @@ table! {
     player_games (game_id, requester_id) {
         game_id -> Int4,
         requester_id -> Int4,
+        requester_win -> Bool,
         order_num -> Int4,
-        requester_char_played -> Varchar,
-        opponent_char_played -> Varchar,
-        stage -> Varchar,
+        requester_char_played -> Nullable<Varchar>,
+        opponent_char_played -> Nullable<Varchar>,
+        stage -> Nullable<Varchar>,
     }
 }
 
@@ -28,8 +29,10 @@ table! {
         requester_id -> Int4,
         requester_tag_with_prefix -> Varchar,
         requester_score -> Int4,
+        requester_seed -> Int4,
         opponent_tag_with_prefix -> Varchar,
         opponent_score -> Int4,
+        opponent_seed -> Int4,
         result_type -> Int4,
         game_ids -> Nullable<Array<Int4>>,
         event_id -> Int4,
@@ -47,6 +50,7 @@ table! {
         placement -> Int4,
         num_entrants -> Int4,
         seed -> Int4,
+        link -> Varchar,
     }
 }
 

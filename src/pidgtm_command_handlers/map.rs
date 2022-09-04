@@ -11,10 +11,10 @@ use schema::empty_player_ids::dsl::*;
 use schema::last_checked_player_id::dsl::*;
 use schema::players::dsl::*;
 
+use std::process;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use std::process;
 use std::{thread::sleep, time::Duration};
 
 use crate::{db, schema};

@@ -15,8 +15,13 @@ query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag
 				id
 				games {
    	   		id
+          winnerId
 					orderNum
           selections {
+            entrant {
+              id
+              name
+            }
             selectionValue
           }
           stage {
@@ -25,6 +30,7 @@ query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag
         }
         slots {
           entrant {
+            id
             name
           }
           seed {
@@ -44,9 +50,13 @@ query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag
         }
         event {
           id
+          slug
           name
           numEntrants
           isOnline
+          teamRosterSize {
+            maxPlayers
+          }
           videogame {
             name
           }
@@ -56,6 +66,9 @@ query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag
           }
           standings(query: { filter: { search: { searchString: $gamerTag}}}) {
             nodes {
+              entrant {
+                id
+              }
               player {
                 id
               }

@@ -1,5 +1,5 @@
 #![allow(clippy::extra_unused_lifetimes)]
-// ^^^ this is needed& because Insertable introduces a lifetime we don't use
+// ^^^ this is needed because Insertable introduces a lifetime we don't use
 // — an auto fix for this exists only in Diesel v2.
 use crate::schema::player_sets;
 
@@ -11,8 +11,10 @@ pub struct Set {
     requester_id: i32,
     requester_tag_with_prefix: String,
     requester_score: i32,
+    requester_seed: i32,
     opponent_tag_with_prefix: String,
     opponent_score: i32,
+    opponent_seed: i32,
     result_type: i32,
     game_ids: Option<Vec<i32>>,
     event_id: i32,
@@ -21,6 +23,7 @@ pub struct Set {
 }
 
 impl Set {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: i32,
         cat: i64,
@@ -29,19 +32,25 @@ impl Set {
         e_id: i32,
         t_id: i32,
         gids: Option<Vec<i32>>,
+        rtag: &str,
+        rscore: i32,
+        rseed: i32,
+        otag: &str,
+        oscore: i32,
+        oseed: i32,
     ) -> Self {
-        // TODO: get scores
-        let (rtag, rscore, otag, oscore) = ("".to_string(), 2, "".to_string(), 0);
         let result_type = determine_result_type(rscore, oscore);
 
         Self {
             id,
             completed_at: cat,
             requester_id: rid,
-            requester_tag_with_prefix: rtag,
+            requester_tag_with_prefix: rtag.to_string(),
             requester_score: rscore,
-            opponent_tag_with_prefix: otag,
+            requester_seed: rseed,
+            opponent_tag_with_prefix: otag.to_string(),
             opponent_score: oscore,
+            opponent_seed: oseed,
             result_type,
             is_event_online: is_on,
             event_id: e_id,
