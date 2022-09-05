@@ -4,7 +4,7 @@
 use crate::schema::players;
 use crate::startgg;
 
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Insertable, Queryable, QueryableByName)]
 #[table_name = "players"]
 pub struct Player {
     pub player_id: i32,

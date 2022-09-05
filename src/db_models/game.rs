@@ -3,7 +3,7 @@
 // — an auto fix for this exists only in Diesel v2.
 use crate::{schema::player_games, startgg::SSBU_CHARACTERS};
 
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Insertable, Queryable, QueryableByName)]
 #[table_name = "player_games"]
 pub struct Game {
     game_id: i32,

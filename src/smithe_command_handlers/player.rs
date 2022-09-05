@@ -1,5 +1,5 @@
 #![allow(unused)]
-use std::{os, rc, thread, time::Duration};
+use std::{collections::HashMap, os, rc, thread, time::Duration};
 
 use anyhow::Result;
 
@@ -7,11 +7,35 @@ use crate::{
     db,
     db_models::{game::Game, player::Player, set::Set, tournament::Tournament},
     queries::set_getter::make_set_getter_query,
-    schema::{player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*},
+    schema::{
+        player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*,
+    },
 };
 
 use dialoguer::{theme::ColorfulTheme, Select};
-use diesel::{insert_into, prelude::*};
+use diesel::{
+    dsl::{count, count_star, sql, sum},
+    insert_into,
+    prelude::*,
+    sql_query,
+    sql_types::{Float, Int4, Text},
+};
+
+#[derive(Debug, Queryable, QueryableByName)]
+struct Losses {
+    #[sql_type = "Int4"]
+    event_id: i32,
+    #[sql_type = "Int4"]
+    losses: i32,
+}
+
+#[derive(Debug, QueryableByName)]
+struct Wins {
+    #[sql_type = "Int4"]
+    event_id: i32,
+    #[sql_type = "Int4"]
+    wins: i32,
+}
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     let processed_tag = tag.replace(' ', "%");
@@ -211,7 +235,6 @@ pub async fn handle_player(tag: &str) -> Result<()> {
                         .seed
                         .seedNum;
 
-
                     let res_pt = player_tournaments
                         .find((
                             s.event.tournament.as_ref().unwrap().id,
@@ -234,7 +257,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
 
                     if res_pt.is_err() && !curated_tournaments.contains(&tournament) {
                         // ^^^ not found
-                        tracing::info!("{:?}", &tournament);
+                        dbg!(&tournament);
                         curated_tournaments.push(tournament);
                     }
                 }
@@ -245,26 +268,77 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         }
     }
 
-    // TODO: insert into tournaments
+    insert_into(player_games)
+        .values(curated_games)
+        .execute(&db_connection)?;
 
-    // TODO:
-    // insert_into(sets)
-    //     .values(curated_sets)
-    //     .execute(&db_connection)?;
+    insert_into(player_sets)
+        .values(curated_sets)
+        .execute(&db_connection)?;
 
-    // TODO: insert into games
+    insert_into(player_tournaments)
+        .values(curated_tournaments)
+        .execute(&db_connection)?;
 
-    // TODO:
-    // at this point, we want to analyze the data to get:
-    //      - total # of set wins (sum(resultType == 2) || sum(resultType == 1)),
-    //      - total # of losses (sum(resultType == -2) || sum(resultType == -1)),
-    //      - total # of wins by DQs (sum(resultType == 1)),
-    //      - total # of losses by DQs, (sum(resultType == -1))
-    //      - winrate abs((sum(resultType == 2) - sum(resultType == -2)) / (sum(resultType == 2) + sum(resultType == -2))),
-    //      - placements
-    //      ^^^ (display event + tournament name -> sets // seeding in tournament // result // # wins - # losses), and
-    //      - what competitor type you are (e.g., 0-2er, 1-2er, 2-2er, etc.).
-    //      ^^^ sum(resultType == 2) in event + tournament name and sum(resultType == -2) in event + tournament name
+    let set_wins_without_dqs = player_sets
+        .filter(result_type.eq(2))
+        .count()
+        .get_result::<i64>(&db_connection)?;
+    dbg!(&set_wins_without_dqs);
 
-    todo!("player functionality still need to be implemented");
+    let set_losses_without_dqs = player_sets
+        .filter(result_type.eq(-2))
+        .count()
+        .get_result::<i64>(&db_connection)?;
+    dbg!(&set_losses_without_dqs);
+
+    let set_wins_by_dq = player_sets
+        .filter(result_type.eq(1))
+        .count()
+        .get_result::<i64>(&db_connection)?;
+    dbg!(&set_wins_by_dq);
+
+    let set_losses_by_dq = player_sets
+        .filter(result_type.eq(-1))
+        .count()
+        .get_result::<i64>(&db_connection)?;
+    dbg!(&set_losses_by_dq);
+
+    let winrate = ((set_wins_without_dqs as f32)
+        / ((set_wins_without_dqs + set_losses_without_dqs) as f32))
+        .abs()
+        * 100.0;
+    dbg!(&winrate.round());
+
+    let raw_player_results = player_sets
+        .filter(crate::schema::player_sets::requester_id.eq(selected_player.player_id))
+        .group_by(crate::schema::player_sets::event_id)
+        .select((
+            crate::schema::player_sets::event_id,
+            sql("COUNT(result_type>0 OR NULL)"),
+            sql("COUNT(result_type<0 OR NULL)"),
+        ))
+        .get_results::<(i32, String, String)>(&db_connection)?;
+    // ^^^ not sure why but have to get the count as text
+
+    let player_results = raw_player_results
+        .iter()
+        .map(|i| {
+            (
+                i.0,
+                i.1.chars().nth_back(0).unwrap() as u32,
+                i.2.chars().nth_back(0).unwrap() as u32,
+            )
+        })
+        .collect::<Vec<(i32, u32, u32)>>();
+
+    let competitor_type = (
+        ((player_results.iter().map(|i| i.1).sum::<u32>() as f32) / (player_results.len() as f32))
+            .round() as u32,
+        ((player_results.iter().map(|i| i.2).sum::<u32>() as f32) / (player_results.len() as f32))
+            .round() as u32,
+    );
+    dbg!(&competitor_type);
+
+    Ok(())
 }
