@@ -30,16 +30,8 @@ impl Game {
             requester_id: rid,
             requester_win: rw,
             order_num: onum,
-            requester_char_played: if let Some(rcp_num) = rcp_num_o {
-                Some(get_character_from_id(rcp_num))
-            } else {
-                None
-            },
-            opponent_char_played: if let Some(ocp_num) = ocp_num_o {
-                Some(get_character_from_id(ocp_num))
-            } else {
-                None
-            },
+            requester_char_played: rcp_num_o.map(get_character_from_id),
+            opponent_char_played: ocp_num_o.map(get_character_from_id),
             stage: s,
         }
     }

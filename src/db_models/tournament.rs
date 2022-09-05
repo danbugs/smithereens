@@ -22,12 +22,6 @@ impl PartialEq for Tournament {
             && self.event_id == other.event_id
             && self.requester_id == other.requester_id
     }
-
-    fn ne(&self, other: &Self) -> bool {
-        self.tournament_id != other.tournament_id
-            || self.event_id != other.event_id
-            || self.requester_id != other.requester_id
-    }
 }
 
 impl Tournament {

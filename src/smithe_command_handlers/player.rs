@@ -21,22 +21,6 @@ use diesel::{
     sql_types::{Float, Int4, Text},
 };
 
-#[derive(Debug, Queryable, QueryableByName)]
-struct Losses {
-    #[sql_type = "Int4"]
-    event_id: i32,
-    #[sql_type = "Int4"]
-    losses: i32,
-}
-
-#[derive(Debug, QueryableByName)]
-struct Wins {
-    #[sql_type = "Int4"]
-    event_id: i32,
-    #[sql_type = "Int4"]
-    wins: i32,
-}
-
 pub async fn handle_player(tag: &str) -> Result<()> {
     let processed_tag = tag.replace(' ', "%");
     // ^^^ transform spaces into wildcards to make search most inclusive
@@ -138,55 +122,43 @@ pub async fn handle_player(tag: &str) -> Result<()> {
                         continue;
                     };
 
-                    let gids = if let Some(gs) = s.games {
-                        Some(
-                            gs.iter()
-                                .map(|g| {
-                                    let rcp_num = if let Some(rs) = &g.selections {
-                                        if let Some(rgs) = rs.iter().find(|i| {
+                    let gids = s.games.map(|gs| {
+                        gs.iter()
+                            .map(|g| {
+                                let rcp_num = if let Some(rs) = &g.selections {
+                                    rs.iter()
+                                        .find(|i| {
                                             i.entrant.id.as_ref().unwrap().eq(requester_entrant_id)
-                                        }) {
-                                            Some(rgs.selectionValue)
-                                        } else {
-                                            None
-                                        }
-                                    } else {
-                                        None
-                                    };
+                                        })
+                                        .map(|rgs| rgs.selectionValue)
+                                } else {
+                                    None
+                                };
 
-                                    let ocp_num = if let Some(os) = &g.selections {
-                                        if let Some(ogs) = os.iter().find(|i| {
+                                let ocp_num = if let Some(os) = &g.selections {
+                                    os.iter()
+                                        .find(|i| {
                                             i.entrant.id.as_ref().unwrap().ne(requester_entrant_id)
-                                        }) {
-                                            Some(ogs.selectionValue)
-                                        } else {
-                                            None
-                                        }
-                                    } else {
-                                        None
-                                    };
+                                        })
+                                        .map(|ogs| ogs.selectionValue)
+                                } else {
+                                    None
+                                };
 
-                                    curated_games.push(Game::new(
-                                        g.id,
-                                        selected_player.player_id,
-                                        g.winnerId.eq(requester_entrant_id),
-                                        g.orderNum,
-                                        rcp_num,
-                                        ocp_num,
-                                        if let Some(se) = &g.stage {
-                                            Some(se.name.clone())
-                                        } else {
-                                            None
-                                        },
-                                    ));
+                                curated_games.push(Game::new(
+                                    g.id,
+                                    selected_player.player_id,
+                                    g.winnerId.eq(requester_entrant_id),
+                                    g.orderNum,
+                                    rcp_num,
+                                    ocp_num,
+                                    g.stage.as_ref().map(|se| se.name.clone()),
+                                ));
 
-                                    g.id
-                                })
-                                .collect::<Vec<i32>>(),
-                        )
-                    } else {
-                        None
-                    };
+                                g.id
+                            })
+                            .collect::<Vec<i32>>()
+                    });
 
                     let rslot = s
                         .slots
@@ -207,10 +179,10 @@ pub async fn handle_player(tag: &str) -> Result<()> {
                         s.event.id.unwrap(),
                         s.event.tournament.as_ref().unwrap().id,
                         gids,
-                        &rslot.entrant.name.as_ref().unwrap(),
+                        rslot.entrant.name.as_ref().unwrap(),
                         rslot.standing.stats.as_ref().unwrap().score.value,
                         rslot.seed.seedNum,
-                        &oslot.entrant.name.as_ref().unwrap(),
+                        oslot.entrant.name.as_ref().unwrap(),
                         oslot.standing.stats.as_ref().unwrap().score.value,
                         oslot.seed.seedNum,
                     ));
