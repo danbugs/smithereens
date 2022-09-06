@@ -4,7 +4,7 @@
 
 use crate::schema::last_checked_player_id;
 
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Insertable, Queryable, QueryableByName)]
 #[table_name = "last_checked_player_id"]
 pub struct LastCheckedPlayerId {
     pub player_id: i32,

@@ -39,12 +39,17 @@ pub async fn make_event_getter_query(event_slug: &str) -> Result<EventGetterData
     sgg.gql_client()
         .query_with_vars::<EventGetterData, EventGetterVars>(EVENTS_GETTER_QUERY, vars)
         .await
-        .map_err(|_| anyhow::anyhow!("failed to get events under the '{}' event slug", event_slug))?
+        .map_err(|e| anyhow::anyhow!(e.message().to_string()))?
         .ok_or_else(|| anyhow::anyhow!("no event found for specified slug: '{}'", event_slug))
 }
 
 pub async fn get_phase_id_from_event_slug(event_slug: &str) -> Result<i32> {
-    make_event_getter_query(event_slug).await?.event.phases[0]
+    // vvv fine to unwrap given context
+    make_event_getter_query(event_slug)
+        .await?
+        .event
+        .phases
+        .unwrap()[0]
         .id
         .ok_or_else(|| {
             anyhow::anyhow!(

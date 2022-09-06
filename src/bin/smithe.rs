@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Player { tag } => handle_player(tag),
+        Commands::Player { tag } => handle_player(tag).await,
         Commands::Event { url } => handle_event(Url::from_str(url)?).await,
     }
 }
