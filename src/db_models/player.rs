@@ -4,7 +4,7 @@
 use crate::schema::players;
 use crate::startgg;
 
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Insertable, Queryable, QueryableByName)]
 #[table_name = "players"]
 pub struct Player {
     pub player_id: i32,
@@ -17,11 +17,11 @@ impl From<startgg::Player> for Player {
         // ^^^ if we got here, player is guaranteed to be Ok(..)
         let gamer_tag_with_prefix = if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
             // ^^^ it is ok to unwrap here due to the first conditional
-            p.gamerTag
+            p.gamerTag.unwrap()
         } else {
-            format!("{} | {}", p.prefix.unwrap(), p.gamerTag)
-            // ^^^ it is ok to unwrap here because already we know it is not None
+            format!("{} | {}", p.prefix.unwrap(), p.gamerTag.unwrap())
         };
+        // ^^^ it is ok to unwrap here because already we know it is not None
 
         Self {
             player_id: p.id,

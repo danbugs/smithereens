@@ -4,7 +4,7 @@
 
 use crate::schema::empty_player_ids;
 
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Insertable, Queryable, QueryableByName)]
 #[table_name = "empty_player_ids"]
 pub struct EmptyPlayerId {
     pub player_id: i32,
