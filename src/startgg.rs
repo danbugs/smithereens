@@ -84,6 +84,7 @@ pub struct SetConnection {
 pub struct Tournament {
     pub id: i32,
     pub name: String,
+    pub endAt: i64,
 }
 
 #[derive(Debug, Deserialize)]

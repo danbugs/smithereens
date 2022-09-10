@@ -1,7 +1,9 @@
 CREATE TABLE player_tournaments(
     tournament_id INTEGER,
     event_id INTEGER,
-    event_at_tournament VARCHAR NOT NULL,
+    event_name VARCHAR NOT NULL,
+    tournament_name VARCHAR NOT NULL,
+    end_at BIGINT NOT NULL,
     requester_id INTEGER,
     placement INTEGER NOT NULL,
     num_entrants INTEGER NOT NULL,
