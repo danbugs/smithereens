@@ -45,7 +45,9 @@ table! {
     player_tournaments (tournament_id, event_id, requester_id) {
         tournament_id -> Int4,
         event_id -> Int4,
-        event_at_tournament -> Varchar,
+        event_name -> Varchar,
+        tournament_name -> Varchar,
+        end_at -> Int8,
         requester_id -> Int4,
         placement -> Int4,
         num_entrants -> Int4,

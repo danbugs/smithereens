@@ -24,8 +24,8 @@ In the future, I hope to make it possible for you to claim your profile (i.e., v
 
 Smithereens is not yet available as a website, only as a command-line tool. With it, you can:
 - ✅ view the hidden seeding for an event, 
-- ❎ view a player's overall results,
-- ❎ view a 'digested' tournament result, and
+- ✅ view a player's overall results,
+- ✅ view a 'digested' tournament result, and
 - ❎ claim your profile, and make it your own.
 
 > Note:
