@@ -23,38 +23,40 @@ use diesel::{
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     let processed_tag = tag.replace(' ', "%");
-    // ^^^ transform spaces into wildcards to make search most inclusive
+    // ^^^ transform spaces into wildcards to make search more inclusive
 
-    tracing::info!("querying pidgtm db for players with tag similar to the provided ones...");
+    tracing::info!("🔍 looking for players with tags similar to the provided one...");
     let db_connection = db::connect()?;
     let matching_players: Vec<Player> = players
-        .filter(gamer_tag_with_prefix.ilike(format!("%{}%", processed_tag)))
+        .filter(gamer_tag_with_prefix.ilike(format!("%{}%", processed_tag))) // case-insensitive like
         .get_results::<Player>(&db_connection)?;
 
     let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("These players matched your search:")
+        .with_prompt("❗ These players matched your search:")
         .default(0)
         .items(&matching_players[..])
         .interact()?;
 
     let selected_player = &matching_players[selection];
 
-    tracing::info!("checking if player is cached...");
-    let db_connection = db::connect()?;
+    tracing::info!("🤔 checking if player is cached...");
     let cache = player_sets
         .filter(crate::schema::player_sets::requester_id.eq(selected_player.player_id))
         .load::<Set>(&db_connection)?;
     // ^^^ have to use fully-qualified syntax in the filter here
 
     let updated_after = if !cache.is_empty() {
+        tracing::info!("✅ player was cached...");
         Some(
             cache
                 .iter()
                 .max_by_key(|s| s.completed_at)
                 .unwrap()
-                .completed_at,
+                .completed_at
+                + 1,
         )
     } else {
+        tracing::info!("❌ player was not cached...");
         None
     };
 
@@ -64,7 +66,10 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     let mut curated_tournaments = vec![];
     loop {
         let mut player = None;
+
+        // there is the possibility we will hit the rate-limit so we want to do this on loop
         loop {
+            tracing::info!("🍥 querying StartGG API for player results...");
             match make_set_getter_query(
                 selected_player.player_id,
                 curr_page,
@@ -93,9 +98,12 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         // ^^^ guaranteed to have sets in this context, ok to unwrap
 
         if ss.is_empty() {
+            tracing::info!("🏁 finished compiling results for this player!");
             break;
         } else {
+            tracing::info!("✅ got some results...");
             for s in ss {
+                // we only want to compile results for: double elimination single ssbu brackets
                 if s.event.videogame.as_ref().unwrap().name == "Super Smash Bros. Ultimate"
                     && s.phaseGroup.bracketType == "DOUBLE_ELIMINATION"
                     && s.event.teamRosterSize.is_none()
@@ -220,6 +228,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
                         s.event.id.unwrap(),
                         s.event.name.as_ref().unwrap(),
                         &s.event.tournament.as_ref().unwrap().name,
+                        s.event.tournament.as_ref().unwrap().endAt,
                         selected_player.player_id,
                         pt,
                         s.event.numEntrants.unwrap(),
@@ -229,7 +238,6 @@ pub async fn handle_player(tag: &str) -> Result<()> {
 
                     if res_pt.is_err() && !curated_tournaments.contains(&tournament) {
                         // ^^^ not found
-                        dbg!(&tournament);
                         curated_tournaments.push(tournament);
                     }
                 }
@@ -256,31 +264,31 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         .filter(result_type.eq(2))
         .count()
         .get_result::<i64>(&db_connection)?;
-    dbg!(&set_wins_without_dqs);
+    println!("🏆 set wins without DQs: {}", set_wins_without_dqs);
 
     let set_losses_without_dqs = player_sets
         .filter(result_type.eq(-2))
         .count()
         .get_result::<i64>(&db_connection)?;
-    dbg!(&set_losses_without_dqs);
+    println!("😭 set losses without DQs: {}", set_losses_without_dqs);
 
     let set_wins_by_dq = player_sets
         .filter(result_type.eq(1))
         .count()
         .get_result::<i64>(&db_connection)?;
-    dbg!(&set_wins_by_dq);
+    println!("😎 set wins by DQs: {}", set_wins_by_dq);
 
     let set_losses_by_dq = player_sets
         .filter(result_type.eq(-1))
         .count()
         .get_result::<i64>(&db_connection)?;
-    dbg!(&set_losses_by_dq);
+    println!("🤷 set losses by DQs: {}", set_losses_by_dq);
 
     let winrate = ((set_wins_without_dqs as f32)
         / ((set_wins_without_dqs + set_losses_without_dqs) as f32))
         .abs()
         * 100.0;
-    dbg!(&winrate.round());
+    println!("🥇 win-rate: {}%", winrate.round());
 
     let raw_player_results = player_sets
         .filter(crate::schema::player_sets::requester_id.eq(selected_player.player_id))
@@ -310,7 +318,11 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         ((player_results.iter().map(|i| i.2).sum::<u32>() as f32) / (player_results.len() as f32))
             .round() as u32,
     );
-    dbg!(&competitor_type);
+    println!(
+        "🌱 competitor type: {}-{}er",
+        competitor_type.0,
+        competitor_type.1
+    );
 
     Ok(())
 }

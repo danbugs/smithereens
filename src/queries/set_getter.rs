@@ -63,6 +63,7 @@ query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag
           tournament {
             id
             name
+            endAt
           }
           standings(query: { filter: { search: { searchString: $gamerTag}}}) {
             nodes {
