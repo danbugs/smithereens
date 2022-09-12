@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+pub mod queries;
+
 use std::collections::HashMap;
 
 use serde::Deserialize;

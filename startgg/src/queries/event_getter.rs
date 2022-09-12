@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::startgg::{Event, StartGG};
+use crate::{Event, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 

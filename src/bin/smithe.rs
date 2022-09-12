@@ -4,7 +4,7 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
 use clap::{Parser, Subcommand};
-use smithereens::smithe_command_handlers::{event::handle_event, player::handle_player};
+use smithereens::smithe::{event::handle_event, player::handle_player};
 use url::Url;
 
 /// Smithereens, or Smithe, is a digested open-source data visualizer tool for your Smash results.

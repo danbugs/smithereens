@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::startgg::{Phase, Seed, StartGG};
+use crate::{Phase, Seed, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -83,7 +83,7 @@ pub async fn make_seeding_getter_query(phase_id: i32) -> Result<Vec<Seed>> {
 mod tests {
     use crate::{
         queries::seeding_geeter::{SeedingGetterData, SeedingGetterVars, SEEDING_GETTER_QUERY},
-        startgg::StartGG,
+        StartGG,
     };
     use anyhow::Result;
 

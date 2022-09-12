@@ -3,14 +3,14 @@ use std::{collections::HashMap, os, rc, thread, time::Duration};
 
 use anyhow::Result;
 
-use crate::{
-    db,
+use smithe_database::{
     db_models::{game::Game, player::Player, set::Set, tournament::Tournament},
-    queries::set_getter::make_set_getter_query,
     schema::{
         player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*,
     },
 };
+
+use startgg::queries::set_getter::make_set_getter_query;
 
 use dialoguer::{theme::ColorfulTheme, Select};
 use diesel::{
@@ -26,7 +26,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     // ^^^ transform spaces into wildcards to make search more inclusive
 
     tracing::info!("🔍 looking for players with tags similar to the provided one...");
-    let db_connection = db::connect()?;
+    let db_connection = smithe_database::connect()?;
     let matching_players: Vec<Player> = players
         .filter(gamer_tag_with_prefix.ilike(format!("%{}%", processed_tag))) // case-insensitive like
         .get_results::<Player>(&db_connection)?;
@@ -41,7 +41,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
 
     tracing::info!("🤔 checking if player is cached...");
     let cache = player_sets
-        .filter(crate::schema::player_sets::requester_id.eq(selected_player.player_id))
+        .filter(smithe_database::schema::player_sets::requester_id.eq(selected_player.player_id))
         .load::<Set>(&db_connection)?;
     // ^^^ have to use fully-qualified syntax in the filter here
 
@@ -291,10 +291,10 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     println!("🥇 win-rate: {}%", winrate.round());
 
     let raw_player_results = player_sets
-        .filter(crate::schema::player_sets::requester_id.eq(selected_player.player_id))
-        .group_by(crate::schema::player_sets::event_id)
+        .filter(smithe_database::schema::player_sets::requester_id.eq(selected_player.player_id))
+        .group_by(smithe_database::schema::player_sets::event_id)
         .select((
-            crate::schema::player_sets::event_id,
+            smithe_database::schema::player_sets::event_id,
             sql("COUNT(result_type>0 OR NULL)"),
             sql("COUNT(result_type<0 OR NULL)"),
         ))

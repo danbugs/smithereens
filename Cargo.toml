@@ -16,14 +16,21 @@ name = "smithe"
 test = false
 
 [dependencies]
-gql_client = "1"
-serde = "1"
 anyhow = "1"
-tokio = { version = "1.1", features = ["full"] }
 clap = { version = "3.2", features = ["derive"] }
-url = "2.2"
-diesel = { version = "1.4", features = ["postgres"] }
 ctrlc = "3.2"
+dialoguer = "0.10"
+diesel = { version = "1.4", features = ["postgres"] }
+tokio = { version = "1.1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
-dialoguer = "0.10"
+url = "2.2"
+startgg = { path = "startgg" }
+smithe_database = { path = "database" }
+
+[workspace]
+members = [
+    "backend",
+    "database",
+    "startgg"
+]

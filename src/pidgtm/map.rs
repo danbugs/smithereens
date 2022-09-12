@@ -1,15 +1,15 @@
 use anyhow::Result;
 use diesel::dsl::max;
 
-use crate::db_models::empty_player_ids::EmptyPlayerId;
-use crate::db_models::last_checked_player_id::LastCheckedPlayerId;
-use crate::db_models::player::Player;
-use crate::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData};
-use crate::schema::last_checked_player_id;
+use smithe_database::db_models::empty_player_ids::EmptyPlayerId;
+use smithe_database::db_models::last_checked_player_id::LastCheckedPlayerId;
+use smithe_database::db_models::player::Player;
+use startgg::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData};
+use smithe_database::schema::last_checked_player_id;
 use diesel::{insert_into, prelude::*};
-use schema::empty_player_ids::dsl::*;
-use schema::last_checked_player_id::dsl::*;
-use schema::players::dsl::*;
+use smithe_database::schema::empty_player_ids::dsl::*;
+use smithe_database::schema::last_checked_player_id::dsl::*;
+use smithe_database::schema::players::dsl::*;
 
 use std::process;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -17,10 +17,8 @@ use std::sync::Arc;
 use std::time::Instant;
 use std::{thread::sleep, time::Duration};
 
-use crate::{db, schema};
-
 pub async fn handle_map() -> Result<()> {
-    let db_connection = db::connect()?;
+    let db_connection = smithe_database::connect()?;
 
     tracing::info!("❗ checking cache for last checked player id...");
     let max_checked_player_id = last_checked_player_id

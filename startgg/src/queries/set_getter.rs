@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use crate::startgg::{Player, StartGG};
+use crate::{Player, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
