@@ -109,7 +109,7 @@ mod tests {
             .await
             .unwrap();
 
-        dbg!(nodes);
+        println!("{:#?}", nodes);
 
         Ok(())
     }

@@ -73,7 +73,7 @@ mod tests {
 
     #[tokio::test]
     async fn event_getter() -> Result<()> {
-        dbg!(make_event_getter_query(BOBC4_VAR_SLUG).await?);
+        println!("{:#?}", make_event_getter_query(BOBC4_VAR_SLUG).await?);
         Ok(())
     }
 }

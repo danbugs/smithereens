@@ -159,7 +159,8 @@ mod tests {
 
     #[tokio::test]
     async fn set_getter() -> Result<()> {
-        dbg!(
+        println!(
+            "{:#?}",
             make_set_getter_query(
                 1,
                 Arc::new(Mutex::new(SetGetterVars::unpaginated_new(

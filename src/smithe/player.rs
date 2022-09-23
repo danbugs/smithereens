@@ -95,7 +95,7 @@ where
                     continue;
                 };
 
-                let maybe_games = maybe_get_games_from_set(requester_entrant_id, &s);
+                let maybe_games = maybe_get_games_from_set(player.id, requester_entrant_id, &s);
 
                 // if there are games, we want to add to the vec to insert in the DB at the end
                 if let Some(mut games) = maybe_games.clone() {
@@ -127,14 +127,14 @@ where
                     s.event.name.as_ref().unwrap(),
                     &s.event.tournament.as_ref().unwrap().name,
                     s.event.tournament.as_ref().unwrap().endAt,
-                    requester_entrant_id,
-                    get_placement(requester_entrant_id, &s),
+                    player.id,
+                    get_placement(player.id, &s),
                     s.event.numEntrants.unwrap(),
                     get_seed(requester_entrant_id, &s),
                     format!("https://www.start.gg/{}", s.event.slug.as_ref().unwrap()).as_str(),
                 );
 
-                if !is_tournament_cached(requester_entrant_id, &s)?
+                if !is_tournament_cached(player.id, &s)?
                     && !curated_tournaments.contains(&tournament)
                 {
                     // ^^^ not found

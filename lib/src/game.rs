@@ -1,7 +1,11 @@
 use smithe_database::db_models::game::Game;
 use startgg::Set as SGGSet;
 
-pub fn maybe_get_games_from_set(requester_entrant_id: i32, s: &SGGSet) -> Option<Vec<Game>> {
+pub fn maybe_get_games_from_set(
+    player_id: i32,
+    requester_entrant_id: i32,
+    s: &SGGSet,
+) -> Option<Vec<Game>> {
     s.clone().games.map(|gs| {
         gs.iter()
             .map(|g| {
@@ -23,7 +27,7 @@ pub fn maybe_get_games_from_set(requester_entrant_id: i32, s: &SGGSet) -> Option
 
                 Game::new(
                     g.id,
-                    requester_entrant_id,
+                    player_id,
                     g.winnerId.eq(&requester_entrant_id),
                     g.orderNum,
                     rcp_num,

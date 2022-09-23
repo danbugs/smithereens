@@ -10,7 +10,7 @@ improve:
 
 .PHONY: test
 test:
-	cargo test -- --show-output
+	cargo test --workspace -- --show-output 2>&1 | tee test.out
 
 .PHONY: build
 build:

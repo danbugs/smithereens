@@ -6,6 +6,7 @@ authors = [ "Dan Chiarlone" ]
 
 [lib]
 doctest = false
+test = false
 
 [[bin]]
 name = "pidgtm"
@@ -32,7 +33,6 @@ smithe_lib = { path = "lib/" }
 
 [workspace]
 members = [
-    "backend/",
     "database/",
     "startgg_api/",
     "lib/"

@@ -72,7 +72,10 @@ mod tests {
 
     #[tokio::test]
     async fn player_getter() -> Result<()> {
-        dbg!(make_pidgtm_player_getter_query(DANTOTTO_PLAYER_ID).await?);
+        println!(
+            "{:#?}",
+            make_pidgtm_player_getter_query(DANTOTTO_PLAYER_ID).await?
+        );
         Ok(())
     }
 }

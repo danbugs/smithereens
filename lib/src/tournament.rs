@@ -30,14 +30,14 @@ pub fn is_ssbu_singles_double_elimination_tournament(s: &SGGSet) -> bool {
         && s.event.teamRosterSize.is_none()
 }
 
-pub fn get_placement(requester_entrant_id: i32, s: &SGGSet) -> i32 {
+pub fn get_placement(player_id: i32, s: &SGGSet) -> i32 {
     s.event
         .standings
         .as_ref()
         .unwrap()
         .nodes
         .iter()
-        .find(|i| i.player.as_ref().unwrap().id.eq(&requester_entrant_id))
+        .find(|i| i.player.as_ref().unwrap().id.eq(&player_id))
         .unwrap()
         .placement
         .unwrap()
@@ -52,13 +52,13 @@ pub fn get_seed(requester_entrant_id: i32, s: &SGGSet) -> i32 {
         .seedNum
 }
 
-pub fn is_tournament_cached(requester_entrant_id: i32, s: &SGGSet) -> Result<bool> {
+pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
     let db_connection = smithe_database::connect()?;
     Ok(player_tournaments
         .find((
             s.event.tournament.as_ref().unwrap().id,
             s.event.id.unwrap(),
-            requester_entrant_id,
+            player_id,
         ))
         .first::<Tournament>(&db_connection)
         .is_ok())
