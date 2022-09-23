@@ -57,11 +57,8 @@ impl Set {
             is_event_online: is_on,
             event_id: e_id,
             tournament_id: t_id,
-            game_ids: if let Some(games) = maybe_games {
-                Some(games.iter().map(|g| g.game_id).collect::<Vec<i32>>())
-            } else {
-                None
-            },
+            game_ids: maybe_games
+                .map(|games| games.iter().map(|g| g.game_id).collect::<Vec<i32>>()),
         }
     }
 }

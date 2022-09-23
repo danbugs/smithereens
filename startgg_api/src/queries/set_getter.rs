@@ -134,13 +134,11 @@ pub async fn make_set_getter_query(
     page: i32,
     usgv: Arc<Mutex<SetGetterVars>>,
 ) -> Result<SetGetterData> {
-    usgv.lock().unwrap().page = page;
+    let mut usgv_lock = usgv.lock().unwrap().clone();
+    usgv_lock.page = page;
     let sgg = StartGG::connect();
     sgg.gql_client()
-        .query_with_vars::<SetGetterData, SetGetterVars>(
-            SET_GETTER_QUERY,
-            usgv.lock().unwrap().clone(),
-        )
+        .query_with_vars::<SetGetterData, SetGetterVars>(SET_GETTER_QUERY, usgv_lock)
         .await
         .transpose()
         .expect("an unexpected error occurred (empty data)")

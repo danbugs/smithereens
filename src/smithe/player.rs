@@ -1,20 +1,11 @@
-use std::{
-    any::Any,
-    collections::HashMap,
-    os, rc,
-    sync::{Arc, Mutex},
-    thread,
-    time::Duration,
-};
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 
 use as_any::Downcast;
 use smithe_database::{
-    db_models::{game::Game, player::Player, set::Set, tournament::Tournament},
-    schema::{
-        player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*,
-    },
+    db_models::{player::Player, set::Set, tournament::Tournament},
+    schema::{player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*},
 };
 
 use smithe_lib::{
@@ -38,13 +29,7 @@ use startgg::{
 };
 
 use dialoguer::{theme::ColorfulTheme, Select};
-use diesel::{
-    dsl::{count, count_star, sql, sum},
-    insert_into,
-    prelude::*,
-    sql_query,
-    sql_types::{Float, Int4, Text},
-};
+use diesel::{insert_into, prelude::*};
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("🔍 looking for players with tags similar to the provided one...");
@@ -61,11 +46,11 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("🤔 checking if player is cached...");
     let cache = get_all_from_player_id(selected_player.player_id)?;
 
-    let mut curr_page = 1;
+    let _curr_page = 1;
     let updated_after = get_last_completed_at(cache);
     let processed_gamer_tag = maybe_remove_prefix_from_gamer_tag(selected_player);
 
-    let mut usgv = SetGetterVars::unpaginated_new(
+    let usgv = SetGetterVars::unpaginated_new(
         selected_player.player_id,
         updated_after,
         &processed_gamer_tag,
@@ -98,7 +83,7 @@ where
 
     if ss.is_empty() {
         tracing::info!("🏁 finished compiling results for this player!");
-        return Ok(true);
+        Ok(true)
     } else {
         tracing::info!("✅ got some results...");
         for s in ss {
@@ -110,7 +95,7 @@ where
                     continue;
                 };
 
-                let mut maybe_games = maybe_get_games_from_set(requester_entrant_id, &s);
+                let maybe_games = maybe_get_games_from_set(requester_entrant_id, &s);
 
                 // if there are games, we want to add to the vec to insert in the DB at the end
                 if let Some(mut games) = maybe_games.clone() {
@@ -172,7 +157,7 @@ where
             .values(curated_tournaments)
             .execute(&db_connection)?;
 
-        return Ok(false);
+        Ok(false)
     }
 }
 
