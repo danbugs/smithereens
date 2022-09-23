@@ -4,10 +4,10 @@
 use crate::schema::player_games;
 use startgg::SSBU_CHARACTERS;
 
-#[derive(Debug, Insertable, Queryable, QueryableByName)]
+#[derive(Debug, Clone, Insertable, Queryable, QueryableByName)]
 #[table_name = "player_games"]
 pub struct Game {
-    game_id: i32,
+    pub game_id: i32,
     requester_id: i32,
     requester_win: bool,
     order_num: i32,

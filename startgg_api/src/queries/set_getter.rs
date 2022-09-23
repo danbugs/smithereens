@@ -2,7 +2,9 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use crate::{Player, StartGG};
+use std::sync::{Arc, Mutex};
+
+use crate::{GQLData, GQLVars, Player, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -92,12 +94,20 @@ pub struct SetGetterData {
     pub player: Player,
 }
 
-#[derive(Serialize)]
+impl GQLData for SetGetterData {}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct SetGetterVars {
-    playerId: i32,
+    pub playerId: i32,
     page: i32,
     updatedAfter: Option<i64>,
     gamerTag: String,
+}
+
+impl GQLVars for SetGetterVars {
+    fn update(&mut self) -> Self {
+        panic!("internal error: something when wrong when updating SetGetterVars");
+    }
 }
 
 impl SetGetterVars {
@@ -109,19 +119,27 @@ impl SetGetterVars {
             gamerTag: gamerTag.to_string(),
         }
     }
+
+    pub fn unpaginated_new(playerId: i32, updatedAfter: Option<i64>, gamerTag: &str) -> Self {
+        Self {
+            playerId,
+            page: -999,
+            updatedAfter,
+            gamerTag: gamerTag.to_string(),
+        }
+    }
 }
 
 pub async fn make_set_getter_query(
-    player_id: i32,
     page: i32,
-    updated_after: Option<i64>,
-    gamer_tag: &str,
+    usgv: Arc<Mutex<SetGetterVars>>,
 ) -> Result<SetGetterData> {
+    usgv.lock().unwrap().page = page;
     let sgg = StartGG::connect();
     sgg.gql_client()
         .query_with_vars::<SetGetterData, SetGetterVars>(
             SET_GETTER_QUERY,
-            SetGetterVars::new(player_id, page, updated_after, gamer_tag),
+            usgv.lock().unwrap().clone(),
         )
         .await
         .transpose()
@@ -131,15 +149,29 @@ pub async fn make_set_getter_query(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::Mutex;
+
     use anyhow::Result;
 
     use crate::queries::set_getter::make_set_getter_query;
+    use crate::queries::set_getter::SetGetterVars;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     #[tokio::test]
     async fn set_getter() -> Result<()> {
-        dbg!(make_set_getter_query(DANTOTTO_PLAYER_ID, 1, None, "Dantotto").await?);
+        dbg!(
+            make_set_getter_query(
+                1,
+                Arc::new(Mutex::new(SetGetterVars::unpaginated_new(
+                    DANTOTTO_PLAYER_ID,
+                    None,
+                    "Dantotto"
+                )))
+            )
+            .await?
+        );
         Ok(())
     }
 }

@@ -25,12 +25,15 @@ tokio = { version = "1.1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 url = "2.2"
-startgg = { path = "startgg" }
-smithe_database = { path = "database" }
+as-any = "0.3"
+startgg = { path = "startgg_api/" }
+smithe_database = { path = "database/" }
+smithe_lib = { path = "lib/" }
 
 [workspace]
 members = [
-    "backend",
-    "database",
-    "startgg"
+    "backend/",
+    "database/",
+    "startgg_api/",
+    "lib/"
 ]

@@ -3,6 +3,8 @@
 // — an auto fix for this exists only in Diesel v2.
 use crate::schema::player_sets;
 
+use crate::db_models::game::Game;
+
 #[derive(Debug, Insertable, Queryable, QueryableByName)]
 #[table_name = "player_sets"]
 pub struct Set {
@@ -31,7 +33,7 @@ impl Set {
         is_on: bool,
         e_id: i32,
         t_id: i32,
-        gids: Option<Vec<i32>>,
+        maybe_games: Option<Vec<Game>>,
         rtag: &str,
         rscore: i32,
         rseed: i32,
@@ -55,7 +57,11 @@ impl Set {
             is_event_online: is_on,
             event_id: e_id,
             tournament_id: t_id,
-            game_ids: gids,
+            game_ids: if let Some(games) = maybe_games {
+                Some(games.iter().map(|g| g.game_id).collect::<Vec<i32>>())
+            } else {
+                None
+            },
         }
     }
 }

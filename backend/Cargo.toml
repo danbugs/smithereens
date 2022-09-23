@@ -9,4 +9,4 @@ edition = "2021"
 diesel = { version = "1.4", features = ["postgres"] }
 rocket = { version = "0.5.0-rc.2", features = ["json"] }
 smithe_database = { path = "../database" }
-startgg = { path = "../startgg" }
+startgg = { path = "../startgg_api/" }

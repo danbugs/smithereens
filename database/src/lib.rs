@@ -5,8 +5,8 @@
 #[macro_use]
 extern crate diesel;
 
-pub mod schema;
 pub mod db_models;
+pub mod schema;
 
 use std::env;
 

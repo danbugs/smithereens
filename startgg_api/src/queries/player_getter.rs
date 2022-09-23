@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use crate::{Player, StartGG};
+use crate::{GQLData, GQLVars, Player, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -24,15 +24,23 @@ pub struct PIDGTM_PlayerGetterData {
     pub player: Option<Player>,
 }
 
+impl GQLData for PIDGTM_PlayerGetterData {}
+
 impl PIDGTM_PlayerGetterData {
     pub fn empty() -> Self {
         Self { player: None }
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct PIDGTM_PlayerGetterVars {
     playerId: i32,
+}
+
+impl GQLVars for PIDGTM_PlayerGetterVars {
+    fn update(&mut self) -> Self {
+        todo!()
+    }
 }
 
 impl PIDGTM_PlayerGetterVars {

@@ -5,34 +5,41 @@ pub mod queries;
 
 use std::collections::HashMap;
 
+use as_any::AsAny;
 use serde::Deserialize;
 
 pub const STARTGG_ENDPOINT: &str = "https://api.start.gg/gql/alpha";
 
-#[derive(Debug, Deserialize)]
+pub trait GQLData: AsAny + std::fmt::Debug {}
+
+pub trait GQLVars: AsAny + std::fmt::Debug {
+    fn update(&mut self) -> Self;
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Phase {
     pub id: Option<i32>,
     pub seeds: Option<SeedConnection>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SeedConnection {
     pub nodes: Vec<Seed>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Seed {
     pub seedNum: i32,
     entrant: Option<Entrant>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Entrant {
     pub id: Option<i32>,
     pub name: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Event {
     pub id: Option<i32>,
     pub slug: Option<String>,
@@ -46,22 +53,22 @@ pub struct Event {
     pub teamRosterSize: Option<TeamRosterSize>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct TeamRosterSize {
     maxPlayers: i32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct StandingConnection {
     pub nodes: Vec<Standing>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Videogame {
     pub name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Player {
     pub id: i32,
     pub sets: Option<SetConnection>,
@@ -77,19 +84,19 @@ pub struct Player {
     // we don't want to fail here.
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SetConnection {
     pub nodes: Vec<Set>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Tournament {
     pub id: i32,
     pub name: String,
     pub endAt: i64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Set {
     pub id: i32,
     pub games: Option<Vec<Game>>,
@@ -99,14 +106,14 @@ pub struct Set {
     pub event: Event,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SetSlot {
     pub entrant: Entrant,
     pub seed: Seed,
     pub standing: Standing,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Standing {
     pub entrant: Option<Entrant>,
     pub player: Option<Player>,
@@ -114,17 +121,17 @@ pub struct Standing {
     pub placement: Option<i32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct StandingStats {
     pub score: Score,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Score {
     pub value: i32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Game {
     pub id: i32,
     pub winnerId: i32,
@@ -133,23 +140,23 @@ pub struct Game {
     pub stage: Option<Stage>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct GameSelection {
     pub entrant: Entrant,
     pub selectionValue: i32, // this will be an i32 that represents the character
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Stage {
     pub name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct PhaseGroup {
     pub bracketType: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct User {
     pub slug: Option<String>,
 }

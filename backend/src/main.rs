@@ -1,6 +1,6 @@
+use diesel::prelude::*;
 use rocket::http::Status;
 use rocket::serde::json::Json;
-use diesel::prelude::*;
 
 use smithe_database::{db_models::player::Player, schema::players::dsl::*};
 

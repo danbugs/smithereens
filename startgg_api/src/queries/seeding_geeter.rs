@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::{Phase, Seed, StartGG};
+use crate::{GQLData, Phase, Seed, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -30,12 +30,16 @@ pub struct SeedingGetterData {
     phase: Phase,
 }
 
-#[derive(Serialize)]
+impl GQLData for SeedingGetterData {}
+
+#[derive(Debug, Serialize)]
 pub struct SeedingGetterVars {
     phaseId: i32,
     page: i32,
     perPage: i32,
 }
+
+// maybe impl GQLVars
 
 impl SeedingGetterVars {
     pub fn new(phaseId: i32, page: i32, perPage: Option<i32>) -> Self {

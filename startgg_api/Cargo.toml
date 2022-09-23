@@ -1,5 +1,5 @@
 [package]
-name = "smithe_database"
+name = "startgg"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-diesel = { version = "1.4", features = ["postgres"] }
+gql_client = "1"
 serde = "1"
-startgg = { path = "../startgg_api/" }
+as-any = "0.3"
+tokio = { version = "1.1", features = ["full"] }

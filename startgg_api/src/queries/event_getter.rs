@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::{Event, StartGG};
+use crate::{Event, GQLData, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -20,10 +20,14 @@ pub struct EventGetterData {
     event: Event,
 }
 
-#[derive(Serialize)]
+impl GQLData for EventGetterData {}
+
+#[derive(Debug, Serialize)]
 pub struct EventGetterVars {
     slug: String,
 }
+
+// maybe impl GQLVars
 
 impl EventGetterVars {
     pub fn new(slug: &str) -> Self {

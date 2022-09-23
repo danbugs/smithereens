@@ -1,15 +1,15 @@
 use anyhow::Result;
 use diesel::dsl::max;
 
+use diesel::{insert_into, prelude::*};
 use smithe_database::db_models::empty_player_ids::EmptyPlayerId;
 use smithe_database::db_models::last_checked_player_id::LastCheckedPlayerId;
 use smithe_database::db_models::player::Player;
-use startgg::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData};
-use smithe_database::schema::last_checked_player_id;
-use diesel::{insert_into, prelude::*};
 use smithe_database::schema::empty_player_ids::dsl::*;
+use smithe_database::schema::last_checked_player_id;
 use smithe_database::schema::last_checked_player_id::dsl::*;
 use smithe_database::schema::players::dsl::*;
+use startgg::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData};
 
 use std::process;
 use std::sync::atomic::{AtomicUsize, Ordering};
