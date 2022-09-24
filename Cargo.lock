@@ -902,6 +902,7 @@ name = "smithe_lib"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ctrlc",
  "diesel",
  "smithe_database",
  "startgg",

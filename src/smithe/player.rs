@@ -9,7 +9,7 @@ use smithe_database::{
 };
 
 use smithe_lib::{
-    common::read_all_and_execute,
+    common::start_read_all_execute_finish_maybe_cancel,
     game::maybe_get_games_from_set,
     player::{get_all_like, maybe_remove_prefix_from_gamer_tag},
     set::{
@@ -45,8 +45,6 @@ pub async fn handle_player(tag: &str) -> Result<()> {
 
     tracing::info!("🤔 checking if player is cached...");
     let cache = get_all_from_player_id(selected_player.player_id)?;
-
-    let _curr_page = 1;
     let updated_after = get_last_completed_at(cache);
     let processed_gamer_tag = maybe_remove_prefix_from_gamer_tag(selected_player);
 
@@ -56,16 +54,18 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         &processed_gamer_tag,
     );
 
-    read_all_and_execute(
+    start_read_all_execute_finish_maybe_cancel(
         Arc::new(Mutex::new(usgv)),
         make_set_getter_query,
+        || Ok(1),
         execute,
         finish,
+        |gqlv| Ok(()),
     )
     .await
 }
 
-fn execute<T>(set_getter_data: T) -> Result<bool>
+fn execute<T>(_: Arc<Mutex<SetGetterVars>>, set_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {

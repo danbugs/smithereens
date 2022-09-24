@@ -4,31 +4,43 @@ use anyhow::Result;
 
 use std::{
     future::Future,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}},
     thread::sleep,
-    time::{Duration, Instant},
+    time::{Duration, Instant}, process,
 };
 
 use startgg::{GQLData, GQLVars};
 
-pub async fn read_all_and_execute<V, F, D>(
+pub async fn start_read_all_execute_finish_maybe_cancel<V, F, D>(
     gql_vars: Arc<Mutex<V>>,
     get_pages: fn(i32, Arc<Mutex<V>>) -> F,
-    execute: fn(D) -> Result<bool>,
+    start: fn() -> Result<i32>,
+    execute: fn(Arc<Mutex<V>>, D) -> Result<bool>,
     finish: fn(Arc<Mutex<V>>) -> Result<()>,
+    cancel: fn(Arc<Mutex<V>>) -> Result<()>,
 ) -> Result<()>
 where
     V: GQLVars + Clone,
     F: Future<Output = Result<D>>,
     D: GQLData,
 {
-    let mut curr_page = 1;
+    let running = Arc::new(AtomicUsize::new(0));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        let prev = r.fetch_add(1, Ordering::SeqCst);
+        if prev == 0 {
+            tracing::info!("👋 exiting...");
+        } else {
+            process::exit(0);
+        }
+    })?;
 
+    let mut curr_page = start()?;
     let mut now = Instant::now();
     loop {
         let result;
         loop {
-            tracing::info!("🍥 querying StartGG API for player results...");
+            tracing::info!("🍥 querying StartGG API...");
             match get_pages(curr_page, gql_vars.clone()).await {
                 Ok(data) => {
                     result = data;
@@ -67,10 +79,15 @@ where
             }
         }
 
-        if execute(result)? {
+        if execute(gql_vars.clone(), result)? {
             break;
         } else {
             curr_page += 1;
+        }
+
+        if running.load(Ordering::SeqCst) > 0 {
+            cancel(gql_vars.clone())?;
+            break;
         }
     }
 
