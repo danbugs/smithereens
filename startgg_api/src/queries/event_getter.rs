@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::startgg::{Event, StartGG};
+use crate::{Event, GQLData, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -20,10 +20,14 @@ pub struct EventGetterData {
     event: Event,
 }
 
-#[derive(Serialize)]
+impl GQLData for EventGetterData {}
+
+#[derive(Debug, Serialize)]
 pub struct EventGetterVars {
     slug: String,
 }
+
+// maybe impl GQLVars
 
 impl EventGetterVars {
     pub fn new(slug: &str) -> Self {
@@ -69,7 +73,7 @@ mod tests {
 
     #[tokio::test]
     async fn event_getter() -> Result<()> {
-        dbg!(make_event_getter_query(BOBC4_VAR_SLUG).await?);
+        println!("{:#?}", make_event_getter_query(BOBC4_VAR_SLUG).await?);
         Ok(())
     }
 }

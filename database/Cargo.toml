@@ -1,0 +1,15 @@
+[package]
+name = "smithe_database"
+version = "0.1.0"
+edition = "2021"
+authors = [ "Dan Chiarlone" ]
+
+[lib]
+doctest = false
+test = false
+
+[dependencies]
+anyhow = "1"
+diesel = { version = "1.4", features = ["postgres"] }
+serde = "1"
+startgg = { path = "../startgg_api/" }

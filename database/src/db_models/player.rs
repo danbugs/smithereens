@@ -2,9 +2,10 @@
 // ^^^ this is needed because Insertable introduces a lifetime we don't use
 // — an auto fix for this exists only in Diesel v2.
 use crate::schema::players;
-use crate::startgg;
 
-#[derive(Debug, Insertable, Queryable, QueryableByName)]
+use serde::Serialize;
+
+#[derive(Debug, Serialize, Insertable, Queryable, QueryableByName)]
 #[table_name = "players"]
 pub struct Player {
     pub player_id: i32,

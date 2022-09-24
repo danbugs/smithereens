@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::startgg::{Phase, Seed, StartGG};
+use crate::{GQLData, Phase, Seed, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -30,12 +30,16 @@ pub struct SeedingGetterData {
     phase: Phase,
 }
 
-#[derive(Serialize)]
+impl GQLData for SeedingGetterData {}
+
+#[derive(Debug, Serialize)]
 pub struct SeedingGetterVars {
     phaseId: i32,
     page: i32,
     perPage: i32,
 }
+
+// maybe impl GQLVars
 
 impl SeedingGetterVars {
     pub fn new(phaseId: i32, page: i32, perPage: Option<i32>) -> Self {
@@ -83,7 +87,7 @@ pub async fn make_seeding_getter_query(phase_id: i32) -> Result<Vec<Seed>> {
 mod tests {
     use crate::{
         queries::seeding_geeter::{SeedingGetterData, SeedingGetterVars, SEEDING_GETTER_QUERY},
-        startgg::StartGG,
+        StartGG,
     };
     use anyhow::Result;
 
@@ -105,7 +109,7 @@ mod tests {
             .await
             .unwrap();
 
-        dbg!(nodes);
+        println!("{:#?}", nodes);
 
         Ok(())
     }

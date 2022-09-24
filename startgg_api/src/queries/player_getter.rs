@@ -2,7 +2,9 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use crate::startgg::{Player, StartGG};
+use std::sync::{Arc, Mutex};
+
+use crate::{GQLData, GQLVars, Player, StartGG};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
@@ -24,29 +26,42 @@ pub struct PIDGTM_PlayerGetterData {
     pub player: Option<Player>,
 }
 
+impl GQLData for PIDGTM_PlayerGetterData {}
+
 impl PIDGTM_PlayerGetterData {
     pub fn empty() -> Self {
         Self { player: None }
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PIDGTM_PlayerGetterVars {
-    playerId: i32,
+    pub playerId: i32,
 }
 
-impl PIDGTM_PlayerGetterVars {
-    pub fn new(playerId: i32) -> Self {
-        Self { playerId }
+impl GQLVars for PIDGTM_PlayerGetterVars {
+    fn update(&mut self) -> Self {
+        todo!()
     }
 }
 
-pub async fn make_pidgtm_player_getter_query(player_id: i32) -> Result<PIDGTM_PlayerGetterData> {
+impl PIDGTM_PlayerGetterVars {
+    pub fn empty() -> Self {
+        Self { playerId: 0 }
+    }
+}
+
+pub async fn make_pidgtm_player_getter_query(
+    player_id: i32,
+    upgv: Arc<Mutex<PIDGTM_PlayerGetterVars>>,
+) -> Result<PIDGTM_PlayerGetterData> {
+    let mut upgv_lock = upgv.lock().unwrap().clone();
+    upgv_lock.playerId = player_id;
     let sgg = StartGG::connect();
     sgg.gql_client()
         .query_with_vars::<PIDGTM_PlayerGetterData, PIDGTM_PlayerGetterVars>(
             PIDGTM_PLAYER_GETTER_QUERY,
-            PIDGTM_PlayerGetterVars::new(player_id),
+            upgv_lock,
         )
         .await
         .transpose()
@@ -56,15 +71,24 @@ pub async fn make_pidgtm_player_getter_query(player_id: i32) -> Result<PIDGTM_Pl
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
     use anyhow::Result;
 
-    use crate::queries::player_getter::make_pidgtm_player_getter_query;
+    use crate::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterVars};
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     #[tokio::test]
     async fn player_getter() -> Result<()> {
-        dbg!(make_pidgtm_player_getter_query(DANTOTTO_PLAYER_ID).await?);
+        println!(
+            "{:#?}",
+            make_pidgtm_player_getter_query(
+                DANTOTTO_PLAYER_ID,
+                Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty()))
+            )
+            .await?
+        );
         Ok(())
     }
 }
