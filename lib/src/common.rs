@@ -4,9 +4,13 @@ use anyhow::Result;
 
 use std::{
     future::Future,
-    sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}},
+    process,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
     thread::sleep,
-    time::{Duration, Instant}, process,
+    time::{Duration, Instant},
 };
 
 use startgg::{GQLData, GQLVars};
