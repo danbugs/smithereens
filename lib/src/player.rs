@@ -4,12 +4,15 @@ use anyhow::Result;
 
 use diesel::{dsl::max, insert_into, prelude::*};
 use smithe_database::{
-    db_models::{last_checked_player_id::LastCheckedPlayerId, player::Player},
+    db_models::{
+        empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId,
+        player::Player,
+    },
     schema::last_checked_player_id,
-    schema::last_checked_player_id::dsl::*,
     schema::players::dsl::*,
+    schema::{empty_player_ids::dsl::*, last_checked_player_id::dsl::*},
 };
-use startgg::queries::player_getter::PIDGTM_PlayerGetterVars;
+use startgg::{queries::player_getter::PIDGTM_PlayerGetterVars, Player as SGGPlayer};
 
 pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
@@ -52,5 +55,21 @@ pub fn increment_last_cached_player_id(pgv: Arc<Mutex<PIDGTM_PlayerGetterVars>>)
         .values(LastCheckedPlayerId::from(pgv.lock().unwrap().playerId))
         .execute(&db_connection)?;
 
+    Ok(())
+}
+
+pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
+    let db_connection = smithe_database::connect()?;
+    insert_into(players)
+        .values(Player::from(pti.clone()))
+        .execute(&db_connection)?;
+    Ok(())
+}
+
+pub fn add_new_empty_player_record(pid: i32) -> Result<()> {
+    let db_connection = smithe_database::connect()?;
+    insert_into(empty_player_ids)
+        .values(EmptyPlayerId::from(pid))
+        .execute(&db_connection)?;
     Ok(())
 }

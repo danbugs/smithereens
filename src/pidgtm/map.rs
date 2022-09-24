@@ -1,15 +1,11 @@
 use anyhow::Result;
 
 use as_any::Downcast;
-use diesel::{insert_into, prelude::*};
-use smithe_database::db_models::empty_player_ids::EmptyPlayerId;
-
-use smithe_database::db_models::player::Player;
-use smithe_database::schema::empty_player_ids::dsl::*;
-
-use smithe_database::schema::players::dsl::*;
 use smithe_lib::common::start_read_all_execute_finish_maybe_cancel;
-use smithe_lib::player::{get_last_cached_player_id, increment_last_cached_player_id};
+use smithe_lib::player::{
+    add_new_empty_player_record, add_new_player_to_pidgtm_db, get_last_cached_player_id,
+    increment_last_cached_player_id,
+};
 use startgg::queries::player_getter::{
     make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData, PIDGTM_PlayerGetterVars,
 };
@@ -37,7 +33,6 @@ fn execute<T>(
 where
     T: GQLData,
 {
-    let db_connection = smithe_database::connect()?;
     let curr_player_id = player_getter_vars.lock().unwrap().playerId;
     let pgd = player_getter_data.downcast_ref::<PIDGTM_PlayerGetterData>();
     if let Some(pti) = &pgd.as_ref().unwrap().player {
@@ -51,15 +46,11 @@ where
                 "💫 appending player (id: '{}') to pidgtm db...",
                 curr_player_id
             );
-            insert_into(players)
-                .values(Player::from(pti.clone()))
-                .execute(&db_connection)?;
+            add_new_player_to_pidgtm_db(pti)?;
         }
     } else {
         tracing::info!("⛔ no player under id '{}', moving on...", curr_player_id);
-        insert_into(empty_player_ids)
-            .values(EmptyPlayerId::from(curr_player_id))
-            .execute(&db_connection)?;
+        add_new_empty_player_record(curr_player_id)?;
     }
 
     Ok(false)
