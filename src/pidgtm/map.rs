@@ -15,11 +15,7 @@ use startgg::queries::player_getter::{
 };
 use startgg::GQLData;
 
-
-
 use std::sync::{Arc, Mutex};
-
-
 
 pub async fn handle_map() -> Result<()> {
     start_read_all_execute_finish_maybe_cancel(
