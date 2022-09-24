@@ -60,7 +60,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         || Ok(1),
         execute,
         finish,
-        |gqlv| Ok(()),
+        |_gqlv| Ok(()),
     )
     .await
 }

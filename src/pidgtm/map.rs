@@ -3,10 +3,10 @@ use anyhow::Result;
 use as_any::Downcast;
 use diesel::{insert_into, prelude::*};
 use smithe_database::db_models::empty_player_ids::EmptyPlayerId;
-use smithe_database::db_models::last_checked_player_id::LastCheckedPlayerId;
+
 use smithe_database::db_models::player::Player;
 use smithe_database::schema::empty_player_ids::dsl::*;
-use smithe_database::schema::last_checked_player_id::dsl::*;
+
 use smithe_database::schema::players::dsl::*;
 use smithe_lib::common::start_read_all_execute_finish_maybe_cancel;
 use smithe_lib::player::{get_last_cached_player_id, increment_last_cached_player_id};
@@ -15,11 +15,11 @@ use startgg::queries::player_getter::{
 };
 use startgg::GQLData;
 
-use std::process;
-use std::sync::atomic::{AtomicUsize, Ordering};
+
+
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
-use std::{thread::sleep, time::Duration};
+
+
 
 pub async fn handle_map() -> Result<()> {
     start_read_all_execute_finish_maybe_cancel(
@@ -27,7 +27,7 @@ pub async fn handle_map() -> Result<()> {
         make_pidgtm_player_getter_query,
         get_last_cached_player_id,
         execute,
-        |gqlv| Ok(()),
+        |_gqlv| Ok(()),
         increment_last_cached_player_id,
     )
     .await?;
