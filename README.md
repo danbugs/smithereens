@@ -1,4 +1,4 @@
-<img align="right" src="assets/favicon.png" width="150px" />
+<img align="right" src="docs/imgs/android-chrome-192x192.png" width="150px" />
 
 # Smithereens
 
