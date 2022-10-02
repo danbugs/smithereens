@@ -59,8 +59,19 @@ table! {
 table! {
     players (player_id) {
         player_id -> Int4,
-        gamer_tag_with_prefix -> Varchar,
         user_slug -> Varchar,
+        prefix -> Nullable<Varchar>,
+        gamer_tag -> Varchar,
+        name -> Nullable<Varchar>,
+        state -> Nullable<Varchar>,
+        country -> Nullable<Varchar>,
+        profile_picture -> Nullable<Varchar>,
+        twitch_username -> Nullable<Varchar>,
+        twitter_username -> Nullable<Varchar>,
+        gender_pronouns -> Nullable<Varchar>,
+        birthday -> Nullable<Varchar>,
+        bio -> Nullable<Varchar>,
+        rankings -> Nullable<Array<Text>>,
     }
 }
 

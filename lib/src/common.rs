@@ -1,4 +1,4 @@
-#![allow(unused_assignments)]
+#![allow(unused)]
 
 use anyhow::Result;
 
@@ -15,11 +15,12 @@ use std::{
 
 use startgg::{GQLData, GQLVars};
 
-pub async fn start_read_all_execute_finish_maybe_cancel<V, F, D>(
+pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
     gql_vars: Arc<Mutex<V>>,
     get_pages: fn(i32, Arc<Mutex<V>>) -> F,
     start: fn() -> Result<i32>,
     execute: fn(Arc<Mutex<V>>, D) -> Result<bool>,
+    increment: fn(i32) -> Result<i32>,
     finish: fn(Arc<Mutex<V>>) -> Result<()>,
     cancel: fn(Arc<Mutex<V>>) -> Result<()>,
 ) -> Result<()>
@@ -86,7 +87,7 @@ where
         if execute(gql_vars.clone(), result)? {
             break;
         } else {
-            curr_page += 1;
+            curr_page = increment(curr_page)?;
         }
 
         if running.load(Ordering::SeqCst) > 0 {

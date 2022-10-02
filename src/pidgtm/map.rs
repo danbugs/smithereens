@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 use as_any::Downcast;
-use smithe_lib::common::start_read_all_execute_finish_maybe_cancel;
+use smithe_lib::common::start_read_all_by_increment_execute_finish_maybe_cancel;
 use smithe_lib::player::{
     add_new_empty_player_record, add_new_player_to_pidgtm_db, get_last_cached_player_id,
     increment_last_cached_player_id,
@@ -14,11 +14,12 @@ use startgg::GQLData;
 use std::sync::{Arc, Mutex};
 
 pub async fn handle_map() -> Result<()> {
-    start_read_all_execute_finish_maybe_cancel(
+    start_read_all_by_increment_execute_finish_maybe_cancel(
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
         get_last_cached_player_id,
         execute,
+        |curr_page| Ok(curr_page + 1),
         |_gqlv| Ok(()),
         increment_last_cached_player_id,
     )

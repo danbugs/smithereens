@@ -16,26 +16,22 @@ test:
 build:
 	cargo build --release
 
-#INSTALL
+# INSTALL
 .PHONY: install
 install:
 	install target/release/smithe $(INSTALL_DIR)/bin
 	install target/release/pidgtm $(INSTALL_DIR)/bin
 
-# MIGRATIONS
-.PHONY: migration-run
-migration-run:
-	diesel migration run --database-url ${PIDGTM_DATABASE_URL}
-
-.PHONY: migration-redo
-migration-redo:
-	diesel migration redo --database-url ${PIDGTM_DATABASE_URL}
-
-.PHONY: migration-revert
-migration-revert:
-	diesel migration revert --database-url ${PIDGTM_DATABASE_URL}
-
+# PIDGTM
 .PHONY: pidgtm
 pidgtm-map:
 	$(PIDGTM) map
 
+# BACKEND
+.PHONY: build-backend
+build-backend:
+	cargo build --release --manifest-path ./backend/Cargo.toml
+
+.PHONY: run-backend
+run-backend:
+	cargo run --manifest-path ./backend/Cargo.toml

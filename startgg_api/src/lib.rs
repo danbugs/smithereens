@@ -71,7 +71,6 @@ pub struct Videogame {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Player {
     pub id: i32,
-    pub sets: Option<SetConnection>,
     pub prefix: Option<String>,
     // ^^^ if the player never changed their
     // prefix before, it will be null.
@@ -82,6 +81,14 @@ pub struct Player {
     // ^^^ test accounts are not associated
     // to a user, they have a null user ~
     // we don't want to fail here.
+    pub rankings: Option<Vec<PlayerRank>>,
+    pub sets: Option<SetConnection>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PlayerRank {
+    pub rank: i32,
+    pub title: String
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -158,7 +165,31 @@ pub struct PhaseGroup {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct User {
+    pub name: Option<String>,
+    pub location: Option<Address>,
+    pub bio: Option<String>,
+    pub birthday: Option<String>,
+    pub images: Option<Vec<Image>>,
     pub slug: Option<String>,
+    pub genderPronoun: Option<String>,
+    pub authorizations: Option<Vec<ProfileAuthorization>>
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProfileAuthorization {
+    pub externalUsername: String,
+    pub r#type: String
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Image {
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Address {
+    pub state: Option<String>,
+    pub country: Option<String>
 }
 
 pub struct StartGG {
