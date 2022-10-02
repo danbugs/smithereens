@@ -9,9 +9,9 @@ use smithe_database::{
 };
 
 use smithe_lib::{
-    common::start_read_all_execute_finish_maybe_cancel,
+    common::start_read_all_by_increment_execute_finish_maybe_cancel,
     game::maybe_get_games_from_set,
-    player::{get_all_like, maybe_remove_prefix_from_gamer_tag},
+    player::get_all_like,
     set::{
         get_all_from_player_id, get_competitor_type, get_last_completed_at, get_opponent_set_slot,
         get_requester_set_slot, get_set_losses_by_dq, get_set_losses_without_dqs,
@@ -46,26 +46,26 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("🤔 checking if player is cached...");
     let cache = get_all_from_player_id(selected_player.player_id)?;
     let updated_after = get_last_completed_at(cache);
-    let processed_gamer_tag = maybe_remove_prefix_from_gamer_tag(selected_player);
 
     let usgv = SetGetterVars::unpaginated_new(
         selected_player.player_id,
         updated_after,
-        &processed_gamer_tag,
+        &selected_player.gamer_tag,
     );
 
-    start_read_all_execute_finish_maybe_cancel(
+    start_read_all_by_increment_execute_finish_maybe_cancel(
         Arc::new(Mutex::new(usgv)),
         make_set_getter_query,
-        || Ok(1),
+        1,
         execute,
+        |curr_page| Ok(curr_page + 1),
         finish,
-        |_gqlv| Ok(()),
+        |_curr_page| Ok(()),
     )
     .await
 }
 
-fn execute<T>(_: Arc<Mutex<SetGetterVars>>, set_getter_data: T) -> Result<bool>
+fn execute<T>(_: i32, set_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {

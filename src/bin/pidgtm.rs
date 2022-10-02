@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use smithereens::pidgtm::{inspect::handle_inspect, map::handle_map};
+use smithereens::pidgtm::{inspect::handle_inspect, map::handle_map, update::handle_update};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -15,12 +15,17 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Starts mapping playerIds, gamerTags, and userSlugs onto the pidgtm DB
+    /// Starts mapping playerIds, gamerTags, userSlugs, and more onto the pidgtm DB
     Map,
     /// Inspects a singular player from a provided playerId
     Inspect {
         #[clap(value_parser)]
         player_id: i32,
+    },
+    /// Updates current mapping w/ new information onto the pidgtm DB
+    Update {
+        #[clap(value_parser)]
+        start_at_player_id: Option<i32>,
     },
 }
 
@@ -36,5 +41,6 @@ async fn main() -> Result<()> {
     match &cli.commands {
         Commands::Map => handle_map().await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
+        Commands::Update { start_at_player_id } => handle_update(*start_at_player_id).await,
     }
 }

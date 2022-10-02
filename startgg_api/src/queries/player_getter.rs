@@ -11,14 +11,34 @@ use serde::{Deserialize, Serialize};
 pub const PIDGTM_PLAYER_GETTER_QUERY: &str = r#"
 query PIDGTM_PlayerGetter($playerId: ID!) {
     player(id: $playerId) {
-        id
-        prefix
-        gamerTag
-        user {
-            slug
+      id
+      prefix
+      gamerTag
+      rankings {
+        rank
+        title
+      }
+      user {
+        name
+        location {
+          state
+          country
         }
+        bio
+        birthday
+        images(type: "profile") {
+          url
+        }
+        slug
+        genderPronoun
+        authorizations(types: [TWITCH, TWITTER]) {
+          externalUsername
+          type
+        }
+      }
     }
-}
+  }
+  
 "#;
 
 #[derive(Debug, Deserialize)]
