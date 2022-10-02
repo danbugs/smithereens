@@ -30,10 +30,7 @@ pub async fn handle_update(start_at_player_id: Option<i32>) -> Result<()> {
     Ok(())
 }
 
-fn execute<T>(
-    _: i32,
-    player_getter_data: T,
-) -> Result<bool>
+fn execute<T>(_: i32, player_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {

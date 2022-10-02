@@ -27,10 +27,7 @@ pub async fn handle_map() -> Result<()> {
     Ok(())
 }
 
-fn execute<T>(
-    curr_player_id: i32,
-    player_getter_data: T,
-) -> Result<bool>
+fn execute<T>(curr_player_id: i32, player_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {

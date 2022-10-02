@@ -46,7 +46,7 @@ impl From<startgg::Player> for Player {
             name: u.clone().name,
             state: s,
             country: c,
-            profile_picture: if u.clone().images.is_some() && u.clone().images.unwrap().len() > 0 {
+            profile_picture: if u.images.is_some() && !u.clone().images.unwrap().is_empty() {
                 u.clone().images.map(|i| i[0].url.clone())
             } else {
                 None
