@@ -2,7 +2,11 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use std::{sync::{Arc, Mutex}, thread::sleep, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    thread::sleep,
+    time::Duration,
+};
 
 use crate::{GQLData, GQLVars, Player, StartGG};
 use anyhow::Result;

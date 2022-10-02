@@ -10,7 +10,7 @@ use smithe_database::{
     schema::players::dsl::*,
     schema::{empty_player_ids::dsl::*, last_checked_player_id::dsl::*},
 };
-use startgg::Player as SGGPlayer;
+use startgg::{Player as SGGPlayer, User};
 
 pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
@@ -100,4 +100,24 @@ pub fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
     } else {
         Ok(1000) // circle back logic
     }
+}
+
+pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
+    let db_connection = smithe_database::connect()?;
+    let some_slug = players
+        .select(user_slug)
+        .filter(smithe_database::schema::players::player_id.eq(pid))
+        .get_result(&db_connection)
+        .optional()?;
+
+    Ok(Some(User {
+        name: None,
+        location: None,
+        bio: None,
+        birthday: None,
+        images: None,
+        genderPronoun: None,
+        authorizations: None,
+        slug: some_slug,
+    }))
 }

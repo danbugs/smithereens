@@ -5,7 +5,10 @@ use anyhow::Result;
 use as_any::Downcast;
 use smithe_lib::{
     common::start_read_all_by_increment_execute_finish_maybe_cancel,
-    player::{get_subsequent_player_id_with_circle_back, update_player_in_pidgtm_db},
+    player::{
+        get_empty_user_with_slug, get_subsequent_player_id_with_circle_back,
+        update_player_in_pidgtm_db,
+    },
 };
 use startgg::{
     queries::player_getter::{
@@ -35,8 +38,23 @@ where
     T: GQLData,
 {
     let pgd = player_getter_data.downcast_ref::<PIDGTM_PlayerGetterData>();
-    if let Some(pti) = &pgd.as_ref().unwrap().player {
-        tracing::info!("💫 updating player (id: '{}')...", pti.id);
+    let mut player = pgd.as_ref().unwrap().player.clone();
+    // vvv have to do this because people might have deleted their account:
+    if let Some(pti) = (&mut player).as_mut() {
+        if pti.user.is_none() {
+            tracing::info!("❎ caught a deleted account #1 (id: '{}')...", pti.id);
+            pti.user = get_empty_user_with_slug(pti.id)?;
+        } else if pti.user.as_ref().unwrap().slug.is_none() {
+            tracing::info!("❎ caught a deleted account #2 (id: '{}')...", pti.id);
+            pti.user = pti.user.as_mut().map(|mut u| {
+                u.slug = get_empty_user_with_slug(pti.id).unwrap().unwrap().slug;
+                // ^^^ didn't want to unwrap here, but I guess it's fine to panic
+                u.clone()
+            });
+        } else {
+            tracing::info!("💫 updating player (id: '{}')...", pti.id);
+        }
+
         update_player_in_pidgtm_db(pti)?;
     }
 

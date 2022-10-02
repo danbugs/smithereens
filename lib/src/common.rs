@@ -76,7 +76,10 @@ where
                             now = Instant::now();
                         }
                     } else {
-                        tracing::info!("🙃 an oddity happened, skipping for now...");
+                        tracing::info!(
+                            "🙃 an oddity happened, skipping for now ({:#?})...",
+                            e.to_string()
+                        );
                         let mut gql_vars_lock = gql_vars.lock().unwrap();
                         *gql_vars_lock = gql_vars_lock.update();
                     }
