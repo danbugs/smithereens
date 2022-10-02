@@ -46,7 +46,11 @@ impl From<startgg::Player> for Player {
             name: u.clone().name,
             state: s,
             country: c,
-            profile_picture: u.clone().images.map(|i| i[0].url.clone()),
+            profile_picture: if u.clone().images.is_some() && u.clone().images.unwrap().len() > 0 {
+                u.clone().images.map(|i| i[0].url.clone())
+            } else {
+                None
+            },
             twitch_username: if let Some(a) = u.clone().authorizations {
                 a.iter()
                     .find(|a| a.r#type == "TWITCH")

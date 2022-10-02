@@ -56,16 +56,16 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     start_read_all_by_increment_execute_finish_maybe_cancel(
         Arc::new(Mutex::new(usgv)),
         make_set_getter_query,
-        || Ok(1),
+        1,
         execute,
         |curr_page| Ok(curr_page + 1),
         finish,
-        |_gqlv| Ok(()),
+        |_curr_page| Ok(()),
     )
     .await
 }
 
-fn execute<T>(_: Arc<Mutex<SetGetterVars>>, set_getter_data: T) -> Result<bool>
+fn execute<T>(_: i32, set_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {

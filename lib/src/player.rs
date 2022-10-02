@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use anyhow::Result;
 
 use diesel::{dsl::max, insert_into, prelude::*, update};
@@ -12,7 +10,7 @@ use smithe_database::{
     schema::players::dsl::*,
     schema::{empty_player_ids::dsl::*, last_checked_player_id::dsl::*},
 };
-use startgg::{queries::player_getter::PIDGTM_PlayerGetterVars, Player as SGGPlayer};
+use startgg::Player as SGGPlayer;
 
 pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
@@ -40,10 +38,10 @@ pub fn get_last_cached_player_id() -> Result<i32> {
     }
 }
 
-pub fn increment_last_cached_player_id(pgv: Arc<Mutex<PIDGTM_PlayerGetterVars>>) -> Result<()> {
+pub fn increment_last_cached_player_id(curr_player_id: i32) -> Result<()> {
     let db_connection = smithe_database::connect()?;
     insert_into(last_checked_player_id)
-        .values(LastCheckedPlayerId::from(pgv.lock().unwrap().playerId))
+        .values(LastCheckedPlayerId::from(curr_player_id))
         .execute(&db_connection)?;
 
     Ok(())

@@ -14,16 +14,16 @@ use startgg::{
     GQLData,
 };
 
-pub async fn handle_update() -> Result<()> {
+pub async fn handle_update(start_at_player_id: Option<i32>) -> Result<()> {
     start_read_all_by_increment_execute_finish_maybe_cancel(
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
-        || Ok(1000),
+        start_at_player_id.unwrap_or(1000),
         // ^^^ considering I know that the lowest player_id is 1000, no point in getting it every time
         execute,
         get_subsequent_player_id_with_circle_back,
         |_gqlv| Ok(()),
-        |_gqlv| Ok(()),
+        |_curr_page| Ok(()),
     )
     .await?;
 
@@ -31,16 +31,15 @@ pub async fn handle_update() -> Result<()> {
 }
 
 fn execute<T>(
-    player_getter_vars: Arc<Mutex<PIDGTM_PlayerGetterVars>>,
+    _: i32,
     player_getter_data: T,
 ) -> Result<bool>
 where
     T: GQLData,
 {
-    let curr_player_id = player_getter_vars.lock().unwrap().playerId;
     let pgd = player_getter_data.downcast_ref::<PIDGTM_PlayerGetterData>();
     if let Some(pti) = &pgd.as_ref().unwrap().player {
-        tracing::info!("💫 updating player (id: '{}')...", curr_player_id);
+        tracing::info!("💫 updating player (id: '{}')...", pti.id);
         update_player_in_pidgtm_db(pti)?;
     }
 
