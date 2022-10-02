@@ -31,7 +31,7 @@ impl From<startgg::Player> for Player {
         let u = p.user.unwrap();
 
         let (s, c) = if let Some(l) = u.clone().location {
-            (l.state.clone(), l.country.clone())
+            (l.state.clone(), l.country)
         } else {
             (None, None)
         };
@@ -46,41 +46,29 @@ impl From<startgg::Player> for Player {
             name: u.clone().name,
             state: s,
             country: c,
-            profile_picture: if let Some(i) = u.clone().images {
-                Some(i[0].url.clone())
-            } else {
-                None
-            },
+            profile_picture: u.clone().images.map(|i| i[0].url.clone()),
             twitch_username: if let Some(a) = u.clone().authorizations {
-                if let Some(twitch) = a.iter().find(|a| a.r#type == "TWITCH") {
-                    Some(twitch.externalUsername.clone())
-                } else {
-                    None
-                }
+                a.iter()
+                    .find(|a| a.r#type == "TWITCH")
+                    .map(|twitch| twitch.externalUsername.clone())
             } else {
                 None
             },
             twitter_username: if let Some(a) = u.clone().authorizations {
-                if let Some(twitter) = a.iter().find(|a| a.r#type == "TWITTER") {
-                    Some(twitter.externalUsername.clone())
-                } else {
-                    None
-                }
+                a.iter()
+                    .find(|a| a.r#type == "TWITTER")
+                    .map(|twitter| twitter.externalUsername.clone())
             } else {
                 None
             },
             gender_pronouns: u.clone().genderPronoun,
             birthday: u.clone().birthday,
-            bio: u.clone().bio,
-            rankings: if let Some(r) = p.rankings {
-                Some(
-                    r.iter()
-                        .map(|pr| format!("#{} @ {}", pr.rank, pr.title))
-                        .collect::<Vec<String>>(),
-                )
-            } else {
-                None
-            },
+            bio: u.bio,
+            rankings: p.rankings.map(|r| {
+                r.iter()
+                    .map(|pr| format!("#{} @ {}", pr.rank, pr.title))
+                    .collect::<Vec<String>>()
+            }),
         }
     }
 }

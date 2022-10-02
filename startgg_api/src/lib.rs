@@ -88,7 +88,7 @@ pub struct Player {
 #[derive(Debug, Clone, Deserialize)]
 pub struct PlayerRank {
     pub rank: i32,
-    pub title: String
+    pub title: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -172,13 +172,13 @@ pub struct User {
     pub images: Option<Vec<Image>>,
     pub slug: Option<String>,
     pub genderPronoun: Option<String>,
-    pub authorizations: Option<Vec<ProfileAuthorization>>
+    pub authorizations: Option<Vec<ProfileAuthorization>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ProfileAuthorization {
     pub externalUsername: String,
-    pub r#type: String
+    pub r#type: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -189,7 +189,7 @@ pub struct Image {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Address {
     pub state: Option<String>,
-    pub country: Option<String>
+    pub country: Option<String>,
 }
 
 pub struct StartGG {
