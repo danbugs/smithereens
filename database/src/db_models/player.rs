@@ -55,6 +55,7 @@ impl From<startgg::Player> for Player {
                 a.iter()
                     .find(|a| a.r#type == "TWITCH")
                     .map(|twitch| twitch.externalUsername.clone())
+                    .flatten()
             } else {
                 None
             },
@@ -62,6 +63,7 @@ impl From<startgg::Player> for Player {
                 a.iter()
                     .find(|a| a.r#type == "TWITTER")
                     .map(|twitter| twitter.externalUsername.clone())
+                    .flatten()
             } else {
                 None
             },

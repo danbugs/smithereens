@@ -177,7 +177,7 @@ pub struct User {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ProfileAuthorization {
-    pub externalUsername: String,
+    pub externalUsername: Option<String>,
     pub r#type: String,
 }
 
