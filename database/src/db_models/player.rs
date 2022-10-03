@@ -54,16 +54,14 @@ impl From<startgg::Player> for Player {
             twitch_username: if let Some(a) = u.clone().authorizations {
                 a.iter()
                     .find(|a| a.r#type == "TWITCH")
-                    .map(|twitch| twitch.externalUsername.clone())
-                    .flatten()
+                    .and_then(|twitch| twitch.externalUsername.clone())
             } else {
                 None
             },
             twitter_username: if let Some(a) = u.clone().authorizations {
                 a.iter()
                     .find(|a| a.r#type == "TWITTER")
-                    .map(|twitter| twitter.externalUsername.clone())
-                    .flatten()
+                    .and_then(|twitter| twitter.externalUsername.clone())
             } else {
                 None
             },
