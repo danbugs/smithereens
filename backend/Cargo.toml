@@ -8,4 +8,5 @@ authors = ["Dan Chiarlone"]
 anyhow = "1"
 rocket = "0.5.0-rc.2"
 serde_json = "1"
+thiserror = "1"
 smithe_lib = { path = "../lib" }

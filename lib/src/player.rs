@@ -24,6 +24,15 @@ pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     Ok(matching_players)
 }
 
+pub fn get_player(pid: i32) -> Result<Player> {
+    let db_connection = smithe_database::connect()?;
+    let matched_player = players
+        .filter(smithe_database::schema::players::player_id.eq(pid)) // case-insensitive like
+        .get_result::<Player>(&db_connection)?;
+
+    Ok(matched_player)
+}
+
 pub fn get_last_cached_player_id() -> Result<i32> {
     let db_connection = smithe_database::connect()?;
     let max_checked_player_id = last_checked_player_id

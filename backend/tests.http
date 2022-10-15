@@ -1,0 +1,8 @@
+@baseUrl = http://127.0.0.1:8000
+
+### search_players
+GET {{baseUrl}}/players/Dantotto
+
+
+### view_player
+GET {{baseUrl}}/player/1178271
