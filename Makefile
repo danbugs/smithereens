@@ -39,4 +39,4 @@ run-backend:
 # FRONTEND
 .PHONY: serve-frontend
 serve-frontend:
-	trunk serve ./frontend/index.html --proxy-backend=https://yew.rs/tutorial
+	trunk serve ./frontend/index.html
