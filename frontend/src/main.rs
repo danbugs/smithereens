@@ -8,10 +8,12 @@ mod models;
 enum Msg {
     Search(String),
     DisplaySearch(Vec<Player>),
+    SelectPlayer(Player),
 }
 
 struct App {
     search_results: Vec<Player>,
+    selected_player: Option<Player>,
 }
 
 impl Component for App {
@@ -21,6 +23,7 @@ impl Component for App {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             search_results: Vec::new(),
+            selected_player: None,
         }
     }
 
@@ -47,11 +50,15 @@ impl Component for App {
                 self.search_results = players;
                 true
             }
+            Msg::SelectPlayer(player) => {
+                self.selected_player = Some(player);
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let link = ctx.link();
+        let link = ctx.link().clone();
         let onkeypress = link.batch_callback(|e: KeyboardEvent| {
             if e.key() == "Enter" {
                 let input: HtmlInputElement = e.target_unchecked_into();
@@ -73,22 +80,40 @@ impl Component for App {
                     </div>
                 </div>
             </div>
-            <div class="container">
-            {
-                self.search_results.iter().map(|p| {
-                    html!{
-                        <>
-                        <a href={format!("https://www.start.gg/{}", p.user_slug)} target="_blank" key={p.player_id}>{
-                            if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
-                                format!("{}", &p.gamer_tag)
-                            } else {
-                                format!("{} | {}", p.prefix.as_ref().unwrap(), &p.gamer_tag)
-                            }
-                        }</a><br/>
-                        </>
+            <div class="row">
+                <div class="col-md-6 bg-dark text-white">
+                {
+                    self.search_results.iter().map(|p| {
+                        let player = p.clone();
+                        html! {
+                            <>
+                            <button class="btn btn-link link-light" onclick={link.callback_once(move |_| Msg::SelectPlayer(player))} key={p.player_id}>{
+                                if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
+                                    format!("{}", &p.gamer_tag)
+                                } else {
+                                    format!("{} | {}", p.prefix.as_ref().unwrap(), &p.gamer_tag)
+                                }
+                            }</button><br/>
+                            </>
+                        }
+                    }).collect::<Html>()
+                }
+                </div>
+                <div class="col-md-6">
+                {
+                    if self.selected_player.is_some() {
+                        let sp = self.selected_player.as_ref().unwrap();
+                        html! {
+                            <h1>{sp.name.as_ref().unwrap()}</h1>
+                        }
+                    } else {
+                        html! {
+                            <>
+                            </>
+                        }
                     }
-                }).collect::<Html>()
-            }
+                }
+                </div>
             </div>
             </>
         }
