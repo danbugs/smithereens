@@ -84,10 +84,12 @@ impl Component for App {
                 <div class="col-md-6 bg-dark text-white">
                 {
                     self.search_results.iter().map(|p| {
-                        let player = p.clone();
                         html! {
                             <>
-                            <button class="btn btn-link link-light" onclick={link.callback_once(move |_| Msg::SelectPlayer(player))} key={p.player_id}>{
+                            <button class="btn btn-link link-light" onclick={
+                                let player = p.clone();
+                                link.callback_once(move |_| Msg::SelectPlayer(player))
+                            } key={p.player_id}>{
                                 if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
                                     format!("{}", &p.gamer_tag)
                                 } else {
@@ -104,7 +106,81 @@ impl Component for App {
                     if self.selected_player.is_some() {
                         let sp = self.selected_player.as_ref().unwrap();
                         html! {
-                            <h1>{sp.name.as_ref().unwrap()}</h1>
+                            <>
+                                // display image and gamer tag side by side
+                                <div class="row">
+                                    <div class="col-auto">
+                                        <img src={sp.profile_picture.as_ref().unwrap().clone()} alt="Profile Picture" class="img-fluid rounded-circle" style="max-width:128px"/>
+                                    </div>
+                                    <div class="col-auto">
+                                        <h2>{
+                                            if sp.prefix.is_none() || sp.prefix.as_ref().unwrap().is_empty() {
+                                                format!("{}", &sp.gamer_tag)
+                                            } else {
+                                                format!("{} | {}", sp.prefix.as_ref().unwrap(), &sp.gamer_tag)
+                                            }
+                                        }</h2>
+                                        // display name if it exists, otherwise nothing
+                                        {
+                                            if sp.name.is_some() && !sp.name.as_ref().unwrap().is_empty() {
+                                                html! {
+                                                    // display name in a p in grey
+                                                    <p class="text-muted font-weight-light">{sp.name.as_ref().unwrap()}</p>
+                                                }
+                                            } else {
+                                                html! {}
+                                            }
+                                        }
+
+                                        // display country in a p element if it is some, otherwise nothing
+                                        {if sp.country.is_some() {
+                                            html! {
+                                                <p class="text-muted font-weight-light">{&sp.country.as_ref().unwrap()}</p>
+                                            }
+                                        } else {
+                                            html! {}
+                                        }}
+                                    </div>
+                                </div>
+
+                                <br/>
+                                {
+                                    if sp.bio.is_some() && !sp.bio.as_ref().unwrap().is_empty() {
+                                        html! {
+                                            // display bio inside of bootstrap quote
+                                            <blockquote class="blockquote">
+                                                <p class="mb-0">{sp.bio.as_ref().unwrap()}</p>
+                                            </blockquote>
+                                        }
+                                    } else {
+                                        html! {}
+                                    }
+                                }
+
+                                <br/>
+                                // display link to twitter if it is some, otherwise nothing
+                                {if sp.twitter_username.is_some() {
+                                    html! {
+                                    <a target="_blank" href={format!("https://twitter.com/{}", sp.twitter_username.as_ref().unwrap_or(&String::from("")))}>
+                                        <img src="https://abs.twimg.com/favicons/twitter.ico" alt="Twitter" class="img-fluid" style="max-width:32px"/>
+                                    </a>
+                                    }
+                                } else {
+                                    html! {}
+                                }}
+
+                                // display link to twitter if it is some, otherwise nothing
+                                {if sp.twitch_username.is_some() {
+                                    html! {
+                                    <a target="_blank" href={format!("https://twitch.tv/{}", sp.twitch_username.as_ref().unwrap_or(&String::from("")))}>
+                                        <img src="https://static.twitchcdn.net/assets/favicon-32-d6025c14e900565d6177.png" alt="Twitch" class="img-fluid" style="max-width:32px"/>
+                                    </a>
+                                    }
+                                } else {
+                                    html! {}
+                                }}
+
+                            </>
                         }
                     } else {
                         html! {
