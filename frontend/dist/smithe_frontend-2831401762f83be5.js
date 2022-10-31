@@ -680,7 +680,7 @@ function initSync(module) {
 
 async function init(input) {
     if (typeof input === 'undefined') {
-        input = new URL('smithe_frontend-a32a473b088c166e_bg.wasm', import.meta.url);
+        input = new URL('smithe_frontend-2831401762f83be5_bg.wasm', import.meta.url);
     }
     const imports = getImports();
 

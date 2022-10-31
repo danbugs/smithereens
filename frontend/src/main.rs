@@ -70,7 +70,7 @@ impl Component for App {
             }
         });
         html! {
-            <>
+        <>
             <div class="bg-light">
                 <div class="container">
                     <div class="col-md-12">
@@ -81,7 +81,7 @@ impl Component for App {
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-6 bg-dark text-white">
+                <div class="col-md-6 bg-dark text-white mb-5">
                 {
                     self.search_results.iter().map(|p| {
                         html! {
@@ -95,7 +95,8 @@ impl Component for App {
                                 } else {
                                     format!("{} | {}", p.prefix.as_ref().unwrap(), &p.gamer_tag)
                                 }
-                            }</button><br/>
+                            }</button>
+                            <br/>
                             </>
                         }
                     }).collect::<Html>()
@@ -179,7 +180,6 @@ impl Component for App {
                                 } else {
                                     html! {}
                                 }}
-
                             </>
                         }
                     } else {
@@ -191,7 +191,42 @@ impl Component for App {
                 }
                 </div>
             </div>
-            </>
+            // bootstrap footer
+            // make footer sticked to bottom of page
+            <footer class="footer bg-light fixed-bottom">
+                <div class="container">
+                    <center>
+                        <small class="text-muted" style="font-size: 0.8rem;">
+                            {"Made with "}
+                            // icon for made with love
+                            <img src="https://img.icons8.com/ios/50/000000/like--v1.png" alt="Made with love" class="img-fluid" style="max-width:16px"/>
+                            {", "}
+                            // icon for rust
+                            <img src="https://devicons.railway.app/i/rust-dark.svg" alt="Rust" class="img-fluid" style="max-width:16px"/>
+                            {", and "}
+                            // icon for webassembly
+                            <img src="https://devicons.railway.app/i/wasm.svg" alt="WebAssembly" class="img-fluid" style="max-width:16px"/>
+                            // by
+                            {" by "}
+                            // link to my twitter
+                            <a target="_blank" href="https://twitter.com/dantotto">
+                            {"@dantotto"}
+                            </a>
+                            {"."}
+                        </small>
+                        // in a new line mention that the code is open-source and link its' repository
+                        <br/>
+                        <small class="text-muted" style="font-size: 0.8rem;">
+                            {"This website's code is open-source and can be found "}
+                            <a target="_blank" href="https://github.com/danbugs/smithereens">
+                                {"here"}
+                            </a>
+                            {"."}
+                        </small>
+                    </center>
+                </div>
+            </footer>
+        </>
         }
     }
 }
