@@ -6,3 +6,6 @@ GET {{baseUrl}}/players/Dantotto
 
 ### view_player
 GET {{baseUrl}}/player/1178271
+
+### get_player_tournaments
+GET {{baseUrl}}/tournaments/1178271

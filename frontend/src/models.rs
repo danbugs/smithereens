@@ -17,3 +17,17 @@ pub struct Player {
     pub bio: Option<String>,
     pub rankings: Option<Vec<String>>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Tournament {
+    pub tournament_id: i32,
+    pub event_id: i32,
+    pub tournament_name: String,
+    pub event_name: String,
+    pub end_at: i64,
+    pub requester_id: i32,
+    pub placement: i32,
+    pub num_entrants: i32,
+    pub seed: i32,
+    pub link: String,
+}

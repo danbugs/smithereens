@@ -19,6 +19,7 @@ use startgg::{
 
 pub async fn handle_update(start_at_player_id: Option<i32>) -> Result<()> {
     start_read_all_by_increment_execute_finish_maybe_cancel(
+        true,
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
         start_at_player_id.unwrap_or(1000),

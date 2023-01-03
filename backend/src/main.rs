@@ -3,12 +3,19 @@
 extern crate rocket;
 
 use rocket::{
-    http::{Status, Method},
+    http::{Method, Status},
     response::{self, Responder},
     Request,
 };
 use rocket_cors::{AllowedHeaders, AllowedOrigins};
-use smithe_lib::player::{get_all_like, get_player};
+use smithe_lib::{
+    player::{get_all_like, get_player},
+    set::{
+        get_competitor_type, get_set_losses_by_dq, get_set_losses_without_dqs, get_set_wins_by_dq,
+        get_set_wins_without_dqs, get_winrate,
+    },
+    tournament::get_tournaments_from_requester_id,
+};
 use thiserror::Error;
 
 pub const DEV_ADDRESS: &str = "http://localhost:8080/";
@@ -22,8 +29,8 @@ pub enum Error {
     SerdeJson(#[from] serde_json::Error),
 }
 
-impl<'r> Responder<'r> for Error {
-    fn respond_to(self, req: &Request<'_>) -> response::Result<'r> {
+impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
+    fn respond_to(self, req: &Request<'_>) -> response::Result<'o> {
         // todo: use open telemetry at this point
         match self {
             _ => Status::InternalServerError.respond_to(req),
@@ -46,7 +53,45 @@ fn view_player(id: i32) -> Result<String, Error> {
     Ok(serde_json::to_string(&get_player(id)?)?)
 }
 
-fn main() {
+#[get("/<id>")]
+async fn get_player_tournaments(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(
+        &get_tournaments_from_requester_id(id).await?,
+    )?)
+}
+
+#[get("/<id>/wins_without_dqs")]
+async fn get_player_set_wins_without_dqs(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_set_wins_without_dqs(id)?)?)
+}
+
+#[get("/<id>/losses_without_dqs")]
+async fn get_player_set_losses_without_dqs(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_set_losses_without_dqs(id)?)?)
+}
+
+#[get("/<id>/wins_by_dqs")]
+async fn get_player_set_wins_by_dqs(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_set_wins_by_dq(id)?)?)
+}
+
+#[get("/<id>/losses_by_dqs")]
+async fn get_player_set_losses_by_dqs(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_set_losses_by_dq(id)?)?)
+}
+
+#[get("/<id>/winrate")]
+async fn get_player_winrate(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_winrate(id)?)?)
+}
+
+#[get("/<id>/get_competitor_type")]
+async fn get_player_competitor_type(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_competitor_type(id)?)?)
+}
+
+#[rocket::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
 
     let cors = rocket_cors::CorsOptions {
@@ -62,10 +107,26 @@ fn main() {
     .to_cors()
     .expect("failed to set cors");
 
-    rocket::ignite()
+    let _ = rocket::build()
         .mount("/", routes![index])
         .mount("/players", routes![search_players])
-        .mount("/player", routes![view_player])
+        .mount(
+            "/player",
+            routes![view_player, get_player_winrate, get_player_competitor_type],
+        )
+        .mount("/tournaments", routes![get_player_tournaments])
+        .mount(
+            "/sets",
+            routes![
+                get_player_set_wins_without_dqs,
+                get_player_set_losses_without_dqs,
+                get_player_set_wins_by_dqs,
+                get_player_set_losses_by_dqs
+            ],
+        )
         .attach(cors)
-        .launch();
+        .launch()
+        .await?;
+
+    Ok(())
 }

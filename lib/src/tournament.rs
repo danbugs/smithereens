@@ -1,8 +1,12 @@
+use std::sync::{Arc, Mutex};
+
 use anyhow::Result;
 use diesel::prelude::*;
 
 use smithe_database::{db_models::tournament::Tournament, schema::player_tournaments::dsl::*};
-use startgg::Set as SGGSet;
+use startgg::{Set as SGGSet, queries::set_getter::{SetGetterVars, make_set_getter_query}};
+
+use crate::{set::{get_all_from_player_id, get_last_completed_at}, player::{get_player, execute}, common::start_read_all_by_increment_execute_finish_maybe_cancel};
 
 pub fn is_tournament_finished(s: &SGGSet) -> bool {
     s.event.standings.is_some() && !s.event.standings.as_ref().unwrap().nodes.is_empty()
@@ -22,6 +26,40 @@ pub fn get_requester_id_from_standings(s: &SGGSet, player_id: i32) -> i32 {
         .unwrap()
         .id
         .unwrap()
+}
+
+// get tournaments from requester id
+pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournament>> {
+    // get player from pid
+    let p = get_player(rid)?;
+
+    let cache = get_all_from_player_id(p.player_id)?;
+
+    let updated_after = get_last_completed_at(cache);
+    let usgv = SetGetterVars::unpaginated_new(
+        p.player_id,
+        updated_after,
+        &p.gamer_tag,
+    );
+
+    start_read_all_by_increment_execute_finish_maybe_cancel(
+        false,
+        Arc::new(Mutex::new(usgv)),
+        make_set_getter_query,
+        1,
+        execute,
+        |curr_page| Ok(curr_page + 1),
+        |_| Ok(()),
+        |_| Ok(()),
+    )
+    .await?;
+
+    let db_connection = smithe_database::connect()?;
+    let tournaments = player_tournaments
+        .filter(requester_id.eq(rid))
+        .get_results::<Tournament>(&db_connection)?;
+    
+    Ok(tournaments)
 }
 
 pub fn is_ssbu_singles_double_elimination_tournament(s: &SGGSet) -> bool {

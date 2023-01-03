@@ -135,13 +135,13 @@ pub struct StandingStats {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Score {
-    pub value: i32,
+    pub value: Option<i32>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Game {
     pub id: i32,
-    pub winnerId: i32,
+    pub winnerId: Option<i32>,
     pub orderNum: i32,
     pub selections: Option<Vec<GameSelection>>,
     pub stage: Option<Stage>,

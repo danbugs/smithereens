@@ -1,0 +1,1 @@
+ALTER TABLE player_games ALTER COLUMN requester_win DROP NOT NULL;

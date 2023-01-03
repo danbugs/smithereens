@@ -1,9 +1,11 @@
 #![allow(clippy::extra_unused_lifetimes)]
+use serde::Serialize;
+
 // ^^^ this is needed because Insertable introduces a lifetime we don't use
 // — an auto fix for this exists only in Diesel v2.
 use crate::schema::player_tournaments;
 
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Insertable, Queryable, Serialize)]
 #[table_name = "player_tournaments"]
 pub struct Tournament {
     pub tournament_id: i32,
