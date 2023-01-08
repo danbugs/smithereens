@@ -1,28 +1,47 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
-use diesel::prelude::*;
+use diesel::{dsl::count_star, prelude::*};
 
 use smithe_database::{db_models::tournament::Tournament, schema::player_tournaments::dsl::*};
-use startgg::{Set as SGGSet, queries::set_getter::{SetGetterVars, make_set_getter_query}};
+use startgg::{
+    queries::set_getter::{make_set_getter_query, SetGetterVars},
+    Set as SGGSet, Standing,
+};
 
-use crate::{set::{get_all_from_player_id, get_last_completed_at}, player::{get_player, execute}, common::start_read_all_by_increment_execute_finish_maybe_cancel};
+use crate::{
+    common::start_read_all_by_increment_execute_finish_maybe_cancel,
+    player::{execute, get_player},
+    set::{get_all_from_player_id, get_last_completed_at},
+};
 
 pub fn is_tournament_finished(s: &SGGSet) -> bool {
     s.event.standings.is_some() && !s.event.standings.as_ref().unwrap().nodes.is_empty()
 }
 
-pub fn get_requester_id_from_standings(s: &SGGSet, player_id: i32) -> i32 {
-    s.event
+fn get_standings_for_player_id(s: &SGGSet, player_id: i32) -> Standing {
+    if let Some(p) = s
+        .event
         .standings
         .as_ref()
         .unwrap()
         .nodes
         .iter()
         .find(|i| i.player.as_ref().unwrap().id.eq(&player_id))
-        .unwrap()
+    {
+        p.clone()
+    } else {
+        // if the player id is not matched in the standings, they are anonymous
+        // in this case, we just return the first match off of the gamer tag query
+        // this is not ideal because, if there are two players with the same tag,
+        // it could incorrectly match them to the wrong player.
+        s.event.standings.as_ref().unwrap().nodes[0].clone()
+    }
+}
+
+pub fn get_requester_id_from_standings(s: &SGGSet, player_id: i32) -> i32 {
+    get_standings_for_player_id(s, player_id)
         .entrant
-        .as_ref()
         .unwrap()
         .id
         .unwrap()
@@ -36,11 +55,7 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
     let cache = get_all_from_player_id(p.player_id)?;
 
     let updated_after = get_last_completed_at(cache);
-    let usgv = SetGetterVars::unpaginated_new(
-        p.player_id,
-        updated_after,
-        &p.gamer_tag,
-    );
+    let usgv = SetGetterVars::unpaginated_new(p.player_id, updated_after, &p.gamer_tag);
 
     start_read_all_by_increment_execute_finish_maybe_cancel(
         false,
@@ -58,7 +73,7 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
     let tournaments = player_tournaments
         .filter(requester_id.eq(rid))
         .get_results::<Tournament>(&db_connection)?;
-    
+
     Ok(tournaments)
 }
 
@@ -69,24 +84,35 @@ pub fn is_ssbu_singles_double_elimination_tournament(s: &SGGSet) -> bool {
 }
 
 pub fn get_placement(player_id: i32, s: &SGGSet) -> i32 {
-    s.event
-        .standings
-        .as_ref()
-        .unwrap()
-        .nodes
-        .iter()
-        .find(|i| i.player.as_ref().unwrap().id.eq(&player_id))
-        .unwrap()
-        .placement
-        .unwrap()
+    get_standings_for_player_id(s, player_id).placement.unwrap()
+}
+
+pub fn get_num_tournaments_attended(pid: i32) -> Result<i64> {
+    let db_connection = smithe_database::connect()?;
+    let count: i64 = player_tournaments
+        .select(count_star())
+        .filter(requester_id.eq(pid))
+        .first(&db_connection)?;
+
+    Ok(count)
 }
 
 pub fn get_seed(requester_entrant_id: i32, s: &SGGSet) -> i32 {
     s.slots
         .iter()
-        .find(|i| i.entrant.id.as_ref().unwrap().eq(&requester_entrant_id))
+        .find(|i| {
+            i.entrant
+                .as_ref()
+                .unwrap()
+                .id
+                .as_ref()
+                .unwrap()
+                .eq(&requester_entrant_id)
+        })
         .unwrap()
         .seed
+        .as_ref()
+        .unwrap()
         .seedNum
 }
 

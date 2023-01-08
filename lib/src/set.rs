@@ -23,7 +23,7 @@ pub fn get_last_completed_at(cache: Vec<Set>) -> Option<i64> {
                 .max_by_key(|s| s.completed_at)
                 .unwrap()
                 .completed_at
-                + 1,
+                + 2,
         )
     } else {
         tracing::info!("❌ player was not cached...");
@@ -35,24 +35,34 @@ pub fn get_last_completed_at(cache: Vec<Set>) -> Option<i64> {
 /// - entrant name,
 /// - entrant seed, and
 /// - entrant set score (e.g., won 2 games, DQd, etc.).
-pub fn get_requester_set_slot(requester_entrant_id: i32, s: &SGGSet) -> SGGSetSlot {
+pub fn get_requester_set_slot(requester_entrant_id: i32, s: &SGGSet) -> Option<SGGSetSlot> {
     s.slots
         .iter()
-        .find(|i| i.entrant.id.as_ref().unwrap().eq(&requester_entrant_id))
-        .unwrap()
-        .clone()
+        .find(|i| {
+            if let Some(e) = i.entrant.as_ref() {
+                e.id.as_ref().unwrap().eq(&requester_entrant_id)
+            } else {
+                false
+            }
+        })
+        .cloned()
 }
 
 /// Provides a set with access to:
 /// - entrant name,
 /// - entrant seed, and
 /// - entrant set score (e.g., won 2 games, DQd, etc.).
-pub fn get_opponent_set_slot(requester_entrant_id: i32, s: &SGGSet) -> SGGSetSlot {
+pub fn get_opponent_set_slot(requester_entrant_id: i32, s: &SGGSet) -> Option<SGGSetSlot> {
     s.slots
         .iter()
-        .find(|i| i.entrant.id.as_ref().unwrap().ne(&requester_entrant_id))
-        .unwrap()
-        .clone()
+        .find(|i| {
+            if let Some(e) = i.entrant.as_ref() {
+                e.id.as_ref().unwrap().ne(&requester_entrant_id)
+            } else {
+                false
+            }
+        })
+        .cloned()
 }
 
 pub fn get_set_wins_without_dqs(player_id: i32) -> Result<i64> {

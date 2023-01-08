@@ -59,6 +59,7 @@ where
                     if e.to_string().contains("429")
                         || e.to_string()
                             .contains("Our services aren't available right now")
+                        || e.to_string().contains("error sending request for url")
                     {
                         // 429 (too many reqs) or outage, want to wait it out
                         let elapsed_time = Instant::now() - now;

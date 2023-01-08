@@ -2,20 +2,28 @@ use anyhow::Result;
 use as_any::Downcast;
 use smithe_database::{
     db_models::{player::Player, set::Set, tournament::Tournament},
-    schema::{players::dsl::*, player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*},
+    schema::{
+        player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*,
+    },
 };
 
-use diesel::{dsl::max, insert_into, prelude::*, update};
+use diesel::{dsl::{max, count}, insert_into, prelude::*, update};
 use smithe_database::{
-    db_models::{
-        empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId,
-    },
+    db_models::{empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId},
     schema::last_checked_player_id,
     schema::{empty_player_ids::dsl::*, last_checked_player_id::dsl::*},
 };
-use startgg::{Player as SGGPlayer, User, GQLData, queries::set_getter::SetGetterData};
+use startgg::{queries::set_getter::SetGetterData, GQLData, Player as SGGPlayer, User};
 
-use crate::{tournament::{is_ssbu_singles_double_elimination_tournament, get_requester_id_from_standings, is_tournament_cached, is_tournament_finished, get_placement, get_seed}, game::maybe_get_games_from_set, set::{get_requester_set_slot, get_opponent_set_slot}};
+use crate::{
+    game::maybe_get_games_from_set,
+    set::{get_opponent_set_slot, get_requester_set_slot},
+    tournament::{
+        get_placement, get_requester_id_from_standings, get_seed,
+        is_ssbu_singles_double_elimination_tournament, is_tournament_cached,
+        is_tournament_finished,
+    },
+};
 
 pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
@@ -176,46 +184,81 @@ where
                 let rslot = get_requester_set_slot(requester_entrant_id, &s);
                 let oslot = get_opponent_set_slot(requester_entrant_id, &s);
 
-                // some sets only have a reported winner, ignore them
-                // e.g., https://www.start.gg/tournament/mainstage-2021/event/ultimate-singles/brackets/952392/1513154
-                if rslot.standing.stats.as_ref().unwrap().score.value.is_some() &&
-                    oslot.standing.stats.as_ref().unwrap().score.value.is_some()
-                {
-                    curated_sets.push(Set::new(
-                        s.id,
-                        s.completedAt,
-                        player.id,
-                        s.event.isOnline.unwrap(),
-                        s.event.id.unwrap(),
+                if let (Some(r), Some(o)) = (rslot, oslot) { // tournaments could be finished, but not have actually finished
+                    // some sets only have a reported winner, ignore them
+                    // e.g., https://www.start.gg/tournament/mainstage-2021/event/ultimate-singles/brackets/952392/1513154
+                    if r.standing
+                        .as_ref()
+                        .unwrap()
+                        .stats
+                        .as_ref()
+                        .unwrap()
+                        .score
+                        .value
+                        .is_some()
+                        && o.standing
+                            .as_ref()
+                            .unwrap()
+                            .stats
+                            .as_ref()
+                            .unwrap()
+                            .score
+                            .value
+                            .is_some()
+                        && s.completedAt.is_some()
+                    {
+                        curated_sets.push(Set::new(
+                            s.id,
+                            s.completedAt.unwrap(),
+                            player.id,
+                            s.event.isOnline.unwrap(),
+                            s.event.id.unwrap(),
+                            s.event.tournament.as_ref().unwrap().id,
+                            maybe_games.clone(),
+                            r.entrant.as_ref().unwrap().name.as_ref().unwrap(),
+                            r.standing
+                                .as_ref()
+                                .unwrap()
+                                .stats
+                                .as_ref()
+                                .unwrap()
+                                .score
+                                .value
+                                .unwrap(),
+                            r.seed.as_ref().unwrap().seedNum,
+                            o.entrant.as_ref().unwrap().name.as_ref().unwrap(),
+                            o.standing
+                                .as_ref()
+                                .unwrap()
+                                .stats
+                                .as_ref()
+                                .unwrap()
+                                .score
+                                .value
+                                .unwrap(),
+                            o.seed.as_ref().unwrap().seedNum,
+                        ));
+                    }
+
+                    let tournament = Tournament::new(
                         s.event.tournament.as_ref().unwrap().id,
-                        maybe_games.clone(),
-                        rslot.entrant.name.as_ref().unwrap(),
-                        rslot.standing.stats.as_ref().unwrap().score.value.unwrap(),
-                        rslot.seed.seedNum,
-                        oslot.entrant.name.as_ref().unwrap(),
-                        oslot.standing.stats.as_ref().unwrap().score.value.unwrap(),
-                        oslot.seed.seedNum,
-                    ));
-                }
+                        s.event.id.unwrap(),
+                        s.event.name.as_ref().unwrap(),
+                        &s.event.tournament.as_ref().unwrap().name,
+                        s.event.tournament.as_ref().unwrap().endAt,
+                        player.id,
+                        get_placement(player.id, &s),
+                        s.event.numEntrants.unwrap(),
+                        get_seed(requester_entrant_id, &s),
+                        format!("https://www.start.gg/{}", s.event.slug.as_ref().unwrap()).as_str(),
+                    );
 
-                let tournament = Tournament::new(
-                    s.event.tournament.as_ref().unwrap().id,
-                    s.event.id.unwrap(),
-                    s.event.name.as_ref().unwrap(),
-                    &s.event.tournament.as_ref().unwrap().name,
-                    s.event.tournament.as_ref().unwrap().endAt,
-                    player.id,
-                    get_placement(player.id, &s),
-                    s.event.numEntrants.unwrap(),
-                    get_seed(requester_entrant_id, &s),
-                    format!("https://www.start.gg/{}", s.event.slug.as_ref().unwrap()).as_str(),
-                );
-
-                if !is_tournament_cached(player.id, &s)?
-                    && !curated_tournaments.contains(&tournament)
-                {
-                    // ^^^ not found
-                    curated_tournaments.push(tournament);
+                    if !is_tournament_cached(player.id, &s)?
+                        && !curated_tournaments.contains(&tournament)
+                    {
+                        // ^^^ not found
+                        curated_tournaments.push(tournament);
+                    }
                 }
             }
             // ^^^ unwrapping in these instances is fine due to the query context that we are in, if an error occurs,
@@ -236,4 +279,19 @@ where
 
         Ok(false)
     }
+}
+
+// get player's top two most played characters
+pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
+    let db_connection = smithe_database::connect()?;
+
+    let top_two_characters = player_games
+        .select(requester_char_played)
+        .filter(smithe_database::schema::player_games::requester_id.eq(pid))
+        .group_by(requester_char_played)
+        .order_by(count(requester_char_played).desc())
+        .limit(2)
+        .get_results::<Option<String>>(&db_connection)?;
+
+    Ok(top_two_characters)
 }

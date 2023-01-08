@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Player {
     pub player_id: i32,
     pub user_slug: String,
@@ -18,7 +18,7 @@ pub struct Player {
     pub rankings: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Tournament {
     pub tournament_id: i32,
     pub event_id: i32,

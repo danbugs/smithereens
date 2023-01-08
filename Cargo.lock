@@ -1727,8 +1727,10 @@ version = "0.1.0"
 dependencies = [
  "country-emoji",
  "gloo-net",
+ "js-sys",
  "serde",
  "serde_json",
+ "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
  "yew",

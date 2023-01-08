@@ -108,16 +108,16 @@ pub struct Set {
     pub id: i32,
     pub games: Option<Vec<Game>>,
     pub slots: Vec<SetSlot>,
-    pub completedAt: i64,
+    pub completedAt: Option<i64>,
     pub phaseGroup: PhaseGroup,
     pub event: Event,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetSlot {
-    pub entrant: Entrant,
-    pub seed: Seed,
-    pub standing: Standing,
+    pub entrant: Option<Entrant>,
+    pub seed: Option<Seed>,
+    pub standing: Option<Standing>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
