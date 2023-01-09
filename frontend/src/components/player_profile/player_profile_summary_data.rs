@@ -17,7 +17,17 @@ pub fn player_profile_summary_data(props: &Props) -> Html {
                     <div class="card text-center">
                         <div class="card-body">
                             <h5 class="card-title fw-bold">{"WIN RATE"}</h5>
-                            <p class="card-text">{format!("{}%", props.selected_player_summary_data.clone().unwrap().0)}</p>
+                            {
+                                if props.selected_player_summary_data.clone().unwrap().0.eq("null") {
+                                    html! {
+                                        <p class="card-text">{"N/A"}</p>
+                                    }
+                                } else {
+                                    html! {
+                                        <p class="card-text">{format!("{}%", props.selected_player_summary_data.clone().unwrap().0)}</p>
+                                    }
+                                }
+                            }
                         </div>
                     </div>
                 </div>

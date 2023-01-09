@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub fn is_tournament_finished(s: &SGGSet) -> bool {
-    s.event.standings.is_some() && !s.event.standings.as_ref().unwrap().nodes.is_empty()
+    s.event.tournament.as_ref().unwrap().endAt <= chrono::Utc::now().timestamp()
 }
 
 fn get_standings_for_player_id(s: &SGGSet, player_id: i32) -> Standing {

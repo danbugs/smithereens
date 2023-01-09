@@ -12,7 +12,7 @@ use smithe_lib::{
     player::{get_all_like, get_player, get_top_two_characters},
     set::{
         get_competitor_type, get_set_losses_by_dq, get_set_losses_without_dqs, get_set_wins_by_dq,
-        get_set_wins_without_dqs, get_winrate,
+        get_set_wins_without_dqs, get_winrate, get_sets_per_player_id,
     },
     tournament::get_tournaments_from_requester_id,
 };
@@ -97,6 +97,12 @@ async fn get_player_top_two_characters(id: i32) -> Result<String, Error> {
     Ok(serde_json::to_string(&get_top_two_characters(id)?)?)
 }
 
+// get sets by player id
+#[get("/<id>")]
+async fn get_player_sets(id: i32) -> Result<String, Error> {
+    Ok(serde_json::to_string(&get_sets_per_player_id(id)?)?)
+}
+
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
@@ -125,6 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .mount(
             "/sets",
             routes![
+                get_player_sets,
                 get_player_set_wins_without_dqs,
                 get_player_set_losses_without_dqs,
                 get_player_set_wins_by_dqs,

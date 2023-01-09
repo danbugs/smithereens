@@ -20,16 +20,16 @@ pub fn player_profile_header(props: &Props) -> Html {
             <br/>
             <div class="row">
                 // align profile picture in center of row
-                <div class="col-md-2 align-self-center">
+                <div class="col-md-2 col-6 align-self-center">
                     <img src={
-                        if let Some(ppp) = props.selected_player.profile_picture.clone() {
-                            ppp
+                        if props.selected_player.profile_picture.clone().is_some() && !props.selected_player.profile_picture.clone().unwrap().is_empty() {
+                            props.selected_player.profile_picture.clone().unwrap()
                         } else {
-                            "https://i.imgur.com/78M17SL.png".to_string()
+                            "https://i.imgur.com/SwpJ1YU.png".to_string()
                         }
-                    } alt="Profile Picture" class="img-fluid rounded-circle" style="width:128px;height:128px;"/>
+                    } alt="Profile Picture" class="img-fluid rounded-circle" referrerpolicy="no-referrer" style="width:128px;height:128px;"/>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 col-6">
                     <h2>
                     {
                         if props.selected_player.prefix.is_none() || props.selected_player.prefix.as_ref().unwrap().is_empty() {
@@ -102,19 +102,26 @@ pub fn player_profile_header(props: &Props) -> Html {
                     }
                 </div> 
 
-                <div class="col-md-4 offset-md-4">
+                <div class="col-md-4 col-12 offset-md-4">
+                    <br/>
                     {
                         if props.display {
                             html! {
                                 <div class="row justify-content-end">                         
                                     {
-                                        props.selected_player_summary_data.as_ref().unwrap().4.iter().map(|character| {
+                                        if props.selected_player_summary_data.as_ref().unwrap().4.is_empty() {
                                             html! {
-                                                <div class="col-auto">
-                                                    <img src={format!("/assets/character_images/{} (Small).png", character)} alt="Character" class="img-fluid" style="max-width:128px;max-height:128px;"/>
-                                                </div>
+                                                <div></div>
                                             }
-                                        }).collect::<Html>()
+                                        } else {
+                                            props.selected_player_summary_data.as_ref().unwrap().4.iter().map(|character| {
+                                                html! {
+                                                    <div class="col-auto">
+                                                        <img src={format!("/assets/character_images/{} (Small).png", character)} alt="Character" class="img-fluid" style="max-width:128px;max-height:128px;"/>
+                                                    </div>
+                                                }
+                                            }).collect::<Html>()
+                                        }
                                     }
                                 </div>
                             }

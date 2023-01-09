@@ -30,3 +30,6 @@ GET {{baseUrl}}/sets/1178271/competitor_type
 
 ### get_player_top_two_characters
 GET {{baseUrl}}/player/1178271/top_two_characters
+
+### get_player_sets
+GET {{baseUrl}}/sets/1178271

@@ -13,3 +13,9 @@ ul.list-group.list-group-striped button:nth-of-type(even){
 ul.list-group.list-group-hover button:hover{
     background: rgb(198, 38, 62, 0.6);
 }
+
+.accordion-button:not(.collapsed) {
+    color: black !important;
+    background-color: rgb(198, 38, 62, 0.6) !important;
+  }
+  

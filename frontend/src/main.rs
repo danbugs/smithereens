@@ -1,5 +1,5 @@
 use gloo_net::http::Request;
-use models::{Player, Tournament};
+use models::{Player, Tournament, Set};
 use utils::parse_text_vector;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement};
@@ -18,7 +18,7 @@ enum Msg {
     Search(String),
     DisplaySearch(Vec<Player>),
     SelectPlayer(i32),
-    GetTournaments(Vec<Tournament>, i32),
+    GetTournaments(Vec<Tournament>, Vec<Set>, i32),
     GetSummaryData(String, String, String, String, Vec<String>),
 }
 
@@ -27,6 +27,7 @@ struct App {
     selected_player: Option<Player>,
     selected_player_tournaments: Option<Vec<Tournament>>,
     selected_player_summary_data: Option<(String, String, String, String, Vec<String>)>,
+    selected_player_sets: Option<Vec<Set>>,
 }
 
 impl Component for App {
@@ -39,6 +40,7 @@ impl Component for App {
             selected_player: None,
             selected_player_tournaments: None,
             selected_player_summary_data: None,
+            selected_player_sets: None,
         }
     }
 
@@ -48,6 +50,7 @@ impl Component for App {
                 self.selected_player = None;
                 self.selected_player_tournaments = None;
                 self.selected_player_summary_data = None;
+                self.selected_player_sets = None;
                 self.search_results = Vec::new();
 
                 let link = ctx.link().clone();
@@ -75,6 +78,9 @@ impl Component for App {
                 true
             }
             Msg::SelectPlayer(pid) => {
+                // console log pid
+                web_sys::console::log_1(&pid.into());
+                
                 self.selected_player = Some(
                     self.search_results
                         .iter()
@@ -86,8 +92,7 @@ impl Component for App {
                 let link = ctx.link().clone();
 
                 wasm_bindgen_futures::spawn_local(async move {
-                    let endpoint = format!("{}/tournaments/{}", env!("SERVER_ADDRESS"), pid);
-                    let fetched_tournaments: Vec<Tournament> = Request::get(&endpoint)
+                    let fetched_tournaments: Vec<Tournament> = Request::get(&format!("{}/tournaments/{}", env!("SERVER_ADDRESS"), pid))
                         .send()
                         .await
                         .unwrap()
@@ -95,17 +100,27 @@ impl Component for App {
                         .await
                         .unwrap();
 
-                    link.send_message(Msg::GetTournaments(fetched_tournaments, pid));
+                    let fetched_sets: Vec<Set> = Request::get(&format!("{}/sets/{}", env!("SERVER_ADDRESS"), pid))
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
+                
+
+                    link.send_message(Msg::GetTournaments(fetched_tournaments, fetched_sets, pid));
                 });
 
                 true
             }
-            Msg::GetTournaments(tournaments, pid) => {
+            Msg::GetTournaments(tournaments, sets, pid) => {
                 let num_tournaments = tournaments.len();
                 let mut ts = tournaments.clone();
                 ts.sort_by_key(|e| e.tournament_id);
                 ts.reverse();
                 self.selected_player_tournaments = Some(ts);
+                self.selected_player_sets = Some(sets);
 
                 let link = ctx.link().clone();
                 wasm_bindgen_futures::spawn_local(async move {
@@ -166,9 +181,6 @@ impl Component for App {
                     .await
                     .unwrap();
 
-                    // console log two two chars
-                    web_sys::console::log_1(&format!("Top two chars: {}", fetch_top_two_characters).into());
-
                     let wins_losses =
                         format!("{}-{}", fetch_wins_without_dqs, fetch_losses_without_dqs);
                     let tournaments_attended = format!("{}", num_tournaments);
@@ -206,7 +218,7 @@ impl Component for App {
             }
         });
 
-        let onclick = link.batch_callback(|e: MouseEvent| {
+        let plist_onclick = link.batch_callback(|e: MouseEvent| {
             if let Some(elem) = e
                 .target()
                 .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
@@ -229,7 +241,7 @@ impl Component for App {
                             full_display={self.selected_player.is_none() && !self.search_results.is_empty()}
                             alternate_display={self.selected_player.is_none()}
                             search_results={self.search_results.clone()}
-                            {onclick}
+                            onclick={plist_onclick}
                         />
 
                         <PlayerProfile
@@ -237,6 +249,7 @@ impl Component for App {
                             selected_player={self.selected_player.clone()}
                             selected_player_tournaments={self.selected_player_tournaments.clone()}
                             selected_player_summary_data={self.selected_player_summary_data.clone()}
+                            selected_tournament_sets={self.selected_player_sets.clone()}
                         />
                     </div>
                 </div>

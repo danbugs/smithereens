@@ -1,14 +1,14 @@
-pub fn calculate_spr(seed: i32, placement: i32) -> i32 {
-    let s = if seed == 1 {
+pub fn calculate_spr_or_uf(a: i32, b: i32) -> i32 {
+    let s = if a == 1 {
         0.
     } else {
-        (seed as f32 - 1.).log2().floor() + (2./3. * seed as f32).log2().ceil()
+        (a as f32 - 1.).log2().floor() + (2./3. * a as f32).log2().ceil()
     };
     
-    let p = if placement == 1 {
+    let p = if b == 1 {
         0.
     } else {
-        (placement as f32 - 1.).log2().floor() + (2./3. * placement as f32).log2().ceil()
+        (b as f32 - 1.).log2().floor() + (2./3. * b as f32).log2().ceil()
     };
 
     (s - p) as i32
@@ -17,6 +17,10 @@ pub fn calculate_spr(seed: i32, placement: i32) -> i32 {
 pub fn parse_text_vector(text: &str) -> Vec<String> {
     // remove the first and last characters
     let text = &text[1..text.len() - 1];
+    
+    if text.is_empty() {
+        return Vec::new();
+    }
     
     let mut result = Vec::new();
     let mut current = String::new();
