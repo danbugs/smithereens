@@ -1,6 +1,6 @@
 use anyhow::Result;
 use startgg::queries::{
-    event_getter::get_phase_id_from_event_slug, seeding_geeter::make_seeding_getter_query,
+    event_getter::get_phase_id_from_event_slug, seeding_getter::make_seeding_getter_query,
 };
 use url::Url;
 
