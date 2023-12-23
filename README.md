@@ -2,7 +2,7 @@
 
 # Smithereens
 
-Smithereens is a digested open-source data visualizer tool for your Smash results. 
+Smithereens is a digested open-source data visualizer tool for your Smash Ultimate results. 
 
 ## What Is the Plan for It?
 
@@ -36,6 +36,6 @@ Smithereens is not yet available as a website, only as a command-line tool. With
 
 Currently, the only way to get Smithereens on your computer is to build it from source. To do so, you need to have the Rust toolchain installed on your machine. To install it, follow instructions [here](https://www.rust-lang.org/tools/install).
 
-After that, inside of Smithereens' repository root, run: `cargo build --release`. With that, you'll have Smithereens' binary (i.e., `smithe`) built under `target/release`. You can run it, like: `./target/release/smithe`. Afther that, feel free to move the binary to a more convenient place on your machine (i.e., perhaps to a place included in your `PATH`, so you can run it simply with `smithe`).
+After that, inside of Smithereens' repository root, run: `cargo build --release`. With that, you'll have Smithereens' binary (i.e., `smithe`) built under `target/release`. You can run it, like: `./target/release/smithe`. After that, feel free to move the binary to a more convenient place on your machine (i.e., perhaps to a place included in your `PATH`, so you can run it simply with `smithe`).
 
 > Note: In the future, there will be releases for `smithe`, so this process will be better streamlined.

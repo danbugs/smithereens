@@ -158,8 +158,10 @@ where
     } else {
         tracing::info!("✅ got some results...");
         for s in ss {
+            tracing::info!("🍥 processing set from tourney \"{}\"", s.event.tournament.clone().unwrap().name);
+
             // we only want to compile results for: double elimination single ssbu brackets
-            if is_ssbu_singles_double_elimination_tournament(&s) {
+            if is_ssbu_singles_double_elimination_tournament(&s) && s.completedAt.is_some(){
                 let requester_entrant_id = if is_tournament_finished(&s) {
                     get_requester_id_from_standings(&s, player.id)
                 } else {
@@ -183,7 +185,7 @@ where
                 {
                     curated_sets.push(Set::new(
                         s.id,
-                        s.completedAt,
+                        s.completedAt.unwrap(),
                         player.id,
                         s.event.isOnline.unwrap(),
                         s.event.id.unwrap(),

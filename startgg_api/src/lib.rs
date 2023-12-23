@@ -3,7 +3,7 @@
 
 pub mod queries;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, env};
 
 use as_any::AsAny;
 use serde::Deserialize;
@@ -108,7 +108,7 @@ pub struct Set {
     pub id: i32,
     pub games: Option<Vec<Game>>,
     pub slots: Vec<SetSlot>,
-    pub completedAt: i64,
+    pub completedAt: Option<i64>, // needs to be an option in case the tournament hasn't finished.
     pub phaseGroup: PhaseGroup,
     pub event: Event,
 }
@@ -199,8 +199,9 @@ pub struct StartGG {
 impl StartGG {
     pub fn connect() -> Self {
         let mut headers = HashMap::new();
-        let bearer_token = concat!("Bearer ", env!("STARTGG_TOKEN"));
-        headers.insert("authorization", bearer_token);
+        let sgg_env_var = env::var("STARTGG_TOKEN").expect("STARTGG_TOKEN not found");
+        let bearer_token = format!("Bearer {}", sgg_env_var);
+        headers.insert("authorization", bearer_token.as_str());
         Self {
             gql_client: gql_client::Client::new_with_headers(STARTGG_ENDPOINT, headers),
         }

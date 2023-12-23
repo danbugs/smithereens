@@ -52,6 +52,7 @@ where
             tracing::info!("🍥 querying StartGG API...");
             match get_pages(curr_page, gql_vars.clone()).await {
                 Ok(data) => {
+                    tracing::info!("🍥 got data for page {}", &curr_page);
                     result = data;
                     break;
                 }

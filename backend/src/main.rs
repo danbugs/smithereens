@@ -1,11 +1,10 @@
-#![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use]
 extern crate rocket;
 
 use rocket::{
     http::{Method, Status},
     response::{self, Responder},
-    Request,
+    Build, Request, Rocket,
 };
 use rocket_cors::{AllowedHeaders, AllowedOrigins};
 use smithe_lib::{
@@ -90,8 +89,7 @@ async fn get_player_competitor_type(id: i32) -> Result<String, Error> {
     Ok(serde_json::to_string(&get_competitor_type(id)?)?)
 }
 
-#[rocket::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn rocket() -> Rocket<Build> {
     let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
 
     let cors = rocket_cors::CorsOptions {
@@ -107,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .to_cors()
     .expect("failed to set cors");
 
-    let _ = rocket::build()
+    rocket::build()
         .mount("/", routes![index])
         .mount("/players", routes![search_players])
         .mount(
@@ -125,8 +123,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ],
         )
         .attach(cors)
-        .launch()
-        .await?;
+}
 
+#[rocket::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _ = rocket().launch().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use rocket::{local::blocking::Client, http::Status};
+
+    use super::rocket;
+
+    #[test]
+    fn get_player_tournaments_test() -> Result<(), Box<dyn std::error::Error>> {
+        let client = Client::tracked(rocket())?;
+        let response = client.get("/tournaments/1178271").dispatch();
+        assert_eq!(response.status(), Status::Ok);
+
+        Ok(())
+    }
 }
