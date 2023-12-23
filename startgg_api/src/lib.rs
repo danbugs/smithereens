@@ -108,16 +108,16 @@ pub struct Set {
     pub id: i32,
     pub games: Option<Vec<Game>>,
     pub slots: Vec<SetSlot>,
-    pub completedAt: Option<i64>, // needs to be an option in case the tournament hasn't finished.
+    pub completedAt: Option<i64>,
     pub phaseGroup: PhaseGroup,
     pub event: Event,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetSlot {
-    pub entrant: Entrant,
-    pub seed: Seed,
-    pub standing: Standing,
+    pub entrant: Option<Entrant>,
+    pub seed: Option<Seed>,
+    pub standing: Option<Standing>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -199,8 +199,7 @@ pub struct StartGG {
 impl StartGG {
     pub fn connect() -> Self {
         let mut headers = HashMap::new();
-        let sgg_env_var = env::var("STARTGG_TOKEN").expect("STARTGG_TOKEN not found");
-        let bearer_token = format!("Bearer {}", sgg_env_var);
+        let bearer_token = format!("Bearer {}", env!("STARTGG_TOKEN"));
         headers.insert("authorization", bearer_token.as_str());
         Self {
             gql_client: gql_client::Client::new_with_headers(STARTGG_ENDPOINT, headers),

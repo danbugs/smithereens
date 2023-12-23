@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Player {
     pub player_id: i32,
     pub user_slug: String,
@@ -18,7 +18,7 @@ pub struct Player {
     pub rankings: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Tournament {
     pub tournament_id: i32,
     pub event_id: i32,
@@ -30,4 +30,22 @@ pub struct Tournament {
     pub num_entrants: i32,
     pub seed: i32,
     pub link: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct Set {
+    pub id: i32,
+    pub completed_at: i64,
+    pub requester_id: i32,
+    pub requester_tag_with_prefix: String,
+    pub requester_score: i32,
+    pub requester_seed: i32,
+    pub opponent_tag_with_prefix: String,
+    pub opponent_score: i32,
+    pub opponent_seed: i32,
+    pub result_type: i32,
+    pub game_ids: Option<Vec<i32>>,
+    pub event_id: i32,
+    pub tournament_id: i32,
+    pub is_event_online: bool,
 }

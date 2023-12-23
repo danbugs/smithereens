@@ -74,6 +74,9 @@ query SetGetter($playerId: ID!, $page: Int!, $updatedAfter: Timestamp, $gamerTag
               }
               player {
                 id
+                user {
+                  slug
+                }
               }
               placement
             }

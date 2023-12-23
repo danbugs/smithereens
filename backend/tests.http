@@ -9,3 +9,27 @@ GET {{baseUrl}}/player/1178271
 
 ### get_player_tournaments
 GET {{baseUrl}}/tournaments/1178271
+
+### get_player_set_wins_without_dqs
+GET {{baseUrl}}/sets/1178271/wins_without_dqs
+
+### get_player_set_losses_without_dqs
+GET {{baseUrl}}/sets/1178271/losses_without_dqs
+
+### get_player_set_wins_by_dqs
+GET {{baseUrl}}/sets/1178271/wins_by_dqs
+
+### get_player_set_losses_by_dqs
+GET {{baseUrl}}/sets/1178271/losses_by_dqs
+
+### get_player_winrate
+GET {{baseUrl}}/sets/1178271/winrate
+
+### get_player_competitor_type
+GET {{baseUrl}}/sets/1178271/competitor_type
+
+### get_player_top_two_characters
+GET {{baseUrl}}/player/1178271/top_two_characters
+
+### get_player_sets
+GET {{baseUrl}}/sets/1178271
