@@ -86,7 +86,7 @@ pub async fn make_seeding_getter_query(phase_id: i32) -> Result<Vec<Seed>> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        queries::seeding_geeter::{SeedingGetterData, SeedingGetterVars, SEEDING_GETTER_QUERY},
+        queries::seeding_getter::{SeedingGetterData, SeedingGetterVars, SEEDING_GETTER_QUERY},
         StartGG,
     };
     use anyhow::Result;
