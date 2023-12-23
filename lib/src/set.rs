@@ -23,7 +23,7 @@ pub fn get_last_completed_at(cache: Vec<Set>) -> Option<i64> {
                 .max_by_key(|s| s.completed_at)
                 .unwrap()
                 .completed_at
-                + 1,
+                + 2,
         )
     } else {
         tracing::info!("❌ player was not cached...");
@@ -35,24 +35,34 @@ pub fn get_last_completed_at(cache: Vec<Set>) -> Option<i64> {
 /// - entrant name,
 /// - entrant seed, and
 /// - entrant set score (e.g., won 2 games, DQd, etc.).
-pub fn get_requester_set_slot(requester_entrant_id: i32, s: &SGGSet) -> SGGSetSlot {
+pub fn get_requester_set_slot(requester_entrant_id: i32, s: &SGGSet) -> Option<SGGSetSlot> {
     s.slots
         .iter()
-        .find(|i| i.entrant.id.as_ref().unwrap().eq(&requester_entrant_id))
-        .unwrap()
-        .clone()
+        .find(|i| {
+            if let Some(e) = i.entrant.as_ref() {
+                e.id.as_ref().unwrap().eq(&requester_entrant_id)
+            } else {
+                false
+            }
+        })
+        .cloned()
 }
 
 /// Provides a set with access to:
 /// - entrant name,
 /// - entrant seed, and
 /// - entrant set score (e.g., won 2 games, DQd, etc.).
-pub fn get_opponent_set_slot(requester_entrant_id: i32, s: &SGGSet) -> SGGSetSlot {
+pub fn get_opponent_set_slot(requester_entrant_id: i32, s: &SGGSet) -> Option<SGGSetSlot> {
     s.slots
         .iter()
-        .find(|i| i.entrant.id.as_ref().unwrap().ne(&requester_entrant_id))
-        .unwrap()
-        .clone()
+        .find(|i| {
+            if let Some(e) = i.entrant.as_ref() {
+                e.id.as_ref().unwrap().ne(&requester_entrant_id)
+            } else {
+                false
+            }
+        })
+        .cloned()
 }
 
 pub fn get_set_wins_without_dqs(player_id: i32) -> Result<i64> {
@@ -101,6 +111,14 @@ pub fn get_winrate(player_id: i32) -> Result<f32> {
     )
 }
 
+// get sets per player id
+pub fn get_sets_per_player_id(player_id: i32) -> Result<Vec<Set>> {
+    let db_connection = smithe_database::connect()?;
+    Ok(player_sets
+        .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
+        .get_results::<Set>(&db_connection)?)
+}
+
 pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
     let db_connection = smithe_database::connect()?;
     let raw_player_results = player_sets
@@ -108,8 +126,8 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
         .group_by(event_id)
         .select((
             event_id,
-            sql("COUNT(result_type>0 OR NULL)"),
-            sql("COUNT(result_type<0 OR NULL)"),
+            sql("COUNT(result_type>1 OR NULL)"),
+            sql("COUNT(result_type<-1 OR NULL)"),
         ))
         .get_results::<(i32, String, String)>(&db_connection)?;
     // ^^^ not sure why but have to get the count as text
@@ -125,6 +143,11 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
         })
         .collect::<Vec<(i32, u32, u32)>>();
 
+    // filter out events where both player_results.1 and player_results.2 are 0
+    let player_results = player_results
+        .iter()
+        .filter(|i| i.1 != 0 || i.2 != 0)
+        .collect::<Vec<&(i32, u32, u32)>>();
     Ok((
         ((player_results.iter().map(|i| i.1).sum::<u32>() as f32) / (player_results.len() as f32))
             .round() as u32,

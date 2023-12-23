@@ -3,9 +3,9 @@
 // — an auto fix for this exists only in Diesel v2.
 use crate::schema::players;
 
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Insertable, Queryable, QueryableByName)]
+#[derive(Debug, Serialize, Deserialize, Insertable, Queryable, QueryableByName)]
 #[table_name = "players"]
 pub struct Player {
     pub player_id: i32,
@@ -84,7 +84,7 @@ impl std::fmt::Display for Player {
                 // ^^^ it is ok to unwrap here due to the first conditional
                 self.gamer_tag.clone()
             } else {
-                format!("{} | {}", self.prefix.as_ref().unwrap(), &self.gamer_tag)
+                format!("({} | {}", self.prefix.as_ref().unwrap(), &self.gamer_tag)
             };
         write!(f, "{}", gamer_tag_with_prefix)
     }

@@ -1,16 +1,29 @@
 use anyhow::Result;
-
-use diesel::{dsl::max, insert_into, prelude::*, update};
+use as_any::Downcast;
 use smithe_database::{
-    db_models::{
-        empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId,
-        player::Player,
+    db_models::{player::Player, set::Set, tournament::Tournament},
+    schema::{
+        player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*,
     },
+};
+
+use diesel::{dsl::{max, count}, insert_into, prelude::*, update};
+use smithe_database::{
+    db_models::{empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId},
     schema::last_checked_player_id,
-    schema::players::dsl::*,
     schema::{empty_player_ids::dsl::*, last_checked_player_id::dsl::*},
 };
-use startgg::{Player as SGGPlayer, User};
+use startgg::{queries::set_getter::SetGetterData, GQLData, Player as SGGPlayer, User};
+
+use crate::{
+    game::maybe_get_games_from_set,
+    set::{get_opponent_set_slot, get_requester_set_slot},
+    tournament::{
+        get_placement, get_requester_id_from_standings, get_seed,
+        is_ssbu_singles_double_elimination_tournament, is_tournament_cached,
+        is_tournament_finished,
+    },
+};
 
 pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
@@ -22,6 +35,15 @@ pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
         .get_results::<Player>(&db_connection)?;
 
     Ok(matching_players)
+}
+
+pub fn get_player(pid: i32) -> Result<Player> {
+    let db_connection = smithe_database::connect()?;
+    let matched_player = players
+        .filter(smithe_database::schema::players::player_id.eq(pid)) // case-insensitive like
+        .get_result::<Player>(&db_connection)?;
+
+    Ok(matched_player)
 }
 
 pub fn get_last_cached_player_id() -> Result<i32> {
@@ -120,4 +142,158 @@ pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
         authorizations: None,
         slug: some_slug,
     }))
+}
+
+pub fn execute<T>(_: i32, set_getter_data: T) -> Result<bool>
+where
+    T: GQLData,
+{
+    let sgd = set_getter_data.downcast_ref::<SetGetterData>();
+    let player = sgd.unwrap().player.clone();
+
+    let mut curated_sets = vec![];
+    let mut curated_games = vec![];
+    let mut curated_tournaments = vec![];
+
+    let db_connection = smithe_database::connect()?;
+
+    let ss = player.sets.unwrap().nodes;
+    // ^^^ guaranteed to have sets in this context, ok to unwrap
+
+    if ss.is_empty() {
+        tracing::info!("🏁 finished compiling results for this player!");
+        Ok(true)
+    } else {
+        tracing::info!("✅ got some results...");
+        for s in ss {
+            tracing::info!("🍥 processing set from tourney \"{}\"", s.event.tournament.clone().unwrap().name);
+
+            // we only want to compile results for: double elimination single ssbu brackets
+            if is_ssbu_singles_double_elimination_tournament(&s) && s.completedAt.is_some(){
+                let requester_entrant_id = if is_tournament_finished(&s) {
+                    get_requester_id_from_standings(&s, player.id)
+                } else {
+                    continue;
+                };
+
+                let maybe_games = maybe_get_games_from_set(player.id, requester_entrant_id, &s);
+
+                // if there are games, we want to add to the vec to insert in the DB at the end
+                if let Some(mut games) = maybe_games.clone() {
+                    curated_games.append(&mut games);
+                }
+
+                let rslot = get_requester_set_slot(requester_entrant_id, &s);
+                let oslot = get_opponent_set_slot(requester_entrant_id, &s);
+
+                if let (Some(r), Some(o)) = (rslot, oslot) { // tournaments could be finished, but not have actually finished
+                    // some sets only have a reported winner, ignore them
+                    // e.g., https://www.start.gg/tournament/mainstage-2021/event/ultimate-singles/brackets/952392/1513154
+                    if r.standing
+                        .as_ref()
+                        .unwrap()
+                        .stats
+                        .as_ref()
+                        .unwrap()
+                        .score
+                        .value
+                        .is_some()
+                        && o.standing
+                            .as_ref()
+                            .unwrap()
+                            .stats
+                            .as_ref()
+                            .unwrap()
+                            .score
+                            .value
+                            .is_some()
+                        && s.completedAt.is_some()
+                    {
+                        curated_sets.push(Set::new(
+                            s.id,
+                            s.completedAt.unwrap(),
+                            player.id,
+                            s.event.isOnline.unwrap(),
+                            s.event.id.unwrap(),
+                            s.event.tournament.as_ref().unwrap().id,
+                            maybe_games.clone(),
+                            r.entrant.as_ref().unwrap().name.as_ref().unwrap(),
+                            r.standing
+                                .as_ref()
+                                .unwrap()
+                                .stats
+                                .as_ref()
+                                .unwrap()
+                                .score
+                                .value
+                                .unwrap(),
+                            r.seed.as_ref().unwrap().seedNum,
+                            o.entrant.as_ref().unwrap().name.as_ref().unwrap(),
+                            o.standing
+                                .as_ref()
+                                .unwrap()
+                                .stats
+                                .as_ref()
+                                .unwrap()
+                                .score
+                                .value
+                                .unwrap(),
+                            o.seed.as_ref().unwrap().seedNum,
+                        ));
+                    }
+
+                    let tournament = Tournament::new(
+                        s.event.tournament.as_ref().unwrap().id,
+                        s.event.id.unwrap(),
+                        s.event.name.as_ref().unwrap(),
+                        &s.event.tournament.as_ref().unwrap().name,
+                        s.event.tournament.as_ref().unwrap().endAt,
+                        player.id,
+                        get_placement(player.id, &s),
+                        s.event.numEntrants.unwrap(),
+                        get_seed(requester_entrant_id, &s),
+                        format!("https://www.start.gg/{}", s.event.slug.as_ref().unwrap()).as_str(),
+                    );
+
+                    if !is_tournament_cached(player.id, &s)?
+                        && !curated_tournaments.contains(&tournament)
+                    {
+                        // ^^^ not found
+                        curated_tournaments.push(tournament);
+                    }
+                }
+            }
+            // ^^^ unwrapping in these instances is fine due to the query context that we are in, if an error occurs,
+            // we want to panic regardless
+        }
+
+        insert_into(player_games)
+            .values(curated_games)
+            .execute(&db_connection)?;
+
+        insert_into(player_sets)
+            .values(curated_sets)
+            .execute(&db_connection)?;
+
+        insert_into(player_tournaments)
+            .values(curated_tournaments)
+            .execute(&db_connection)?;
+
+        Ok(false)
+    }
+}
+
+// get player's top two most played characters
+pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
+    let db_connection = smithe_database::connect()?;
+
+    let top_two_characters = player_games
+        .select(requester_char_played)
+        .filter(smithe_database::schema::player_games::requester_id.eq(pid))
+        .group_by(requester_char_played)
+        .order_by(count(requester_char_played).desc())
+        .limit(2)
+        .get_results::<Option<String>>(&db_connection)?;
+
+    Ok(top_two_characters)
 }

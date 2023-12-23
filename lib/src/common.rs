@@ -16,6 +16,7 @@ use std::{
 use startgg::{GQLData, GQLVars};
 
 pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
+    is_cli: bool,
     gql_vars: Arc<Mutex<V>>,
     get_pages: fn(i32, Arc<Mutex<V>>) -> F,
     start: i32,
@@ -30,15 +31,18 @@ where
     D: GQLData,
 {
     let running = Arc::new(AtomicUsize::new(0));
-    let r = running.clone();
-    ctrlc::set_handler(move || {
-        let prev = r.fetch_add(1, Ordering::SeqCst);
-        if prev == 0 {
-            tracing::info!("👋 exiting...");
-        } else {
-            process::exit(0);
-        }
-    })?;
+
+    if is_cli {
+        let r = running.clone();
+        ctrlc::set_handler(move || {
+            let prev = r.fetch_add(1, Ordering::SeqCst);
+            if prev == 0 {
+                tracing::info!("👋 exiting...");
+            } else {
+                process::exit(0);
+            }
+        })?;
+    }
 
     let mut curr_page = start;
     let mut now = Instant::now();
@@ -48,6 +52,7 @@ where
             tracing::info!("🍥 querying StartGG API...");
             match get_pages(curr_page, gql_vars.clone()).await {
                 Ok(data) => {
+                    tracing::info!("🍥 got data for page {}", &curr_page);
                     result = data;
                     break;
                 }
@@ -55,6 +60,7 @@ where
                     if e.to_string().contains("429")
                         || e.to_string()
                             .contains("Our services aren't available right now")
+                        || e.to_string().contains("error sending request for url")
                     {
                         // 429 (too many reqs) or outage, want to wait it out
                         let elapsed_time = Instant::now() - now;
@@ -93,7 +99,7 @@ where
             curr_page = increment(curr_page)?;
         }
 
-        if running.load(Ordering::SeqCst) > 0 {
+        if is_cli && running.load(Ordering::SeqCst) > 0 {
             cancel(curr_page)?;
             break;
         }

@@ -3,7 +3,7 @@
 
 pub mod queries;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, env};
 
 use as_any::AsAny;
 use serde::Deserialize;
@@ -108,16 +108,16 @@ pub struct Set {
     pub id: i32,
     pub games: Option<Vec<Game>>,
     pub slots: Vec<SetSlot>,
-    pub completedAt: i64,
+    pub completedAt: Option<i64>,
     pub phaseGroup: PhaseGroup,
     pub event: Event,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SetSlot {
-    pub entrant: Entrant,
-    pub seed: Seed,
-    pub standing: Standing,
+    pub entrant: Option<Entrant>,
+    pub seed: Option<Seed>,
+    pub standing: Option<Standing>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -135,13 +135,13 @@ pub struct StandingStats {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Score {
-    pub value: i32,
+    pub value: Option<i32>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Game {
     pub id: i32,
-    pub winnerId: i32,
+    pub winnerId: Option<i32>,
     pub orderNum: i32,
     pub selections: Option<Vec<GameSelection>>,
     pub stage: Option<Stage>,
@@ -199,8 +199,8 @@ pub struct StartGG {
 impl StartGG {
     pub fn connect() -> Self {
         let mut headers = HashMap::new();
-        let bearer_token = concat!("Bearer ", env!("STARTGG_TOKEN"));
-        headers.insert("authorization", bearer_token);
+        let bearer_token = format!("Bearer {}", env!("STARTGG_TOKEN"));
+        headers.insert("authorization", bearer_token.as_str());
         Self {
             gql_client: gql_client::Client::new_with_headers(STARTGG_ENDPOINT, headers),
         }

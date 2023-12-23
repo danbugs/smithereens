@@ -20,3 +20,13 @@ pub fn connect() -> Result<PgConnection> {
         PIDGTM_DATABASE_URL_ENVVAR_NAME,
     )?)?)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_connect() {
+        assert!(connect().is_ok());
+    }
+}

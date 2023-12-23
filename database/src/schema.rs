@@ -14,7 +14,7 @@ table! {
     player_games (game_id, requester_id) {
         game_id -> Int4,
         requester_id -> Int4,
-        requester_win -> Bool,
+        requester_win -> Nullable<Bool>,
         order_num -> Int4,
         requester_char_played -> Nullable<Varchar>,
         opponent_char_played -> Nullable<Varchar>,

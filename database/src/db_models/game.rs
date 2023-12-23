@@ -9,7 +9,7 @@ use startgg::SSBU_CHARACTERS;
 pub struct Game {
     pub game_id: i32,
     requester_id: i32,
-    requester_win: bool,
+    requester_win: Option<bool>,
     order_num: i32,
     requester_char_played: Option<String>,
     opponent_char_played: Option<String>,
@@ -20,7 +20,7 @@ impl Game {
     pub fn new(
         gid: i32,
         rid: i32,
-        rw: bool,
+        rw: Option<bool>,
         onum: i32,
         rcp_num_o: Option<i32>,
         ocp_num_o: Option<i32>,

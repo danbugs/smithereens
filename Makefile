@@ -30,8 +30,13 @@ pidgtm-map:
 # BACKEND
 .PHONY: build-backend
 build-backend:
-	cargo build --release --manifest-path ./backend/Cargo.toml
+	cargo +nightly build --release --manifest-path ./backend/Cargo.toml
 
 .PHONY: run-backend
 run-backend:
-	cargo run --manifest-path ./backend/Cargo.toml
+	cargo +nightly run --manifest-path ./backend/Cargo.toml
+
+# FRONTEND
+.PHONY: serve-frontend
+serve-frontend:
+	trunk serve ./frontend/index.html

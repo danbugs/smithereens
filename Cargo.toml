@@ -34,6 +34,7 @@ smithe_lib = { path = "lib/" }
 members = [
     "backend/",
     "database/",
-    "startgg_api/",
-    "lib/"
+    "frontend/",
+    "lib/",
+    "startgg_api/"
 ]

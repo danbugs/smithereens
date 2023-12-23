@@ -15,3 +15,7 @@ diesel = { version = "1.4", features = ["postgres"] }
 smithe_database = { path = "../database" }
 startgg = { path = "../startgg_api" }
 ctrlc = "3.2"
+as-any = "0.3"
+tokio = { version = "1.1", features = [ "rt", "macros" ] }
+tracing-test = "0.2"
+chrono = "0.4"

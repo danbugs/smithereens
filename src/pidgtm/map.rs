@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex};
 
 pub async fn handle_map() -> Result<()> {
     start_read_all_by_increment_execute_finish_maybe_cancel(
+        true,
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
         get_last_cached_player_id()?,

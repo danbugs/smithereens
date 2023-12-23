@@ -19,6 +19,7 @@ use startgg::{
 
 pub async fn handle_update(start_at_player_id: Option<i32>) -> Result<()> {
     start_read_all_by_increment_execute_finish_maybe_cancel(
+        true,
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
         start_at_player_id.unwrap_or(1000),
@@ -46,7 +47,7 @@ where
             pti.user = get_empty_user_with_slug(pti.id)?;
         } else if pti.user.as_ref().unwrap().slug.is_none() {
             tracing::info!("❎ caught a deleted account #2 (id: '{}')...", pti.id);
-            pti.user = pti.user.as_mut().map(|mut u| {
+            pti.user = pti.user.as_mut().map(|u| {
                 u.slug = get_empty_user_with_slug(pti.id).unwrap().unwrap().slug;
                 // ^^^ didn't want to unwrap here, but I guess it's fine to panic
                 u.clone()
