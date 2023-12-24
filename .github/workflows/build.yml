@@ -46,15 +46,7 @@ jobs:
 
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2
-
-    - if: matrix.os == 'windows-latest'
-      name: Cache Chocolatey packages
-      uses: actions/cache@v2
-      with:
-        path: C:\ProgramData\chocolatey\lib
-        key: windows-choco-${{ hashFiles('**/choco-packages.config') }}
-        restore-keys: |
-          windows-choco-      
+   
 
     - name: Install Rust toolchain
       uses: actions-rs/toolchain@v1
@@ -66,7 +58,7 @@ jobs:
 
     - if: matrix.os == 'windows-latest'
       name: Install PostgreSQL
-      run: choco install postgresql --params '/Password:postgres' --no-progress        
+      uses: ikalnytskyi/action-setup-postgres@v4       
 
     - name: Build
       run: cargo build --release --target ${{ matrix.target }}
