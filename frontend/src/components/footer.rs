@@ -35,6 +35,6 @@ pub fn footer() -> Html {
                     </small>
                 </center>
             </div>
-        </div>        
+        </div>
     }
 }

@@ -1,8 +1,8 @@
 use country_emoji::flag;
-use yew::{function_component, html, Properties, Html};
+use yew::{function_component, html, Html, Properties};
 
-use crate::models::Player;
 use crate::components::loading_spinner::LoadingSpinner;
+use crate::models::Player;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -33,7 +33,7 @@ pub fn player_profile_header(props: &Props) -> Html {
                     <h2>
                     {
                         if props.selected_player.prefix.is_none() || props.selected_player.prefix.as_ref().unwrap().is_empty() {
-                            format!("{}", &props.selected_player.gamer_tag)
+                            (&props.selected_player.gamer_tag).to_string()
                         } else {
                             format!("{} | {}", props.selected_player.prefix.as_ref().unwrap(), &props.selected_player.gamer_tag)
                         }
@@ -45,8 +45,8 @@ pub fn player_profile_header(props: &Props) -> Html {
                             html! {
                                 // display name and flag in a p in grey
                                 <p class="text-muted font-weight-light">{
-                                    format!("{} {}", 
-                                        props.selected_player.name.as_ref().unwrap(), 
+                                    format!("{} {}",
+                                        props.selected_player.name.as_ref().unwrap(),
                                         if let Some(pc) = props.selected_player.country.clone() {
                                             flag(&pc).unwrap_or("".to_string())
                                         } else {
@@ -100,14 +100,14 @@ pub fn player_profile_header(props: &Props) -> Html {
                             }
                         }
                     }
-                </div> 
+                </div>
 
                 <div class="col-md-4 col-12 offset-md-4">
                     <br/>
                     {
                         if props.display {
                             html! {
-                                <div class="row justify-content-end">                         
+                                <div class="row justify-content-end">
                                     {
                                         if props.selected_player_summary_data.as_ref().unwrap().4.is_empty() {
                                             html! {
@@ -130,8 +130,8 @@ pub fn player_profile_header(props: &Props) -> Html {
                                 <LoadingSpinner/>
                             }
                         }
-                    }     
-                </div>           
+                    }
+                </div>
             </div>
         </div>
     }

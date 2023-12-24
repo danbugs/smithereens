@@ -11,7 +11,7 @@ pub fn header(props: &Props) -> Html {
         html! {
             <div class="text-center p-5" style="background-color:#C6263E;">
                 <img src="assets/smithe_header.svg" width="75%" height="75%" class="img-fluid" alt="" />
-            </div>          
+            </div>
         }
     } else {
         html! {

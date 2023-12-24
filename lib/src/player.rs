@@ -7,7 +7,12 @@ use smithe_database::{
     },
 };
 
-use diesel::{dsl::{max, count}, insert_into, prelude::*, update};
+use diesel::{
+    dsl::{count, max},
+    insert_into,
+    prelude::*,
+    update,
+};
 use smithe_database::{
     db_models::{empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId},
     schema::last_checked_player_id,
@@ -54,9 +59,15 @@ pub fn get_last_cached_player_id() -> Result<i32> {
     if let Some(val) = max_checked_player_id {
         Ok(val)
     } else {
-        Ok(1)
-        // ^^^ don't start at 0 because it is uniquely populated
-        // w/ all null values but non null player
+        // return max player id from players table
+        let max_player_id = players
+            .select(max(smithe_database::schema::players::player_id))
+            .first::<Option<i32>>(&db_connection)?;
+        if let Some(val) = max_player_id {
+            Ok(val)
+        } else {
+            Ok(1000) // nothing in db, start at 1000
+        }
     }
 }
 
@@ -166,10 +177,13 @@ where
     } else {
         tracing::info!("✅ got some results...");
         for s in ss {
-            tracing::info!("🍥 processing set from tourney \"{}\"", s.event.tournament.clone().unwrap().name);
+            tracing::info!(
+                "🍥 processing set from tourney \"{}\"",
+                s.event.tournament.clone().unwrap().name
+            );
 
             // we only want to compile results for: double elimination single ssbu brackets
-            if is_ssbu_singles_double_elimination_tournament(&s) && s.completedAt.is_some(){
+            if is_ssbu_singles_double_elimination_tournament(&s) && s.completedAt.is_some() {
                 let requester_entrant_id = if is_tournament_finished(&s) {
                     get_requester_id_from_standings(&s, player.id)
                 } else {
@@ -186,7 +200,8 @@ where
                 let rslot = get_requester_set_slot(requester_entrant_id, &s);
                 let oslot = get_opponent_set_slot(requester_entrant_id, &s);
 
-                if let (Some(r), Some(o)) = (rslot, oslot) { // tournaments could be finished, but not have actually finished
+                if let (Some(r), Some(o)) = (rslot, oslot) {
+                    // tournaments could be finished, but not have actually finished
                     // some sets only have a reported winner, ignore them
                     // e.g., https://www.start.gg/tournament/mainstage-2021/event/ultimate-singles/brackets/952392/1513154
                     if r.standing
