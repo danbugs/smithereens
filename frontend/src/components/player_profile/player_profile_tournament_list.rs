@@ -1,6 +1,6 @@
-use yew::{function_component, html, Properties, Html};
+use yew::{function_component, html, Html, Properties};
 
-use crate::models::{Tournament, Set};
+use crate::models::{Set, Tournament};
 
 use crate::components::loading_spinner::LoadingSpinner;
 use crate::utils::calculate_spr_or_uf;
@@ -37,7 +37,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                             </div>
                                                         </div>
                                                     </div>
-                                
+
                                                     <div class="col-md-2 col-10">
                                                         <div class="card border-0 text-center">
                                                             <div class="card-body">
@@ -54,10 +54,10 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                 <p class="card-text">{format!("{}", calculate_spr_or_uf(t.seed, t.placement))}</p>
                                                             </div>
                                                         </div>
-                                                    </div>                                                
+                                                    </div>
                                                 </div>
                                                 <br/>
-                                            </div>                                     
+                                            </div>
                                         </button>
                                     </h2>
                                     <div id={format!("collapse-{}", t.tournament_id)} class="accordion-collapse collapse" aria-labelledby={format!("heading-{}", t.tournament_id)} data-bs-parent="#accordion">
@@ -86,9 +86,9 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                 <div class="col-md-4 offset-md-4">
                                                                     <div class="row justify-content-end p-1">
                                                                     {
-                                                                        if s.requester_score > s.opponent_score 
-                                                                            && s.requester_seed > s.opponent_seed 
-                                                                            && s.result_type > 1 
+                                                                        if s.requester_score > s.opponent_score
+                                                                            && s.requester_seed > s.opponent_seed
+                                                                            && s.result_type > 1
                                                                             && calculate_spr_or_uf(s.requester_seed, s.opponent_seed) > 0 {
                                                                             format!("upset factor: {}", calculate_spr_or_uf(s.requester_seed, s.opponent_seed))
                                                                         } else {

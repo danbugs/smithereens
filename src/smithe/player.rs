@@ -2,21 +2,17 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 
-use smithe_database::{
-    db_models::{player::Player}
-};
+use smithe_database::db_models::player::Player;
 
 use smithe_lib::{
     common::start_read_all_by_increment_execute_finish_maybe_cancel,
+    player::{execute, get_all_like},
     set::{
-        get_all_from_player_id, get_competitor_type, get_last_completed_at,
-        get_set_losses_by_dq,
-        get_set_wins_without_dqs, get_winrate, get_set_losses_without_dqs, get_set_wins_by_dq,
-    }, player::{get_all_like, execute},
+        get_all_from_player_id, get_competitor_type, get_last_completed_at, get_set_losses_by_dq,
+        get_set_losses_without_dqs, get_set_wins_by_dq, get_set_wins_without_dqs, get_winrate,
+    },
 };
-use startgg::{
-    queries::set_getter::{make_set_getter_query, SetGetterVars}
-};
+use startgg::queries::set_getter::{make_set_getter_query, SetGetterVars};
 
 use dialoguer::{theme::ColorfulTheme, Select};
 

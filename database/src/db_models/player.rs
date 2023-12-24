@@ -3,7 +3,7 @@
 // — an auto fix for this exists only in Diesel v2.
 use crate::schema::players;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Insertable, Queryable, QueryableByName)]
 #[table_name = "players"]

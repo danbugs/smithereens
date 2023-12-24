@@ -1,6 +1,6 @@
 use yew::{function_component, html, Properties};
 
-use crate::models::{Player, Tournament, Set};
+use crate::models::{Player, Set, Tournament};
 
 pub mod player_profile_header;
 use crate::components::player_profile::player_profile_header::PlayerProfileHeader;
@@ -31,19 +31,19 @@ pub fn player_profile(props: &Props) -> Html {
                 <div class="container">
                     <div class="row">
                         <div class="col-md-12">
-                            <PlayerProfileHeader 
+                            <PlayerProfileHeader
                                 selected_player={selected_player.clone()}
-                                display={props.selected_player_summary_data.is_some()} 
+                                display={props.selected_player_summary_data.is_some()}
                                 selected_player_summary_data={props.selected_player_summary_data.clone()}
                             />
                             <hr/>
-                            <PlayerProfileSummaryData 
-                                display={props.selected_player_summary_data.is_some()} 
+                            <PlayerProfileSummaryData
+                                display={props.selected_player_summary_data.is_some()}
                                 selected_player_summary_data={props.selected_player_summary_data.clone()}
                             />
                             <hr/>
-                            <PlayerProfileTournamentList 
-                                display={props.selected_player_tournaments.is_some()} 
+                            <PlayerProfileTournamentList
+                                display={props.selected_player_tournaments.is_some()}
                                 selected_player_tournaments={props.selected_player_tournaments.clone()}
                                 selected_tournament_sets={props.selected_tournament_sets.clone()}
                             />

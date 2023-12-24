@@ -11,7 +11,7 @@ use smithe_lib::{
     player::{get_all_like, get_player, get_top_two_characters},
     set::{
         get_competitor_type, get_set_losses_by_dq, get_set_losses_without_dqs, get_set_wins_by_dq,
-        get_set_wins_without_dqs, get_winrate, get_sets_per_player_id,
+        get_set_wins_without_dqs, get_sets_per_player_id, get_winrate,
     },
     tournament::get_tournaments_from_requester_id,
 };
@@ -147,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
-    use rocket::{local::blocking::Client, http::Status};
+    use rocket::{http::Status, local::blocking::Client};
 
     use super::rocket;
 

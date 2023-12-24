@@ -1,6 +1,6 @@
 use country_emoji::flag;
 use web_sys::MouseEvent;
-use yew::{function_component, html, Properties, Html, Callback};
+use yew::{function_component, html, Callback, Html, Properties};
 
 use crate::models::Player;
 
