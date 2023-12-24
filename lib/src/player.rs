@@ -54,9 +54,15 @@ pub fn get_last_cached_player_id() -> Result<i32> {
     if let Some(val) = max_checked_player_id {
         Ok(val)
     } else {
-        Ok(1)
-        // ^^^ don't start at 0 because it is uniquely populated
-        // w/ all null values but non null player
+        // return max player id from players table
+        let max_player_id = players
+            .select(max(smithe_database::schema::players::player_id))
+            .first::<Option<i32>>(&db_connection)?;
+        if let Some(val) = max_player_id {
+            Ok(val)
+        } else {
+            Ok(1000) // nothing in db, start at 1000
+        }
     }
 }
 

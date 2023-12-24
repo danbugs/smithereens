@@ -3,7 +3,7 @@
 
 pub mod queries;
 
-use std::{collections::HashMap, env};
+use std::collections::HashMap;
 
 use as_any::AsAny;
 use serde::Deserialize;
@@ -199,7 +199,7 @@ pub struct StartGG {
 impl StartGG {
     pub fn connect() -> Self {
         let mut headers = HashMap::new();
-        let bearer_token = format!("Bearer {}", env!("STARTGG_TOKEN"));
+        let bearer_token = format!("Bearer {}", std::env::var("STARTGG_TOKEN").expect("could not find STARTGG_TOKEN env var"));
         headers.insert("authorization", bearer_token.as_str());
         Self {
             gql_client: gql_client::Client::new_with_headers(STARTGG_ENDPOINT, headers),

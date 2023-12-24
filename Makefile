@@ -19,13 +19,17 @@ build:
 # INSTALL
 .PHONY: install
 install:
-	install target/release/smithe $(INSTALL_DIR)/bin
-	install target/release/pidgtm $(INSTALL_DIR)/bin
+	cargo install --path .
 
 # PIDGTM
 .PHONY: pidgtm
 pidgtm-map:
 	$(PIDGTM) map
+
+.PHONY: pidgtm-user-updater
+pidgtm-user-updater:
+	cargo build --release --bin pidgtm --target x86_64-unknown-linux-gnu
+	docker build -t pidgtm-user-updater -f Dockerfile-UserUpdater .
 
 # BACKEND
 .PHONY: build-backend
