@@ -15,6 +15,7 @@ use std::{
 
 use startgg::{GQLData, GQLVars};
 
+#[allow(clippy::too_many_arguments)]
 pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
     is_cli: bool,
     gql_vars: Arc<Mutex<V>>,

@@ -41,7 +41,7 @@ where
     let pgd = player_getter_data.downcast_ref::<PIDGTM_PlayerGetterData>();
     let mut player = pgd.as_ref().unwrap().player.clone();
     // vvv have to do this because people might have deleted their account:
-    if let Some(pti) = (&mut player).as_mut() {
+    if let Some(pti) = player.as_mut() {
         if pti.user.is_none() {
             tracing::info!("❎ caught a deleted account #1 (id: '{}')...", pti.id);
             pti.user = get_empty_user_with_slug(pti.id)?;

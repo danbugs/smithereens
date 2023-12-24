@@ -33,7 +33,7 @@ pub fn player_profile_header(props: &Props) -> Html {
                     <h2>
                     {
                         if props.selected_player.prefix.is_none() || props.selected_player.prefix.as_ref().unwrap().is_empty() {
-                            format!("{}", &props.selected_player.gamer_tag)
+                            (&props.selected_player.gamer_tag).to_string()
                         } else {
                             format!("{} | {}", props.selected_player.prefix.as_ref().unwrap(), &props.selected_player.gamer_tag)
                         }

@@ -31,9 +31,7 @@ pub enum Error {
 impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
     fn respond_to(self, req: &Request<'_>) -> response::Result<'o> {
         // todo: use open telemetry at this point
-        match self {
-            _ => Status::InternalServerError.respond_to(req),
-        }
+        Status::InternalServerError.respond_to(req)
     }
 }
 

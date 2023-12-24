@@ -26,7 +26,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                     <h2 class="accordion-header" id={format!("heading-{}", t.tournament_id)}>
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={format!("#collapse-{}", t.tournament_id)} aria-expanded="false" aria-controls={format!("collapse-{}", t.tournament_id)}>
                                             <div class="col-md-10">
-                                                <h4 class="fw-bold">{format!("{}", &t.event_name)}</h4>
+                                                <h4 class="fw-bold">{(&t.event_name).to_string()}</h4>
                                                 <hr/>
                                                 <div class="row">
                                                     <div class="col-md-2 col-10">

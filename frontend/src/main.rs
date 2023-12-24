@@ -1,7 +1,5 @@
-use std::env;
-
 use gloo_net::http::Request;
-use models::{Player, Tournament, Set};
+use models::{Player, Set, Tournament};
 use utils::parse_text_vector;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlButtonElement, HtmlInputElement};
@@ -58,7 +56,12 @@ impl Component for App {
                 let link = ctx.link().clone();
 
                 wasm_bindgen_futures::spawn_local(async move {
-                    let endpoint = format!("{}/players/{}", std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"), value);
+                    let endpoint = format!(
+                        "{}/players/{}",
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
+                        value
+                    );
                     let fetched_players: Vec<Player> = Request::get(&endpoint)
                         .send()
                         .await
@@ -82,7 +85,7 @@ impl Component for App {
             Msg::SelectPlayer(pid) => {
                 // console log pid
                 web_sys::console::log_1(&pid.into());
-                
+
                 self.selected_player = Some(
                     self.search_results
                         .iter()
@@ -94,22 +97,31 @@ impl Component for App {
                 let link = ctx.link().clone();
 
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetched_tournaments: Vec<Tournament> = Request::get(&format!("{}/tournaments/{}", std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"), pid))
-                        .send()
-                        .await
-                        .unwrap()
-                        .json()
-                        .await
-                        .unwrap();
+                    let fetched_tournaments: Vec<Tournament> = Request::get(&format!(
+                        "{}/tournaments/{}",
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
+                        pid
+                    ))
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
 
-                    let fetched_sets: Vec<Set> = Request::get(&format!("{}/sets/{}", std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"), pid))
-                        .send()
-                        .await
-                        .unwrap()
-                        .json()
-                        .await
-                        .unwrap();
-                
+                    let fetched_sets: Vec<Set> = Request::get(&format!(
+                        "{}/sets/{}",
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
+                        pid
+                    ))
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
 
                     link.send_message(Msg::GetTournaments(fetched_tournaments, fetched_sets, pid));
                 });
@@ -126,18 +138,23 @@ impl Component for App {
 
                 let link = ctx.link().clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetch_winrate: String =
-                        Request::get(&format!("{}/sets/{}/winrate", std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"), pid))
-                            .send()
-                            .await
-                            .unwrap()
-                            .text()
-                            .await
-                            .unwrap();
+                    let fetch_winrate: String = Request::get(&format!(
+                        "{}/sets/{}/winrate",
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
+                        pid
+                    ))
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap();
 
                     let fetch_competitor_type: String = Request::get(&format!(
                         "{}/sets/{}/competitor_type",
-                        std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"),
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
                         pid
                     ))
                     .send()
@@ -149,7 +166,8 @@ impl Component for App {
 
                     let fetch_wins_without_dqs: String = Request::get(&format!(
                         "{}/sets/{}/wins_without_dqs",
-                        std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"),
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
                         pid
                     ))
                     .send()
@@ -161,7 +179,8 @@ impl Component for App {
 
                     let fetch_losses_without_dqs: String = Request::get(&format!(
                         "{}/sets/{}/losses_without_dqs",
-                        std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"),
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
                         pid
                     ))
                     .send()
@@ -173,7 +192,8 @@ impl Component for App {
 
                     let fetch_top_two_characters: String = Request::get(&format!(
                         "{}/player/{}/top_two_characters",
-                        std::env::var("SERVER_ADDRESS").expect("could not find SERVER_ADDRESS env var"),
+                        std::env::var("SERVER_ADDRESS")
+                            .expect("could not find SERVER_ADDRESS env var"),
                         pid
                     ))
                     .send()
@@ -192,15 +212,26 @@ impl Component for App {
                         fetch_competitor_type,
                         wins_losses,
                         tournaments_attended,
-                        parse_text_vector(&fetch_top_two_characters)
+                        parse_text_vector(&fetch_top_two_characters),
                     ));
                 });
 
                 false
             }
-            Msg::GetSummaryData(winrate, competitor_type, wins_losses, tournaments_attended, top_two_chars) => {
-                self.selected_player_summary_data =
-                    Some((winrate, competitor_type, wins_losses, tournaments_attended, top_two_chars));
+            Msg::GetSummaryData(
+                winrate,
+                competitor_type,
+                wins_losses,
+                tournaments_attended,
+                top_two_chars,
+            ) => {
+                self.selected_player_summary_data = Some((
+                    winrate,
+                    competitor_type,
+                    wins_losses,
+                    tournaments_attended,
+                    top_two_chars,
+                ));
 
                 true
             }
@@ -221,14 +252,9 @@ impl Component for App {
         });
 
         let plist_onclick = link.batch_callback(|e: MouseEvent| {
-            if let Some(elem) = e
-                .target()
+            e.target()
                 .and_then(|t| t.dyn_into::<HtmlButtonElement>().ok())
-            {
-                Some(Msg::SelectPlayer(elem.id().parse().unwrap()))
-            } else {
-                None
-            }
+                .map(|elem| Msg::SelectPlayer(elem.id().parse().unwrap()))
         });
 
         html! {

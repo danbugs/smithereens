@@ -40,7 +40,7 @@ pub fn player_list(props: &Props) -> Html {
                                     <p class="fw-bold mb-1">
                                     {
                                         if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
-                                            format!("{}", &p.gamer_tag)
+                                            (&p.gamer_tag).to_string()
                                         } else {
                                             format!("{} | {}", p.prefix.as_ref().unwrap(), &p.gamer_tag)
                                         }

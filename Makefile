@@ -8,6 +8,11 @@ improve:
 	cargo clippy --all --all-targets --all-features -- -D warnings
 	cargo fmt --all
 
+.PHONY: clippy-fmt
+clippy-fmt: # Runs clippy and fmt on all packages, except frontend because clippy gets confused by in-code HTML
+	cargo clippy -p smithe_backend -p smithe_database -p smithe_lib -p startgg
+	cargo fmt --all
+	
 .PHONY: test
 test:
 	cargo test --workspace -- --show-output 2>&1 | tee test.out

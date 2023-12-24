@@ -28,11 +28,7 @@ pub fn maybe_get_games_from_set(
                 Game::new(
                     g.id,
                     player_id,
-                    if let Some(w) = &g.winnerId {
-                        Some(w.eq(&requester_entrant_id))
-                    } else {
-                        None
-                    },
+                    g.winnerId.as_ref().map(|w| w.eq(&requester_entrant_id)),
                     g.orderNum,
                     rcp_num,
                     ocp_num,
