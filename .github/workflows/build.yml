@@ -4,7 +4,17 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
   pull_request:
+    branches:
+      - main
+    paths:
+      - '**.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
 
 jobs:
   lint-and-format:
