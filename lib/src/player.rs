@@ -264,7 +264,7 @@ where
                         &s.event.tournament.as_ref().unwrap().name,
                         s.event.tournament.as_ref().unwrap().endAt,
                         player.id,
-                        get_placement(player.id, &s),
+                        get_placement(&s, player.id),
                         s.event.numEntrants.unwrap(),
                         get_seed(requester_entrant_id, &s),
                         format!("https://www.start.gg/{}", s.event.slug.as_ref().unwrap()).as_str(),
