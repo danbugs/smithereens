@@ -36,7 +36,7 @@ fn get_standing_of_player_from_sggset(s: &SGGSet, player_id: i32) -> Standing {
     }
 }
 
-pub fn get_placement(player_id: i32, s: &SGGSet) -> i32 {
+pub fn get_placement(s: &SGGSet, player_id: i32) -> i32 {
     let standing = get_standing_of_player_from_sggset(s, player_id);
     standing.placement.unwrap()
 }
