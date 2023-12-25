@@ -1,3 +1,4 @@
 FROM debian:buster-slim
 COPY target/x86_64-unknown-linux-gnu/release/pidgtm /usr/local/bin/pidgtm
+RUN chmod +x /usr/local/bin/pidgtm
 ENTRYPOINT ["pidgtm"]
