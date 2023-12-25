@@ -15,6 +15,7 @@ spec:
       containers:
       - name: pidgtm
         image: danstaken/pidgtm-user-updater:latest
+        imagePullPolicy: Always
         args: ["update"]
         env:
         - name: STARTGG_TOKEN
