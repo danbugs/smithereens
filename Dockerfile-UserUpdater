@@ -1,3 +1,11 @@
-FROM debian:buster-slim
-COPY target/x86_64-unknown-linux-gnu/release/pidgtm /usr/local/bin/pidgtm
+FROM debian:bookworm-slim
+
+# Install necessary packages, and clean up
+RUN apt-get update && \
+    apt-get install -y libpq5 ca-certificates openssl libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the pidgtm binary and set permissions
+COPY --chmod=755 target/aarch64-unknown-linux-gnu/release/pidgtm /usr/local/bin/pidgtm
+
 ENTRYPOINT ["pidgtm"]

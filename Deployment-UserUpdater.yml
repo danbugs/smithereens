@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-pidgtm-user-updater
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pidgtm
+  template:
+    metadata:
+      labels:
+        app: pidgtm
+    spec:
+      containers:
+      - name: pidgtm
+        image: danstaken/pidgtm-user-updater:latest
+        imagePullPolicy: Always
+        args: ["update"]
+        env:
+        - name: STARTGG_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: pidgtm-secrets
+              key: STARTGG_TOKEN
+        - name: PIDGTM_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: pidgtm-secrets
+              key: PIDGTM_DATABASE_URL

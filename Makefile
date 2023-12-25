@@ -16,6 +16,15 @@ test:
 build:
 	cargo build --release
 
+# CROSS
+.PHONY: cross-build
+cross-build:
+	cross build --release --target aarch64-unknown-linux-gnu
+
+.PHONY: docker-buildx
+docker-buildx:
+	docker buildx build --platform linux/arm64 -t danstaken/rust-build-env-arm64:latest -f Dockerfile-BuildArm64 --push 
+
 # INSTALL
 .PHONY: install
 install:
