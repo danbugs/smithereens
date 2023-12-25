@@ -3,7 +3,7 @@ FROM debian:buster-slim
 # Install necessary packages including PostgreSQL client libraries
 # and CA certificates
 RUN apt-get update && \
-    apt-get install -y libpq5 ca-certificates libssl-dev && \ # or use libssl-dev if you need the development libraries
+    apt-get install -y libpq5 ca-certificates libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the pidgtm binary and set permissions
