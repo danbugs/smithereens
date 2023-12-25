@@ -15,6 +15,7 @@ on:
       - '**.rs'
       - '**/Cargo.toml'
       - '**/Cargo.lock'
+  workflow_dispatch:
 
 jobs:
   lint-and-format:
@@ -92,7 +93,9 @@ jobs:
   docker-deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v2
 
@@ -100,6 +103,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: pidgtm-x86_64-unknown-linux-gnu
+          path: target/x86_64-unknown-linux-gnu/release/pidgtm
 
       - name: Build Docker image
         run: |
