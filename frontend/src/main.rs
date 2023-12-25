@@ -56,12 +56,7 @@ impl Component for App {
                 let link = ctx.link().clone();
 
                 wasm_bindgen_futures::spawn_local(async move {
-                    let endpoint = format!(
-                        "{}/players/{}",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
-                        value
-                    );
+                    let endpoint = format!("{}/players/{}", env!("SERVER_ADDRESS"), value);
                     let fetched_players: Vec<Player> = Request::get(&endpoint)
                         .send()
                         .await
@@ -97,31 +92,23 @@ impl Component for App {
                 let link = ctx.link().clone();
 
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetched_tournaments: Vec<Tournament> = Request::get(&format!(
-                        "{}/tournaments/{}",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
-                        pid
-                    ))
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
+                    let fetched_tournaments: Vec<Tournament> =
+                        Request::get(&format!("{}/tournaments/{}", env!("SERVER_ADDRESS"), pid))
+                            .send()
+                            .await
+                            .unwrap()
+                            .json()
+                            .await
+                            .unwrap();
 
-                    let fetched_sets: Vec<Set> = Request::get(&format!(
-                        "{}/sets/{}",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
-                        pid
-                    ))
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
+                    let fetched_sets: Vec<Set> =
+                        Request::get(&format!("{}/sets/{}", env!("SERVER_ADDRESS"), pid))
+                            .send()
+                            .await
+                            .unwrap()
+                            .json()
+                            .await
+                            .unwrap();
 
                     link.send_message(Msg::GetTournaments(fetched_tournaments, fetched_sets, pid));
                 });
@@ -138,23 +125,18 @@ impl Component for App {
 
                 let link = ctx.link().clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetch_winrate: String = Request::get(&format!(
-                        "{}/sets/{}/winrate",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
-                        pid
-                    ))
-                    .send()
-                    .await
-                    .unwrap()
-                    .text()
-                    .await
-                    .unwrap();
+                    let fetch_winrate: String =
+                        Request::get(&format!("{}/sets/{}/winrate", env!("SERVER_ADDRESS"), pid))
+                            .send()
+                            .await
+                            .unwrap()
+                            .text()
+                            .await
+                            .unwrap();
 
                     let fetch_competitor_type: String = Request::get(&format!(
                         "{}/sets/{}/competitor_type",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
+                        env!("SERVER_ADDRESS"),
                         pid
                     ))
                     .send()
@@ -166,8 +148,7 @@ impl Component for App {
 
                     let fetch_wins_without_dqs: String = Request::get(&format!(
                         "{}/sets/{}/wins_without_dqs",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
+                        env!("SERVER_ADDRESS"),
                         pid
                     ))
                     .send()
@@ -179,8 +160,7 @@ impl Component for App {
 
                     let fetch_losses_without_dqs: String = Request::get(&format!(
                         "{}/sets/{}/losses_without_dqs",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
+                        env!("SERVER_ADDRESS"),
                         pid
                     ))
                     .send()
@@ -192,8 +172,7 @@ impl Component for App {
 
                     let fetch_top_two_characters: String = Request::get(&format!(
                         "{}/player/{}/top_two_characters",
-                        std::env::var("SERVER_ADDRESS")
-                            .expect("could not find SERVER_ADDRESS env var"),
+                        env!("SERVER_ADDRESS"),
                         pid
                     ))
                     .send()

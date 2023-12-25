@@ -34,11 +34,11 @@ pidgtm-user-updater:
 # BACKEND
 .PHONY: build-backend
 build-backend:
-	cargo +nightly build --release --manifest-path ./backend/Cargo.toml
+	cargo build --release --manifest-path ./backend/Cargo.toml
 
 .PHONY: run-backend
 run-backend:
-	cargo +nightly run --manifest-path ./backend/Cargo.toml
+	cargo run --manifest-path ./backend/Cargo.toml
 
 # FRONTEND
 .PHONY: serve-frontend
