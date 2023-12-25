@@ -75,8 +75,14 @@ jobs:
       env:
         SERVER_ADDRESS: 'http://127.0.0.1:8080'
 
-    - name: Upload artifact
+    - name: Upload smithe artifact
       uses: actions/upload-artifact@v2
       with:
-        name: my-binary-${{ matrix.target }}
-        path: target/${{ matrix.target }}/release/my-binary
+        name: smithe-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/smithe
+
+    - name: Upload pidgtm artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: pidgtm-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/pidgtm
