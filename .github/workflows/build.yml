@@ -75,13 +75,15 @@ jobs:
       env:
         SERVER_ADDRESS: 'http://127.0.0.1:8080'
 
-    - name: Upload smithe artifact
+    - if: matrix.os == 'ubuntu-latest'
+      name: Upload smithe artifact
       uses: actions/upload-artifact@v2
       with:
         name: smithe-${{ matrix.target }}
         path: target/${{ matrix.target }}/release/smithe
 
-    - name: Upload pidgtm artifact
+    - if: matrix.os == 'ubuntu-latest'
+      name: Upload pidgtm artifact
       uses: actions/upload-artifact@v2
       with:
         name: pidgtm-${{ matrix.target }}
