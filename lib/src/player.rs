@@ -1,17 +1,21 @@
 use anyhow::Result;
 use as_any::Downcast;
 use smithe_database::{
-    db_models::{player::Player, set::Set, tournament::Tournament},
+    db_models::{
+        consecutive_group_result::ConsecutiveGroupResult, player::Player, set::Set,
+        tournament::Tournament,
+    },
     schema::{
         player_games::dsl::*, player_sets::dsl::*, player_tournaments::dsl::*, players::dsl::*,
     },
 };
 
 use diesel::{
+    delete,
     dsl::{count, max},
     insert_into,
     prelude::*,
-    update,
+    sql_query, update,
 };
 use smithe_database::{
     db_models::{empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId},
@@ -135,6 +139,63 @@ pub fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
     }
 }
 
+pub fn check_if_large_consecutive_playerid_grouping_exists() -> Result<bool> {
+    let db_connection = smithe_database::connect()?;
+    let res: Vec<ConsecutiveGroupResult> = sql_query(
+        r#"WITH RankedPlayerIDs AS (
+            SELECT player_id, 
+                   player_id - LAG(player_id) OVER (ORDER BY player_id) AS diff
+            FROM empty_player_ids
+        ),
+        ConsecutiveGroups AS (
+            SELECT player_id,
+                   SUM(CASE WHEN diff > 1 THEN 1 ELSE 0 END) OVER (ORDER BY player_id) AS grp
+            FROM RankedPlayerIDs
+        )
+        SELECT grp, COUNT(*) AS consecutive_count
+        FROM ConsecutiveGroups
+        GROUP BY grp
+        HAVING COUNT(*) > 1144;"#,
+    )
+    .load(&db_connection)?; // 1144 is the number of players in the largest consecutive grouping
+
+    // if vec is not empty, then there is a large consecutive grouping
+    Ok(!res.is_empty())
+}
+
+pub fn delete_large_consecutive_playerid_grouping() -> Result<()> {
+    let db_connection = smithe_database::connect()?;
+    let max_player_id = get_max_player_id()?;
+
+    // delete all empty_player_ids that are greater than the max player id
+    delete(empty_player_ids)
+        .filter(smithe_database::schema::empty_player_ids::player_id.gt(max_player_id))
+        .execute(&db_connection)?;
+
+    Ok(())
+}
+
+pub fn get_max_player_id() -> Result<i32> {
+    let db_connection = smithe_database::connect()?;
+    let max_player_id = players
+        .select(max(smithe_database::schema::players::player_id))
+        .first::<Option<i32>>(&db_connection)?;
+    if let Some(val) = max_player_id {
+        Ok(val)
+    } else {
+        Ok(1000) // nothing in db, start at 1000
+    }
+}
+
+pub fn get_subsequent_player_id_without_circle_back(some_id: i32) -> Result<Option<i32>> {
+    let db_connection = smithe_database::connect()?;
+    Ok(players
+        .select(smithe_database::schema::players::player_id)
+        .filter(smithe_database::schema::players::player_id.gt(some_id))
+        .order(smithe_database::schema::players::player_id.asc())
+        .first(&db_connection)
+        .optional()?)
+}
 pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
     let db_connection = smithe_database::connect()?;
     let some_slug = players
@@ -311,4 +372,14 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
         .get_results::<Option<String>>(&db_connection)?;
 
     Ok(top_two_characters)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_check_if_large_consecutive_playerid_grouping_exists() {
+        check_if_large_consecutive_playerid_grouping_exists().unwrap();
+    }
 }

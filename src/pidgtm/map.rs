@@ -3,7 +3,9 @@ use anyhow::Result;
 use as_any::Downcast;
 use smithe_lib::common::start_read_all_by_increment_execute_finish_maybe_cancel;
 use smithe_lib::player::{
-    add_new_empty_player_record, add_new_player_to_pidgtm_db, get_last_cached_player_id,
+    add_new_empty_player_record, add_new_player_to_pidgtm_db,
+    check_if_large_consecutive_playerid_grouping_exists,
+    delete_large_consecutive_playerid_grouping, get_last_cached_player_id, get_max_player_id,
     increment_last_cached_player_id,
 };
 use startgg::queries::player_getter::{
@@ -20,7 +22,7 @@ pub async fn handle_map() -> Result<()> {
         make_pidgtm_player_getter_query,
         get_last_cached_player_id()?,
         execute,
-        |curr_page| Ok(curr_page + 1),
+        increment,
         |_gqlv| Ok(()),
         increment_last_cached_player_id,
     )
@@ -52,4 +54,20 @@ where
     }
 
     Ok(false)
+}
+
+fn increment(curr_player_id: i32) -> Result<i32> {
+    // Check if there is a consecutive grouping larger than 1144 players.
+    // If so, that means we probably reached the last page of players.
+    if check_if_large_consecutive_playerid_grouping_exists()? {
+        tracing::info!("🏁 reached the end of the player list!");
+        tracing::info!("🗑️ deleting large consecutive player id grouping...");
+        tracing::info!("🔁 restarting from largest player id...");
+        delete_large_consecutive_playerid_grouping()?;
+        get_max_player_id()
+    }
+    // If not, increment the player id by 1.
+    else {
+        Ok(curr_player_id + 1)
+    }
 }

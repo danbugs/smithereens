@@ -1,6 +1,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use smithereens::pidgtm::{inspect::handle_inspect, map::handle_map, update::handle_update};
+use smithereens::pidgtm::{
+    compile::handle_compile, inspect::handle_inspect, map::handle_map, update::handle_update,
+};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -27,6 +29,11 @@ enum Commands {
         #[clap(value_parser)]
         start_at_player_id: Option<i32>,
     },
+    /// Compile all player data from 1000-X onto the pidgtm DB
+    Compile {
+        #[clap(value_parser)]
+        start_at_player_id: Option<i32>,
+    },
 }
 
 #[tokio::main]
@@ -42,5 +49,6 @@ async fn main() -> Result<()> {
         Commands::Map => handle_map().await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
         Commands::Update { start_at_player_id } => handle_update(*start_at_player_id).await,
+        Commands::Compile { start_at_player_id } => handle_compile(*start_at_player_id).await,
     }
 }
