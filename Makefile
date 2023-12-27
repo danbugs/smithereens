@@ -12,39 +12,33 @@ improve:
 test:
 	cargo test --workspace -- --show-output 2>&1 | tee test.out
 
+.PHONY: install
+install:
+	cargo install --path .
+
 .PHONY: build
 build:
 	cargo build --release
-
-# CROSS
+	
 .PHONY: cross-build
 cross-build:
 	cross build --release --target aarch64-unknown-linux-gnu
 
-.PHONY: docker-buildx
-docker-buildx:
-	docker buildx build --platform linux/arm64 -t danstaken/rust-build-env-arm64:latest -f Dockerfile-BuildArm64 --push 
+# DOCKER
+.PHONY: buildx-rsbuildenvarm64
+buildx-rsbuildenvarm64:
+	docker buildx build --platform linux/arm64 -t danstaken/rust-build-env-arm64:latest -f Dockerfile-RustBuildArm64 --push .
 
-# INSTALL
-.PHONY: install
-install:
-	cargo install --path .
+.PHONY: buildx-pidgtm
+buildx-pidgtm:
+	docker buildx build --platform linux/arm64 -t danstaken/pidgtm:latest -f Dockerfile-Pidgtm --push .
 
 # PIDGTM
 .PHONY: pidgtm
 pidgtm-map:
 	$(PIDGTM) map
 
-.PHONY: pidgtm-user-updater
-pidgtm-user-updater:
-	cargo build --release --bin pidgtm --target x86_64-unknown-linux-gnu
-	docker build -t pidgtm-user-updater -f Dockerfile-UserUpdater .
-
 # BACKEND
-.PHONY: build-backend
-build-backend:
-	cargo build --release --manifest-path ./backend/Cargo.toml
-
 .PHONY: run-backend
 run-backend:
 	cargo run --manifest-path ./backend/Cargo.toml
