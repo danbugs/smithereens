@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
     if let Some(token) = cli.startgg_token {
         env::set_var("STARTGG_TOKEN", token);
     }
-    
+
     match &cli.commands {
         Commands::Map => handle_map().await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
