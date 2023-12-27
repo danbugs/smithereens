@@ -139,13 +139,13 @@ jobs:
           username: danstaken
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push multi-architecture Docker pidgtm-user-updater image
+      - name: Build and push multi-architecture Docker pidgtm image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Dockerfile-UserUpdater
           push: true
-          tags: danstaken/pidgtm-user-updater:latest
+          tags: danstaken/pidgtm:latest
           platforms: linux/arm64
 
       - name: Build and push multi-architecture Docker rust-build-env-arm64 image
