@@ -14,17 +14,17 @@ spec:
     spec:
       containers:
       - name: pidgtm
-        image: danstaken/pidgtm-user-updater:latest
+        image: danstaken/pidgtm:latest
         imagePullPolicy: Always
         args: ["compile"]
         env:
         - name: STARTGG_TOKEN
           valueFrom:
             secretKeyRef:
-              name: pidgtm-secrets
+              name: pidgtm-secrets-2
               key: STARTGG_TOKEN
         - name: PIDGTM_DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: pidgtm-secrets
+              name: pidgtm-secrets-2
               key: PIDGTM_DATABASE_URL

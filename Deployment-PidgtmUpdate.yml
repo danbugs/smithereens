@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deployment-pidgtm-user-updater
+  name: deployment-pidgtm-update
 spec:
   replicas: 1
   selector:
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: pidgtm
-        image: danstaken/pidgtm-user-updater:latest
+        image: danstaken/pidgtm:latest
         imagePullPolicy: Always
         args: ["update"]
         env:

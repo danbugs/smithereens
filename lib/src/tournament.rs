@@ -48,6 +48,8 @@ pub fn get_requester_id_from_standings(s: &SGGSet, player_id: i32) -> i32 {
 
 // get tournaments from requester id
 pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournament>> {
+    tracing::info!("getting tournaments from requester id: {}", rid);
+
     // get player from pid
     let p = get_player(rid)?;
 

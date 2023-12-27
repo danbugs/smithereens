@@ -1,3 +1,5 @@
+use std::env;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use smithereens::pidgtm::{
@@ -13,6 +15,9 @@ use tracing_subscriber::FmtSubscriber;
 struct Cli {
     #[clap(subcommand)]
     commands: Commands,
+    /// The StartGG API key to use for requests
+    #[clap(long)]
+    startgg_token: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -45,6 +50,11 @@ async fn main() -> Result<()> {
     tracing::subscriber::set_global_default(subscriber)?;
 
     let cli = Cli::parse();
+
+    if let Some(token) = cli.startgg_token {
+        env::set_var("STARTGG_TOKEN", token);
+    }
+
     match &cli.commands {
         Commands::Map => handle_map().await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
