@@ -1,6 +1,8 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use smithereens::pidgtm::{inspect::handle_inspect, map::handle_map, update::handle_update, compile::handle_compile};
+use smithereens::pidgtm::{
+    compile::handle_compile, inspect::handle_inspect, map::handle_map, update::handle_update,
+};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
