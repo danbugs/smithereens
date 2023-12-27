@@ -18,6 +18,7 @@ pub struct Game {
 }
 
 impl Game {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         gid: i32,
         rid: i32,

@@ -251,7 +251,8 @@ where
                     continue;
                 };
 
-                let maybe_games = maybe_get_games_from_set(player.id, requester_entrant_id, &s, s.id);
+                let maybe_games =
+                    maybe_get_games_from_set(player.id, requester_entrant_id, &s, s.id);
 
                 // if there are games, we want to add to the vec to insert in the DB at the end
                 if let Some(mut games) = maybe_games.clone() {
