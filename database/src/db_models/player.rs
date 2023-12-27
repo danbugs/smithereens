@@ -21,7 +21,7 @@ pub struct Player {
     pub gender_pronouns: Option<String>,
     pub birthday: Option<String>,
     pub bio: Option<String>,
-    pub rankings: Option<Vec<String>>,
+    pub rankings: Option<Vec<Option<String>>>,
 }
 
 impl From<startgg::Player> for Player {
@@ -70,8 +70,8 @@ impl From<startgg::Player> for Player {
             bio: u.bio,
             rankings: p.rankings.map(|r| {
                 r.iter()
-                    .map(|pr| format!("#{} @ {}", pr.rank, pr.title))
-                    .collect::<Vec<String>>()
+                    .map(|pr| Some(format!("#{} @ {}", pr.rank, pr.title)))
+                    .collect::<Vec<Option<String>>>()
             }),
         }
     }

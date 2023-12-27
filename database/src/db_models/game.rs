@@ -14,9 +14,11 @@ pub struct Game {
     requester_char_played: Option<String>,
     opponent_char_played: Option<String>,
     stage: Option<String>,
+    set_id: i32,
 }
 
 impl Game {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         gid: i32,
         rid: i32,
@@ -25,6 +27,7 @@ impl Game {
         rcp_num_o: Option<i32>,
         ocp_num_o: Option<i32>,
         s: Option<String>,
+        sid: i32,
     ) -> Self {
         Self {
             game_id: gid,
@@ -34,6 +37,7 @@ impl Game {
             requester_char_played: rcp_num_o.map(get_character_from_id),
             opponent_char_played: ocp_num_o.map(get_character_from_id),
             stage: s,
+            set_id: sid,
         }
     }
 }

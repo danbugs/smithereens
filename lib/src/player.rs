@@ -236,22 +236,35 @@ where
         tracing::info!("🏁 finished compiling results for this player!");
         Ok(true)
     } else {
-        tracing::info!("✅ got some results...");
         for s in ss {
-            tracing::info!(
-                "🍥 processing set from tourney \"{}\"",
-                s.event.tournament.clone().unwrap().name
-            );
-
             // we only want to compile results for: double elimination single ssbu brackets
-            if is_ssbu_singles_double_elimination_tournament(&s) && s.completedAt.is_some() {
+            if s.event.is_some()
+                && is_ssbu_singles_double_elimination_tournament(&s)
+                && s.completedAt.is_some()
+                && s.event.clone().unwrap().standings.is_some()
+                && s.event
+                    .clone()
+                    .unwrap()
+                    .standings
+                    .as_ref()
+                    .unwrap()
+                    .nodes
+                    .len()
+                    > 1
+            {
+                tracing::info!(
+                    "🍥 processing set from tourney \"{}\"",
+                    s.event.clone().unwrap().tournament.clone().unwrap().name
+                );
+
                 let requester_entrant_id = if is_tournament_finished(&s) {
                     get_requester_id_from_standings(&s, player.id)
                 } else {
                     continue;
                 };
 
-                let maybe_games = maybe_get_games_from_set(player.id, requester_entrant_id, &s);
+                let maybe_games =
+                    maybe_get_games_from_set(player.id, requester_entrant_id, &s, s.id);
 
                 // if there are games, we want to add to the vec to insert in the DB at the end
                 if let Some(mut games) = maybe_games.clone() {
@@ -289,10 +302,9 @@ where
                             s.id,
                             s.completedAt.unwrap(),
                             player.id,
-                            s.event.isOnline.unwrap(),
-                            s.event.id.unwrap(),
-                            s.event.tournament.as_ref().unwrap().id,
-                            maybe_games.clone(),
+                            s.event.clone().unwrap().isOnline.unwrap(),
+                            s.event.clone().unwrap().id.unwrap(),
+                            s.event.clone().unwrap().tournament.as_ref().unwrap().id,
                             r.entrant.as_ref().unwrap().name.as_ref().unwrap(),
                             r.standing
                                 .as_ref()
@@ -319,16 +331,27 @@ where
                     }
 
                     let tournament = Tournament::new(
-                        s.event.tournament.as_ref().unwrap().id,
-                        s.event.id.unwrap(),
-                        s.event.name.as_ref().unwrap(),
-                        &s.event.tournament.as_ref().unwrap().name,
-                        s.event.tournament.as_ref().unwrap().endAt,
+                        s.event.clone().unwrap().tournament.as_ref().unwrap().id,
+                        s.event.clone().unwrap().id.unwrap(),
+                        s.event.clone().unwrap().name.as_ref().unwrap(),
+                        &s.event.clone().unwrap().tournament.as_ref().unwrap().name,
+                        s.event
+                            .clone()
+                            .unwrap()
+                            .tournament
+                            .as_ref()
+                            .unwrap()
+                            .endAt
+                            .unwrap(),
                         player.id,
                         get_placement(&s, player.id),
-                        s.event.numEntrants.unwrap(),
+                        s.event.clone().unwrap().numEntrants.unwrap(),
                         get_seed(requester_entrant_id, &s),
-                        format!("https://www.start.gg/{}", s.event.slug.as_ref().unwrap()).as_str(),
+                        format!(
+                            "https://www.start.gg/{}",
+                            s.event.clone().unwrap().slug.as_ref().unwrap()
+                        )
+                        .as_str(),
                     );
 
                     if !is_tournament_cached(player.id, &s)?
@@ -341,19 +364,44 @@ where
             }
             // ^^^ unwrapping in these instances is fine due to the query context that we are in, if an error occurs,
             // we want to panic regardless
+            else {
+                if s.event.is_some() {
+                    tracing::info!(
+                        "🚫 skipping set from tourney \"{}\"",
+                        s.event.clone().unwrap().tournament.as_ref().unwrap().name
+                    );
+                } else {
+                    tracing::info!("🚫 skipping set from tourney \"{}\"", "unknown");
+                }
+                continue;
+            }
         }
 
-        insert_into(player_games)
-            .values(curated_games)
-            .execute(&db_connection)?;
+        for g in curated_games {
+            let res = insert_into(player_games).values(g).execute(&db_connection);
 
-        insert_into(player_sets)
-            .values(curated_sets)
-            .execute(&db_connection)?;
+            if let Err(e) = res {
+                tracing::error!("🚨 error inserting game into db: {}", e);
+            }
+        }
 
-        insert_into(player_tournaments)
-            .values(curated_tournaments)
-            .execute(&db_connection)?;
+        for s in curated_sets {
+            let res = insert_into(player_sets).values(s).execute(&db_connection);
+
+            if let Err(e) = res {
+                tracing::error!("🚨 error inserting set into db: {}", e);
+            }
+        }
+
+        for t in curated_tournaments {
+            let res = insert_into(player_tournaments)
+                .values(t)
+                .execute(&db_connection);
+
+            if let Err(e) = res {
+                tracing::error!("🚨 error inserting tournament into db: {}", e);
+            }
+        }
 
         Ok(false)
     }

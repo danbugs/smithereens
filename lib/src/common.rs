@@ -1,6 +1,8 @@
 #![allow(unused)]
 
 use anyhow::Result;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 use std::{
     future::Future,
@@ -12,6 +14,16 @@ use std::{
     thread::sleep,
     time::{Duration, Instant},
 };
+
+pub fn init_logger() -> Result<()> {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)?;
+
+    Ok(())
+}
 
 use startgg::{GQLData, GQLVars};
 
@@ -47,15 +59,15 @@ where
 
     let mut curr_page = start;
     let mut now = Instant::now();
-    loop {
+    'outer: loop {
         let result;
-        loop {
+        'inner: loop {
             tracing::info!("🍥 querying StartGG API...");
             match get_pages(curr_page, gql_vars.clone()).await {
                 Ok(data) => {
                     tracing::info!("🍥 got data for page {}", &curr_page);
                     result = data;
-                    break;
+                    break 'inner;
                 }
                 Err(e) => {
                     if e.to_string().contains("429")
@@ -83,10 +95,20 @@ where
                             now = Instant::now();
                         }
                     } else {
-                        tracing::info!(
+                        tracing::error!(
                             "🙃 an oddity happened, skipping for now ({:#?})...",
                             e.to_string()
                         );
+
+                        // weird error, skip this iteration
+                        if e.to_string()
+                            .contains("Look at json field for more details")
+                        {
+                            curr_page = increment(curr_page)?;
+                            continue 'outer;
+                        }
+
+                        // else, if set getter, we prob. want to panic
                         let mut gql_vars_lock = gql_vars.lock().unwrap();
                         *gql_vars_lock = gql_vars_lock.update();
                     }
@@ -95,7 +117,7 @@ where
         }
 
         if execute(curr_page, result)? {
-            break;
+            break 'outer;
         } else {
             curr_page = increment(curr_page)?;
         }

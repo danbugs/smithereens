@@ -16,11 +16,20 @@ use crate::{
 };
 
 pub fn is_tournament_finished(s: &SGGSet) -> bool {
-    s.event.tournament.as_ref().unwrap().endAt <= chrono::Utc::now().timestamp()
+    let e_at = s.event.clone().unwrap().tournament.as_ref().unwrap().endAt;
+    e_at.is_some() && (e_at.unwrap() <= chrono::Utc::now().timestamp())
 }
 
 fn get_standing_of_player_from_sggset(s: &SGGSet, player_id: i32) -> Standing {
-    let standing_nodes = s.event.standings.as_ref().unwrap().nodes.clone();
+    let standing_nodes = s
+        .event
+        .clone()
+        .unwrap()
+        .standings
+        .as_ref()
+        .unwrap()
+        .nodes
+        .clone();
 
     if let Some(a) = standing_nodes
         .iter()
@@ -79,9 +88,10 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
 }
 
 pub fn is_ssbu_singles_double_elimination_tournament(s: &SGGSet) -> bool {
-    s.event.videogame.as_ref().unwrap().name == "Super Smash Bros. Ultimate"
-        && s.phaseGroup.bracketType == "DOUBLE_ELIMINATION"
-        && s.event.teamRosterSize.is_none()
+    s.event.clone().unwrap().videogame.as_ref().unwrap().name == "Super Smash Bros. Ultimate"
+        && s.phaseGroup.is_some()
+        && s.phaseGroup.clone().unwrap().bracketType == "DOUBLE_ELIMINATION"
+        && s.event.clone().unwrap().teamRosterSize.is_none()
 }
 
 pub fn get_num_tournaments_attended(pid: i32) -> Result<i64> {
@@ -117,8 +127,8 @@ pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
     let db_connection = smithe_database::connect()?;
     Ok(player_tournaments
         .find((
-            s.event.tournament.as_ref().unwrap().id,
-            s.event.id.unwrap(),
+            s.event.clone().unwrap().tournament.as_ref().unwrap().id,
+            s.event.clone().unwrap().id.unwrap(),
             player_id,
         ))
         .first::<Tournament>(&db_connection)
@@ -128,14 +138,15 @@ pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use tracing_test::traced_test;
 
-    const DANTOTTO_PLAYER_ID: i32 = 1178271;
+    use crate::common::init_logger;
 
-    #[traced_test]
+    const HUNGRYBOX_PLAYER_ID: i32 = 1004;
+
     #[tokio::test]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
-        let _ = super::get_tournaments_from_requester_id(DANTOTTO_PLAYER_ID).await?;
+        init_logger()?;
+        let _ = super::get_tournaments_from_requester_id(HUNGRYBOX_PLAYER_ID).await?;
         Ok(())
     }
 }

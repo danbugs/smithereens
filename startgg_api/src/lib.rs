@@ -100,7 +100,7 @@ pub struct SetConnection {
 pub struct Tournament {
     pub id: i32,
     pub name: String,
-    pub endAt: i64,
+    pub endAt: Option<i64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -109,8 +109,8 @@ pub struct Set {
     pub games: Option<Vec<Game>>,
     pub slots: Vec<SetSlot>,
     pub completedAt: Option<i64>,
-    pub phaseGroup: PhaseGroup,
-    pub event: Event,
+    pub phaseGroup: Option<PhaseGroup>,
+    pub event: Option<Event>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -149,7 +149,7 @@ pub struct Game {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct GameSelection {
-    pub entrant: Entrant,
+    pub entrant: Option<Entrant>,
     pub selectionValue: i32, // this will be an i32 that represents the character
 }
 

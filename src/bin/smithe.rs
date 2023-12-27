@@ -1,7 +1,6 @@
 use anyhow::Result;
+use smithe_lib::common::init_logger;
 use std::str::FromStr;
-use tracing::Level;
-use tracing_subscriber::FmtSubscriber;
 
 use clap::{Parser, Subcommand};
 use smithereens::smithe::{event::handle_event, player::handle_player};
@@ -32,11 +31,8 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .finish();
+    init_logger()?;
 
-    tracing::subscriber::set_global_default(subscriber)?;
     let cli = Cli::parse();
 
     match &cli.command {
