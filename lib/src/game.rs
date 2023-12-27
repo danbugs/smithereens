@@ -5,6 +5,7 @@ pub fn maybe_get_games_from_set(
     player_id: i32,
     requester_entrant_id: i32,
     s: &SGGSet,
+    sid: i32
 ) -> Option<Vec<Game>> {
     s.clone().games.map(|gs| {
         gs.iter()
@@ -33,6 +34,7 @@ pub fn maybe_get_games_from_set(
                     rcp_num,
                     ocp_num,
                     g.stage.as_ref().map(|se| se.name.clone()),
+                    sid,
                 )
             })
             .collect::<Vec<Game>>()
