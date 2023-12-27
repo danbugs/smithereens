@@ -1,17 +1,19 @@
-table! {
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
     empty_player_ids (player_id) {
         player_id -> Int4,
     }
 }
 
-table! {
+diesel::table! {
     last_checked_player_id (player_id) {
         player_id -> Int4,
     }
 }
 
-table! {
-    player_games (game_id, requester_id) {
+diesel::table! {
+    player_games (game_id, requester_id, set_id) {
         game_id -> Int4,
         requester_id -> Int4,
         requester_win -> Nullable<Bool>,
@@ -19,10 +21,11 @@ table! {
         requester_char_played -> Nullable<Varchar>,
         opponent_char_played -> Nullable<Varchar>,
         stage -> Nullable<Varchar>,
+        set_id -> Int4,
     }
 }
 
-table! {
+diesel::table! {
     player_sets (id, requester_id) {
         id -> Int4,
         completed_at -> Int8,
@@ -34,14 +37,13 @@ table! {
         opponent_score -> Int4,
         opponent_seed -> Int4,
         result_type -> Int4,
-        game_ids -> Nullable<Array<Int4>>,
         event_id -> Int4,
         tournament_id -> Int4,
         is_event_online -> Bool,
     }
 }
 
-table! {
+diesel::table! {
     player_tournaments (tournament_id, event_id, requester_id) {
         tournament_id -> Int4,
         event_id -> Int4,
@@ -56,7 +58,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     players (player_id) {
         player_id -> Int4,
         user_slug -> Varchar,
@@ -71,11 +73,11 @@ table! {
         gender_pronouns -> Nullable<Varchar>,
         birthday -> Nullable<Varchar>,
         bio -> Nullable<Varchar>,
-        rankings -> Nullable<Array<Text>>,
+        rankings -> Nullable<Array<Nullable<Text>>>,
     }
 }
 
-allow_tables_to_appear_in_same_query!(
+diesel::allow_tables_to_appear_in_same_query!(
     empty_player_ids,
     last_checked_player_id,
     player_games,

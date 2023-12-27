@@ -251,7 +251,8 @@ where
                     continue;
                 };
 
-                let maybe_games = maybe_get_games_from_set(player.id, requester_entrant_id, &s);
+                let maybe_games =
+                    maybe_get_games_from_set(player.id, requester_entrant_id, &s, s.id);
 
                 // if there are games, we want to add to the vec to insert in the DB at the end
                 if let Some(mut games) = maybe_games.clone() {
@@ -292,7 +293,6 @@ where
                             s.event.isOnline.unwrap(),
                             s.event.id.unwrap(),
                             s.event.tournament.as_ref().unwrap().id,
-                            maybe_games.clone(),
                             r.entrant.as_ref().unwrap().name.as_ref().unwrap(),
                             r.standing
                                 .as_ref()
