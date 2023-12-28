@@ -344,23 +344,19 @@ where
         }
 
         for g in curated_games {
-            let res = insert_into(player_games)
-                .values(g)
-                .execute(&db_connection);
+            let res = insert_into(player_games).values(g).execute(&db_connection);
 
             if let Err(e) = res {
                 tracing::error!("🚨 error inserting game into db: {}", e);
-            }            
+            }
         }
 
         for s in curated_sets {
-            let res = insert_into(player_sets)
-                .values(s)
-                .execute(&db_connection);
+            let res = insert_into(player_sets).values(s).execute(&db_connection);
 
             if let Err(e) = res {
                 tracing::error!("🚨 error inserting set into db: {}", e);
-            }            
+            }
         }
 
         for t in curated_tournaments {
@@ -370,7 +366,7 @@ where
 
             if let Err(e) = res {
                 tracing::error!("🚨 error inserting tournament into db: {}", e);
-            }            
+            }
         }
 
         Ok(false)

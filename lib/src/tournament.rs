@@ -132,7 +132,7 @@ mod tests {
     use crate::common::init_logger;
 
     const HUNGRYBOX_PLAYER_ID: i32 = 1004;
-    
+
     #[tokio::test]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
         init_logger()?;

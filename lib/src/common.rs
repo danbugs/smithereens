@@ -21,7 +21,7 @@ pub fn init_logger() -> Result<()> {
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)?;
-    
+
     Ok(())
 }
 
