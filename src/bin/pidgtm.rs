@@ -2,11 +2,10 @@ use std::env;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use smithe_lib::common::init_logger;
 use smithereens::pidgtm::{
     compile::handle_compile, inspect::handle_inspect, map::handle_map, update::handle_update,
 };
-use tracing::Level;
-use tracing_subscriber::FmtSubscriber;
 
 /// pidgtm stands for "player id to gamer tag mapper". This is a CLI that allows
 /// direct user access to the engine that powers searching players by name.
@@ -43,11 +42,7 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .finish();
-
-    tracing::subscriber::set_global_default(subscriber)?;
+    init_logger()?;
 
     let cli = Cli::parse();
 

@@ -128,14 +128,15 @@ pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
-    use tracing_test::traced_test;
 
-    const DANTOTTO_PLAYER_ID: i32 = 1178271;
+    use crate::common::init_logger;
 
-    #[traced_test]
+    const HUNGRYBOX_PLAYER_ID: i32 = 1004;
+    
     #[tokio::test]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
-        let _ = super::get_tournaments_from_requester_id(DANTOTTO_PLAYER_ID).await?;
+        init_logger()?;
+        let _ = super::get_tournaments_from_requester_id(HUNGRYBOX_PLAYER_ID).await?;
         Ok(())
     }
 }

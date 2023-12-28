@@ -343,17 +343,35 @@ where
             // we want to panic regardless
         }
 
-        insert_into(player_games)
-            .values(curated_games)
-            .execute(&db_connection)?;
+        for g in curated_games {
+            let res = insert_into(player_games)
+                .values(g)
+                .execute(&db_connection);
 
-        insert_into(player_sets)
-            .values(curated_sets)
-            .execute(&db_connection)?;
+            if let Err(e) = res {
+                tracing::error!("🚨 error inserting game into db: {}", e);
+            }            
+        }
 
-        insert_into(player_tournaments)
-            .values(curated_tournaments)
-            .execute(&db_connection)?;
+        for s in curated_sets {
+            let res = insert_into(player_sets)
+                .values(s)
+                .execute(&db_connection);
+
+            if let Err(e) = res {
+                tracing::error!("🚨 error inserting set into db: {}", e);
+            }            
+        }
+
+        for t in curated_tournaments {
+            let res = insert_into(player_tournaments)
+                .values(t)
+                .execute(&db_connection);
+
+            if let Err(e) = res {
+                tracing::error!("🚨 error inserting tournament into db: {}", e);
+            }            
+        }
 
         Ok(false)
     }
