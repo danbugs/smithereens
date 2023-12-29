@@ -17,13 +17,26 @@ use startgg::{
     GQLData,
 };
 
-pub async fn handle_update(start_at_player_id: Option<i32>) -> Result<()> {
+pub async fn handle_update(
+    start_at_player_id: Option<i32>,
+    end_at_player_id: Option<i32>,
+) -> Result<()> {
+    // set end_at_player_id to None if it is less than or equal start
+    let end_at_player_id = if end_at_player_id.is_some()
+        && end_at_player_id.unwrap() <= start_at_player_id.unwrap_or(1000)
+    {
+        None
+    } else {
+        end_at_player_id
+    };
+
     start_read_all_by_increment_execute_finish_maybe_cancel(
         true,
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
         start_at_player_id.unwrap_or(1000),
         // ^^^ considering I know that the lowest player_id is 1000, no point in getting it every time
+        end_at_player_id,
         execute,
         get_subsequent_player_id_with_circle_back,
         |_gqlv| Ok(()),

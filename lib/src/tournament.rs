@@ -72,6 +72,7 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
         Arc::new(Mutex::new(usgv)),
         make_set_getter_query,
         1,
+        None,
         execute,
         |curr_page| Ok(curr_page + 1),
         |_| Ok(()),
@@ -141,12 +142,16 @@ mod tests {
 
     use crate::common::init_logger;
 
-    const HUNGRYBOX_PLAYER_ID: i32 = 1004;
+    const MANG0_PLAYER_ID: i32 = 1000;
 
     #[tokio::test]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
         init_logger()?;
-        let _ = super::get_tournaments_from_requester_id(HUNGRYBOX_PLAYER_ID).await?;
+        let now = std::time::Instant::now();
+        let _ = super::get_tournaments_from_requester_id(MANG0_PLAYER_ID).await?;
+        let elapsed = now.elapsed();
+
+        tracing::info!("Test took: {:?} seconds", elapsed.as_secs());
         Ok(())
     }
 }

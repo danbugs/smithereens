@@ -33,6 +33,7 @@ pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
     gql_vars: Arc<Mutex<V>>,
     get_pages: fn(i32, Arc<Mutex<V>>) -> F,
     start: i32,
+    end: Option<i32>,
     execute: fn(i32, D) -> Result<bool>,
     increment: fn(i32) -> Result<i32>,
     finish: fn(Arc<Mutex<V>>) -> Result<()>,
@@ -104,8 +105,12 @@ where
                         if e.to_string()
                             .contains("Look at json field for more details")
                         {
-                            curr_page = increment(curr_page)?;
-                            continue 'outer;
+                            // StartGG doesn't allow querying more than 10,000th entry, so we stop here.
+                            tracing::info!(
+                                "🏁 got 'Look at json field for more details' at page {}!",
+                                curr_page
+                            );
+                            break 'outer;
                         }
 
                         // else, if set getter, we prob. want to panic
@@ -122,9 +127,14 @@ where
             curr_page = increment(curr_page)?;
         }
 
+        if Some(curr_page) == end {
+            tracing::info!("🏁 reached the end criteria for this job!");
+            break 'outer;
+        }
+
         if is_cli && running.load(Ordering::SeqCst) > 0 {
             cancel(curr_page)?;
-            break;
+            break 'outer;
         }
     }
 

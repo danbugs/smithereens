@@ -88,6 +88,7 @@ pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
     let db_connection = smithe_database::connect()?;
     insert_into(players)
         .values(Player::from(pti.clone()))
+        .on_conflict_do_nothing()
         .execute(&db_connection)?;
     Ok(())
 }
@@ -119,6 +120,7 @@ pub fn add_new_empty_player_record(pid: i32) -> Result<()> {
     let db_connection = smithe_database::connect()?;
     insert_into(empty_player_ids)
         .values(EmptyPlayerId::from(pid))
+        .on_conflict_do_nothing()
         .execute(&db_connection)?;
     Ok(())
 }
@@ -242,15 +244,15 @@ where
                 && is_ssbu_singles_double_elimination_tournament(&s)
                 && s.completedAt.is_some()
                 && s.event.clone().unwrap().standings.is_some()
-                && s.event
+                && !s
+                    .event
                     .clone()
                     .unwrap()
                     .standings
                     .as_ref()
                     .unwrap()
                     .nodes
-                    .len()
-                    > 1
+                    .is_empty()
             {
                 tracing::info!(
                     "🍥 processing set from tourney \"{}\"",
