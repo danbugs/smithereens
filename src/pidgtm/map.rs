@@ -14,9 +14,12 @@ use startgg::GQLData;
 
 use std::sync::{Arc, Mutex};
 
-pub async fn handle_map(start_at_player_id: Option<i32>, end_at_player_id: Option<i32>) -> Result<()> {
+pub async fn handle_map(
+    start_at_player_id: Option<i32>,
+    end_at_player_id: Option<i32>,
+) -> Result<()> {
     let start = start_at_player_id.unwrap_or(get_last_cached_player_id()?);
-    
+
     // set end_at_player_id to None if it is less than or equal start
     let end_at_player_id = if end_at_player_id.is_some() && end_at_player_id.unwrap() <= start {
         None

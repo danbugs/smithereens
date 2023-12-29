@@ -106,7 +106,10 @@ where
                             .contains("Look at json field for more details")
                         {
                             // StartGG doesn't allow querying more than 10,000th entry, so we stop here.
-                            tracing::info!("🏁 got 'Look at json field for more details' at page {}!", curr_page);
+                            tracing::info!(
+                                "🏁 got 'Look at json field for more details' at page {}!",
+                                curr_page
+                            );
                             break 'outer;
                         }
 

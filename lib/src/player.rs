@@ -244,15 +244,15 @@ where
                 && is_ssbu_singles_double_elimination_tournament(&s)
                 && s.completedAt.is_some()
                 && s.event.clone().unwrap().standings.is_some()
-                && s.event
+                && !s
+                    .event
                     .clone()
                     .unwrap()
                     .standings
                     .as_ref()
                     .unwrap()
                     .nodes
-                    .len()
-                    > 0
+                    .is_empty()
             {
                 tracing::info!(
                     "🍥 processing set from tourney \"{}\"",

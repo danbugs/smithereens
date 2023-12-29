@@ -57,9 +57,18 @@ async fn main() -> Result<()> {
     }
 
     match &cli.commands {
-        Commands::Map { start_at_player_id, end_at_player_id }=> handle_map(*start_at_player_id, *end_at_player_id).await,
+        Commands::Map {
+            start_at_player_id,
+            end_at_player_id,
+        } => handle_map(*start_at_player_id, *end_at_player_id).await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
-        Commands::Update { start_at_player_id, end_at_player_id } => handle_update(*start_at_player_id, *end_at_player_id).await,
-        Commands::Compile { start_at_player_id, end_at_player_id } => handle_compile(*start_at_player_id, *end_at_player_id).await,
+        Commands::Update {
+            start_at_player_id,
+            end_at_player_id,
+        } => handle_update(*start_at_player_id, *end_at_player_id).await,
+        Commands::Compile {
+            start_at_player_id,
+            end_at_player_id,
+        } => handle_compile(*start_at_player_id, *end_at_player_id).await,
     }
 }
