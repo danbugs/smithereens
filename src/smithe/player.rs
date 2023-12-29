@@ -44,6 +44,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         Arc::new(Mutex::new(usgv)),
         make_set_getter_query,
         1,
+        None,
         execute,
         |curr_page| Ok(curr_page + 1),
         finish,

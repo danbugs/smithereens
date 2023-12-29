@@ -22,7 +22,11 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Commands {
     /// Starts mapping playerIds, gamerTags, userSlugs, and more onto the pidgtm DB
-    Map,
+    Map {
+        #[clap(value_parser)]
+        start_at_player_id: Option<i32>,
+        end_at_player_id: Option<i32>,
+    },
     /// Inspects a singular player from a provided playerId
     Inspect {
         #[clap(value_parser)]
@@ -32,11 +36,13 @@ enum Commands {
     Update {
         #[clap(value_parser)]
         start_at_player_id: Option<i32>,
+        end_at_player_id: Option<i32>,
     },
     /// Compile all player data from 1000-X onto the pidgtm DB
     Compile {
         #[clap(value_parser)]
         start_at_player_id: Option<i32>,
+        end_at_player_id: Option<i32>,
     },
 }
 
@@ -51,9 +57,9 @@ async fn main() -> Result<()> {
     }
 
     match &cli.commands {
-        Commands::Map => handle_map().await,
+        Commands::Map { start_at_player_id, end_at_player_id }=> handle_map(*start_at_player_id, *end_at_player_id).await,
         Commands::Inspect { player_id } => handle_inspect(*player_id).await,
-        Commands::Update { start_at_player_id } => handle_update(*start_at_player_id).await,
-        Commands::Compile { start_at_player_id } => handle_compile(*start_at_player_id).await,
+        Commands::Update { start_at_player_id, end_at_player_id } => handle_update(*start_at_player_id, *end_at_player_id).await,
+        Commands::Compile { start_at_player_id, end_at_player_id } => handle_compile(*start_at_player_id, *end_at_player_id).await,
     }
 }

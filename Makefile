@@ -19,6 +19,11 @@ install:
 .PHONY: build
 build:
 	cargo build --release
+
+.PHONY: build-install
+build-install:
+	cargo build --release
+	cargo install --path .
 	
 .PHONY: cross-build
 cross-build:
@@ -47,3 +52,12 @@ run-backend:
 .PHONY: serve-frontend
 serve-frontend:
 	trunk serve ./frontend/index.html
+
+# PYTHON
+.PHONY: py-install-reqs
+py-install-reqs:
+	py -m pip install -r TokenGenerationBot-requirements.txt
+
+.PHONY: py-run
+py-run:
+	py TokenGenerationBot.py

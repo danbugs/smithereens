@@ -6,7 +6,6 @@ use smithe_lib::player::{
     add_new_empty_player_record, add_new_player_to_pidgtm_db,
     check_if_large_consecutive_playerid_grouping_exists,
     delete_large_consecutive_playerid_grouping, get_last_cached_player_id, get_max_player_id,
-    increment_last_cached_player_id,
 };
 use startgg::queries::player_getter::{
     make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData, PIDGTM_PlayerGetterVars,
@@ -15,16 +14,26 @@ use startgg::GQLData;
 
 use std::sync::{Arc, Mutex};
 
-pub async fn handle_map() -> Result<()> {
+pub async fn handle_map(start_at_player_id: Option<i32>, end_at_player_id: Option<i32>) -> Result<()> {
+    let start = start_at_player_id.unwrap_or(get_last_cached_player_id()?);
+    
+    // set end_at_player_id to None if it is less than or equal start
+    let end_at_player_id = if end_at_player_id.is_some() && end_at_player_id.unwrap() <= start {
+        None
+    } else {
+        end_at_player_id
+    };
+
     start_read_all_by_increment_execute_finish_maybe_cancel(
         true,
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
-        get_last_cached_player_id()?,
+        start,
+        end_at_player_id,
         execute,
         increment,
         |_gqlv| Ok(()),
-        increment_last_cached_player_id,
+        |_gqlv| Ok(()),
     )
     .await?;
     Ok(())
