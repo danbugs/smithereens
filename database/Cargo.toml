@@ -10,6 +10,7 @@ test = false
 
 [dependencies]
 anyhow = "1"
-diesel = { version = "1.4", features = ["postgres"] }
+diesel = { version = "2.1", features = ["postgres", "chrono"] }
 serde = "1"
 startgg = { path = "../startgg_api/" }
+chrono = "0.4"

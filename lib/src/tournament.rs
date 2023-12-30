@@ -80,10 +80,10 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
     )
     .await?;
 
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let tournaments = player_tournaments
         .filter(requester_id.eq(rid))
-        .get_results::<Tournament>(&db_connection)?;
+        .get_results::<Tournament>(&mut db_connection)?;
 
     Ok(tournaments)
 }
@@ -96,16 +96,16 @@ pub fn is_ssbu_singles_double_elimination_tournament(s: &SGGSet) -> bool {
 }
 
 pub fn get_num_tournaments_attended(pid: i32) -> Result<i64> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let count: i64 = player_tournaments
         .select(count_star())
         .filter(requester_id.eq(pid))
-        .first(&db_connection)?;
+        .first(&mut db_connection)?;
 
     Ok(count)
 }
 
-pub fn get_seed(requester_entrant_id: i32, s: &SGGSet) -> i32 {
+pub fn get_seed(requester_entrant_id: i32, s: &SGGSet) -> Option<i32> {
     s.slots
         .iter()
         .find(|i| {
@@ -125,15 +125,24 @@ pub fn get_seed(requester_entrant_id: i32, s: &SGGSet) -> i32 {
 }
 
 pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     Ok(player_tournaments
         .find((
             s.event.clone().unwrap().tournament.as_ref().unwrap().id,
             s.event.clone().unwrap().id.unwrap(),
             player_id,
         ))
-        .first::<Tournament>(&db_connection)
+        .first::<Tournament>(&mut db_connection)
         .is_ok())
+}
+
+// delete a player's tournaments given a requester id
+pub fn delete_tournaments_from_requester_id(player_id: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect()?;
+    diesel::delete(player_tournaments.filter(requester_id.eq(player_id)))
+        .execute(&mut db_connection)?;
+
+    Ok(())
 }
 
 #[cfg(test)]

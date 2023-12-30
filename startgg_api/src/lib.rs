@@ -29,7 +29,7 @@ pub struct SeedConnection {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Seed {
-    pub seedNum: i32,
+    pub seedNum: Option<i32>,
     entrant: Option<Entrant>,
 }
 
@@ -135,7 +135,7 @@ pub struct StandingStats {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Score {
-    pub value: Option<i32>,
+    pub value: Option<f32>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

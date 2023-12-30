@@ -1,4 +1,4 @@
-use yew::{function_component, html, Properties};
+use yew::{function_component, html, Properties, Html};
 
 use crate::models::{Player, Set, Tournament};
 

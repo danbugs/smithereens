@@ -7,8 +7,17 @@ diesel::table! {
 }
 
 diesel::table! {
-    last_checked_player_id (player_id) {
-        player_id -> Int4,
+    error_logs (id) {
+        id -> Int4,
+        error_timestamp -> Timestamp,
+        error_message -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    pidgtm_compile_times (time_in_seconds) {
+        time_in_seconds -> Int4,
+        calculation_timestamp -> Timestamp,
     }
 }
 
@@ -79,7 +88,8 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     empty_player_ids,
-    last_checked_player_id,
+    error_logs,
+    pidgtm_compile_times,
     player_games,
     player_sets,
     player_tournaments,

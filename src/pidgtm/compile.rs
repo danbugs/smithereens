@@ -4,6 +4,8 @@ use smithe_lib::{
     tournament::get_tournaments_from_requester_id,
 };
 
+use super::map::map_operation;
+
 pub async fn handle_compile(
     start_at_player_id: Option<i32>,
     end_at_player_id: Option<i32>,
@@ -21,7 +23,7 @@ pub async fn handle_compile(
 
     // loop while rid < end_at_player_id, or until rid is None
     while rid.is_some() && end_at_player_id.map(|e| rid.unwrap() < e).unwrap_or(true) {
-        tracing::info!("🧪 compiling player (id: '{:#?}')...", rid);
+        map_operation(rid.unwrap(), Some(rid.unwrap() + 1)).await?; // essentially requesting to map 1 player
         get_tournaments_from_requester_id(rid.unwrap_or(1000)).await?;
 
         rid = get_subsequent_player_id_without_circle_back(rid.unwrap())?;

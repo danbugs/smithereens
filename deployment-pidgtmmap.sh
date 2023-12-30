@@ -68,11 +68,15 @@ create_job() {
   local job_number=$1
   local start_id=$2
   local end_id=$3
-  local job_definition="apiVersion: batch/v1
-kind: Job
+  local job_definition="apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: job-pidgtm-compile-$job_number
+  name: deployment-pidgtm-map-$job_number
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pidgtm
   template:
     metadata:
       labels:
@@ -82,7 +86,7 @@ spec:
       - name: pidgtm
         image: danstaken/pidgtm:latest
         imagePullPolicy: Always
-        args: [\"compile\", \"$start_id\", \"$end_id\"]
+        args: [\"map\", \"$start_id\", \"$end_id\"]
         env:
         - name: STARTGG_TOKEN
           valueFrom:
@@ -91,7 +95,7 @@ spec:
               key: STARTGG_TOKEN
         - name: PIDGTM_DATABASE_URL
           value: \"$DATABASE_URL\"
-      restartPolicy: OnFailure"
+"
   echo "$job_definition" | kubectl apply -f -
 }
 
