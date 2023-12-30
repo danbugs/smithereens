@@ -5,10 +5,10 @@ edition = "2021"
 authors = [ "Dan Chiarlone" ]
 
 [dependencies]
-yew = "0.19"
+yew = { version = "0.21", features = ["csr"] }
 serde_json = "1"
 wasm-bindgen-futures = "0.4"
-gloo-net = "0.2"
+gloo-net = "0.5"
 serde = { version = "1", features = ["derive"]}
 country-emoji = "0.2"
 js-sys = "0.3"

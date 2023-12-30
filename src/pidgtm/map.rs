@@ -5,7 +5,7 @@ use smithe_lib::common::start_read_all_by_increment_execute_finish_maybe_cancel;
 use smithe_lib::player::{
     add_new_empty_player_record, add_new_player_to_pidgtm_db,
     check_if_large_consecutive_playerid_grouping_exists,
-    delete_large_consecutive_playerid_grouping, get_last_cached_player_id, get_max_player_id,
+    delete_large_consecutive_playerid_grouping, get_max_player_id,
 };
 use startgg::queries::player_getter::{
     make_pidgtm_player_getter_query, PIDGTM_PlayerGetterData, PIDGTM_PlayerGetterVars,
@@ -18,7 +18,7 @@ pub async fn handle_map(
     start_at_player_id: Option<i32>,
     end_at_player_id: Option<i32>,
 ) -> Result<()> {
-    let start = start_at_player_id.unwrap_or(get_last_cached_player_id()?);
+    let start = start_at_player_id.unwrap_or(get_max_player_id()?);
 
     // set end_at_player_id to None if it is less than or equal start
     let end_at_player_id = if end_at_player_id.is_some() && end_at_player_id.unwrap() <= start {
@@ -27,19 +27,23 @@ pub async fn handle_map(
         end_at_player_id
     };
 
+    map_operation(start, end_at_player_id).await?;
+    Ok(())
+}
+
+pub async fn map_operation(start_at_player_id: i32, end_at_player_id: Option<i32>) -> Result<()> {
     start_read_all_by_increment_execute_finish_maybe_cancel(
         true,
         Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())),
         make_pidgtm_player_getter_query,
-        start,
+        start_at_player_id,
         end_at_player_id,
         execute,
-        increment,
+        map_increment,
         |_gqlv| Ok(()),
         |_gqlv| Ok(()),
     )
-    .await?;
-    Ok(())
+    .await
 }
 
 fn execute<T>(curr_player_id: i32, player_getter_data: T) -> Result<bool>
@@ -68,7 +72,7 @@ where
     Ok(false)
 }
 
-fn increment(curr_player_id: i32) -> Result<i32> {
+pub fn map_increment(curr_player_id: i32) -> Result<i32> {
     // Check if there is a consecutive grouping larger than 1144 players.
     // If so, that means we probably reached the last page of players.
     if check_if_large_consecutive_playerid_grouping_exists()? {

@@ -1,5 +1,8 @@
-use smithe_database::db_models::game::Game;
+use anyhow::Result;
 use startgg::Set as SGGSet;
+
+use diesel::prelude::*;
+use smithe_database::{db_models::game::Game, schema::player_games::dsl::*};
 
 pub fn maybe_get_games_from_set(
     player_id: i32,
@@ -51,4 +54,12 @@ pub fn maybe_get_games_from_set(
             })
             .collect::<Vec<Game>>()
     })
+}
+
+// delete a player's games given a requester id
+pub fn delete_games_from_requester_id(player_id: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect()?;
+    diesel::delete(player_games.filter(requester_id.eq(player_id))).execute(&mut db_connection)?;
+
+    Ok(())
 }

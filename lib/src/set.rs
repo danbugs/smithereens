@@ -1,30 +1,34 @@
 use anyhow::Result;
-use diesel::{dsl::sql, prelude::*};
+use diesel::{dsl::sql, prelude::*, sql_types::BigInt};
 
 use smithe_database::{db_models::set::Set, schema::player_sets::dsl::*};
 
 use startgg::{Set as SGGSet, SetSlot as SGGSetSlot};
 
 pub fn get_all_from_player_id(player_id: i32) -> Result<Vec<Set>> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let cache = player_sets
         .filter(requester_id.eq(player_id))
-        .load::<Set>(&db_connection)?;
+        .load::<Set>(&mut db_connection)?;
 
     Ok(cache)
 }
 
 pub fn get_last_completed_at(cache: Vec<Set>) -> Option<i64> {
     if !cache.is_empty() {
-        tracing::info!("✅ player was cached...");
-        Some(
-            cache
-                .iter()
-                .max_by_key(|s| s.completed_at)
-                .unwrap()
-                .completed_at
-                + 2,
-        )
+        let last_completed_at = cache
+            .iter()
+            .max_by_key(|s| s.completed_at)
+            .unwrap()
+            .completed_at
+            + 2;
+
+        tracing::info!(
+            "✅ player was cached, last completed_at: {}",
+            last_completed_at
+        );
+
+        Some(last_completed_at)
     } else {
         tracing::info!("❌ player was not cached...");
         None
@@ -66,39 +70,46 @@ pub fn get_opponent_set_slot(requester_entrant_id: i32, s: &SGGSet) -> Option<SG
 }
 
 pub fn get_set_wins_without_dqs(player_id: i32) -> Result<i64> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(2))
         .count()
-        .get_result::<i64>(&db_connection)?)
+        .get_result::<i64>(&mut db_connection)?)
+}
+
+// delete a player's sets given a requester_id
+pub fn delete_sets_by_requester_id(player_id: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect()?;
+    diesel::delete(player_sets.filter(requester_id.eq(player_id))).execute(&mut db_connection)?;
+    Ok(())
 }
 
 pub fn get_set_losses_without_dqs(player_id: i32) -> Result<i64> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(-2))
         .count()
-        .get_result::<i64>(&db_connection)?)
+        .get_result::<i64>(&mut db_connection)?)
 }
 
 pub fn get_set_wins_by_dq(player_id: i32) -> Result<i64> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(1))
         .count()
-        .get_result::<i64>(&db_connection)?)
+        .get_result::<i64>(&mut db_connection)?)
 }
 
 pub fn get_set_losses_by_dq(player_id: i32) -> Result<i64> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(-1))
         .count()
-        .get_result::<i64>(&db_connection)?)
+        .get_result::<i64>(&mut db_connection)?)
 }
 
 pub fn get_winrate(player_id: i32) -> Result<f32> {
@@ -113,33 +124,31 @@ pub fn get_winrate(player_id: i32) -> Result<f32> {
 
 // get sets per player id
 pub fn get_sets_per_player_id(player_id: i32) -> Result<Vec<Set>> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
-        .get_results::<Set>(&db_connection)?)
+        .get_results::<Set>(&mut db_connection)?)
 }
 
 pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let raw_player_results = player_sets
         .filter(requester_id.eq(player_id))
         .group_by(event_id)
         .select((
             event_id,
-            sql("COUNT(result_type>1 OR NULL)"),
-            sql("COUNT(result_type<-1 OR NULL)"),
+            sql::<BigInt>("COUNT(result_type>1 OR NULL)"),
+            sql::<BigInt>("COUNT(result_type<-1 OR NULL)"),
         ))
-        .get_results::<(i32, String, String)>(&db_connection)?;
+        .get_results::<(i32, i64, i64)>(&mut db_connection)?;
     // ^^^ not sure why but have to get the count as text
 
     let player_results = raw_player_results
         .iter()
-        .map(|i| {
-            (
-                i.0,
-                i.1.chars().nth_back(0).unwrap() as u32,
-                i.2.chars().nth_back(0).unwrap() as u32,
-            )
+        .map(|(eid, win_count, loss_count)| {
+            let win_count = *win_count as u32; // Assuming win_count is already i64 and within u32 range
+            let loss_count = *loss_count as u32; // Assuming loss_count is already i64 and within u32 range
+            (*eid, win_count, loss_count)
         })
         .collect::<Vec<(i32, u32, u32)>>();
 

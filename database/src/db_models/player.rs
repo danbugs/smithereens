@@ -1,12 +1,9 @@
-#![allow(clippy::extra_unused_lifetimes)]
-// ^^^ this is needed because Insertable introduces a lifetime we don't use
-// — an auto fix for this exists only in Diesel v2.
 use crate::schema::players;
 
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Insertable, Queryable, QueryableByName)]
-#[table_name = "players"]
+#[diesel(table_name = players)]
 pub struct Player {
     pub player_id: i32,
     pub user_slug: String,

@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use anyhow::Result;
+use as_any::Downcast;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -25,7 +26,12 @@ pub fn init_logger() -> Result<()> {
     Ok(())
 }
 
-use startgg::{GQLData, GQLVars};
+use startgg::{queries::set_getter::SetGetterVars, GQLData, GQLVars};
+
+use crate::{
+    error_logs::insert_error_log, game::delete_games_from_requester_id,
+    set::delete_sets_by_requester_id, tournament::delete_tournaments_from_requester_id,
+};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
@@ -96,10 +102,12 @@ where
                             now = Instant::now();
                         }
                     } else {
-                        tracing::error!(
+                        let err_msg = format!(
                             "🙃 an oddity happened, skipping for now ({:#?})...",
                             e.to_string()
                         );
+                        tracing::error!(err_msg);
+                        insert_error_log(err_msg.to_string())?;
 
                         // weird error, skip this iteration
                         if e.to_string()
@@ -113,9 +121,23 @@ where
                             break 'outer;
                         }
 
-                        // else, if set getter, we prob. want to panic
-                        let mut gql_vars_lock = gql_vars.lock().unwrap();
-                        *gql_vars_lock = gql_vars_lock.update();
+                        // downcast, if setgettervars do x, else ...
+                        let gql_vars_clone = gql_vars.clone();
+                        let mut gql_vars_lock = gql_vars_clone.lock().unwrap();
+                        if let Some(set_getter_vars) =
+                            gql_vars_clone.downcast_ref::<SetGetterVars>()
+                        {
+                            let err_msg = format!("❌ something went wrong when aggregating data for player id: {}, deleting all of this player's games/sets/tourneys and skipping for now...", set_getter_vars.playerId);
+                            tracing::error!(err_msg);
+                            insert_error_log(err_msg.to_string())?;
+                            // delete all player's games, sets, and tournaments
+                            delete_games_from_requester_id(set_getter_vars.playerId)?;
+                            delete_sets_by_requester_id(set_getter_vars.playerId)?;
+                            delete_tournaments_from_requester_id(set_getter_vars.playerId)?;
+                        } else {
+                            let mut gql_vars_lock = gql_vars_clone.lock().unwrap();
+                            *gql_vars_lock = gql_vars_lock.update();
+                        }
                     }
                 }
             }

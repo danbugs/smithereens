@@ -15,16 +15,16 @@ use diesel::{
     dsl::{count, max},
     insert_into,
     prelude::*,
+    result::{DatabaseErrorKind, Error as DieselError},
     sql_query, update,
 };
 use smithe_database::{
-    db_models::{empty_player_ids::EmptyPlayerId, last_checked_player_id::LastCheckedPlayerId},
-    schema::last_checked_player_id,
-    schema::{empty_player_ids::dsl::*, last_checked_player_id::dsl::*},
+    db_models::empty_player_ids::EmptyPlayerId, schema::empty_player_ids::dsl::*,
 };
 use startgg::{queries::set_getter::SetGetterData, GQLData, Player as SGGPlayer, User};
 
 use crate::{
+    error_logs::insert_error_log,
     game::maybe_get_games_from_set,
     set::{get_opponent_set_slot, get_requester_set_slot},
     tournament::{
@@ -38,63 +38,43 @@ pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
     // ^^^ transform spaces into wildcards to make search more inclusive
 
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let matching_players: Vec<Player> = players
         .filter(gamer_tag.ilike(format!("%{}%", processed_tag))) // case-insensitive like
-        .get_results::<Player>(&db_connection)?;
+        .get_results::<Player>(&mut db_connection)?;
 
     Ok(matching_players)
 }
 
 pub fn get_player(pid: i32) -> Result<Player> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let matched_player = players
         .filter(smithe_database::schema::players::player_id.eq(pid)) // case-insensitive like
-        .get_result::<Player>(&db_connection)?;
+        .get_result::<Player>(&mut db_connection)?;
 
     Ok(matched_player)
 }
 
-pub fn get_last_cached_player_id() -> Result<i32> {
-    let db_connection = smithe_database::connect()?;
-    let max_checked_player_id = last_checked_player_id
-        .select(max(last_checked_player_id::player_id))
-        .first::<Option<i32>>(&db_connection)?;
-    if let Some(val) = max_checked_player_id {
-        Ok(val)
-    } else {
-        // return max player id from players table
-        let max_player_id = players
-            .select(max(smithe_database::schema::players::player_id))
-            .first::<Option<i32>>(&db_connection)?;
-        if let Some(val) = max_player_id {
-            Ok(val)
-        } else {
-            Ok(1000) // nothing in db, start at 1000
-        }
+pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
+    let mut db_connection = smithe_database::connect()?;
+
+    match insert_into(players)
+        .values(Player::from(pti.clone()))
+        .execute(&mut db_connection)
+    {
+        Ok(_) => Ok(()),
+        Err(e) => match e {
+            DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
+                tracing::info!("👍 player already exists in pidgtm db, updating...");
+                update_and_handle_deleted(pti)
+            }
+            _ => Err(e.into()), // Propagate other errors
+        },
     }
 }
 
-pub fn increment_last_cached_player_id(curr_player_id: i32) -> Result<()> {
-    let db_connection = smithe_database::connect()?;
-    insert_into(last_checked_player_id)
-        .values(LastCheckedPlayerId::from(curr_player_id))
-        .execute(&db_connection)?;
-
-    Ok(())
-}
-
-pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
-    let db_connection = smithe_database::connect()?;
-    insert_into(players)
-        .values(Player::from(pti.clone()))
-        .on_conflict_do_nothing()
-        .execute(&db_connection)?;
-    Ok(())
-}
-
-pub fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
-    let db_connection = smithe_database::connect()?;
+fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
+    let mut db_connection = smithe_database::connect()?;
     let player = Player::from(pti.clone());
     update(players)
         .filter(smithe_database::schema::players::player_id.eq(player.player_id))
@@ -112,26 +92,44 @@ pub fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
             bio.eq(player.bio),
             rankings.eq(player.rankings),
         ))
-        .execute(&db_connection)?;
+        .execute(&mut db_connection)?;
     Ok(())
 }
 
+pub fn update_and_handle_deleted(pti: &SGGPlayer) -> Result<()> {
+    if pti.user.is_none() {
+        tracing::info!("❎ caught a deleted account #1 (id: '{}')...", pti.id);
+        pti.clone().user = get_empty_user_with_slug(pti.id)?;
+    } else if pti.user.as_ref().unwrap().slug.is_none() {
+        tracing::info!("❎ caught a deleted account #2 (id: '{}')...", pti.id);
+        pti.clone().user = pti.clone().user.as_mut().map(|u| {
+            u.slug = get_empty_user_with_slug(pti.id).unwrap().unwrap().slug;
+            // ^^^ didn't want to unwrap here, but I guess it's fine to panic
+            u.clone()
+        });
+    } else {
+        tracing::info!("💫 updating player (id: '{}')...", pti.id);
+    }
+
+    update_player_in_pidgtm_db(pti)
+}
+
 pub fn add_new_empty_player_record(pid: i32) -> Result<()> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     insert_into(empty_player_ids)
         .values(EmptyPlayerId::from(pid))
         .on_conflict_do_nothing()
-        .execute(&db_connection)?;
+        .execute(&mut db_connection)?;
     Ok(())
 }
 
 pub fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let res = players
         .select(smithe_database::schema::players::player_id)
         .filter(smithe_database::schema::players::player_id.gt(some_id))
         .order(smithe_database::schema::players::player_id.asc())
-        .first(&db_connection)
+        .first(&mut db_connection)
         .optional()?;
 
     if let Some(r) = res {
@@ -142,7 +140,7 @@ pub fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
 }
 
 pub fn check_if_large_consecutive_playerid_grouping_exists() -> Result<bool> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let res: Vec<ConsecutiveGroupResult> = sql_query(
         r#"WITH RankedPlayerIDs AS (
             SELECT player_id, 
@@ -159,29 +157,29 @@ pub fn check_if_large_consecutive_playerid_grouping_exists() -> Result<bool> {
         GROUP BY grp
         HAVING COUNT(*) > 1144;"#,
     )
-    .load(&db_connection)?; // 1144 is the number of players in the largest consecutive grouping
+    .load(&mut db_connection)?; // 1144 is the number of players in the largest consecutive grouping
 
     // if vec is not empty, then there is a large consecutive grouping
     Ok(!res.is_empty())
 }
 
 pub fn delete_large_consecutive_playerid_grouping() -> Result<()> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let max_player_id = get_max_player_id()?;
 
     // delete all empty_player_ids that are greater than the max player id
     delete(empty_player_ids)
         .filter(smithe_database::schema::empty_player_ids::player_id.gt(max_player_id))
-        .execute(&db_connection)?;
+        .execute(&mut db_connection)?;
 
     Ok(())
 }
 
 pub fn get_max_player_id() -> Result<i32> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let max_player_id = players
         .select(max(smithe_database::schema::players::player_id))
-        .first::<Option<i32>>(&db_connection)?;
+        .first::<Option<i32>>(&mut db_connection)?;
     if let Some(val) = max_player_id {
         Ok(val)
     } else {
@@ -189,21 +187,12 @@ pub fn get_max_player_id() -> Result<i32> {
     }
 }
 
-pub fn get_subsequent_player_id_without_circle_back(some_id: i32) -> Result<Option<i32>> {
-    let db_connection = smithe_database::connect()?;
-    Ok(players
-        .select(smithe_database::schema::players::player_id)
-        .filter(smithe_database::schema::players::player_id.gt(some_id))
-        .order(smithe_database::schema::players::player_id.asc())
-        .first(&db_connection)
-        .optional()?)
-}
 pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
     let some_slug = players
         .select(user_slug)
         .filter(smithe_database::schema::players::player_id.eq(pid))
-        .get_result(&db_connection)
+        .get_result(&mut db_connection)
         .optional()?;
 
     Ok(Some(User {
@@ -229,7 +218,7 @@ where
     let mut curated_games = vec![];
     let mut curated_tournaments = vec![];
 
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
 
     let ss = player.sets.unwrap().nodes;
     // ^^^ guaranteed to have sets in this context, ok to unwrap
@@ -282,23 +271,17 @@ where
                     // e.g., https://www.start.gg/tournament/mainstage-2021/event/ultimate-singles/brackets/952392/1513154
                     if r.standing
                         .as_ref()
-                        .unwrap()
-                        .stats
-                        .as_ref()
-                        .unwrap()
-                        .score
-                        .value
+                        .and_then(|standing| standing.stats.as_ref())
+                        .and_then(|stats| stats.score.value.as_ref())
                         .is_some()
                         && o.standing
                             .as_ref()
-                            .unwrap()
-                            .stats
-                            .as_ref()
-                            .unwrap()
-                            .score
-                            .value
+                            .and_then(|standing| standing.stats.as_ref())
+                            .and_then(|stats| stats.score.value.as_ref())
                             .is_some()
                         && s.completedAt.is_some()
+                        && r.seed.as_ref().unwrap().seedNum.is_some()
+                        && o.seed.as_ref().unwrap().seedNum.is_some()
                     {
                         curated_sets.push(Set::new(
                             s.id,
@@ -316,8 +299,8 @@ where
                                 .unwrap()
                                 .score
                                 .value
-                                .unwrap(),
-                            r.seed.as_ref().unwrap().seedNum,
+                                .unwrap() as i32,
+                            r.seed.as_ref().unwrap().seedNum.unwrap(),
                             o.entrant.as_ref().unwrap().name.as_ref().unwrap(),
                             o.standing
                                 .as_ref()
@@ -327,40 +310,47 @@ where
                                 .unwrap()
                                 .score
                                 .value
-                                .unwrap(),
-                            o.seed.as_ref().unwrap().seedNum,
+                                .unwrap() as i32,
+                            o.seed.as_ref().unwrap().seedNum.unwrap(),
                         ));
                     }
 
-                    let tournament = Tournament::new(
-                        s.event.clone().unwrap().tournament.as_ref().unwrap().id,
-                        s.event.clone().unwrap().id.unwrap(),
-                        s.event.clone().unwrap().name.as_ref().unwrap(),
-                        &s.event.clone().unwrap().tournament.as_ref().unwrap().name,
-                        s.event
-                            .clone()
-                            .unwrap()
-                            .tournament
-                            .as_ref()
-                            .unwrap()
-                            .endAt
-                            .unwrap(),
-                        player.id,
-                        get_placement(&s, player.id),
-                        s.event.clone().unwrap().numEntrants.unwrap(),
-                        get_seed(requester_entrant_id, &s),
-                        format!(
-                            "https://www.start.gg/{}",
-                            s.event.clone().unwrap().slug.as_ref().unwrap()
-                        )
-                        .as_str(),
-                    );
+                    let tourney_seed = get_seed(requester_entrant_id, &s);
 
-                    if !is_tournament_cached(player.id, &s)?
-                        && !curated_tournaments.contains(&tournament)
-                    {
-                        // ^^^ not found
-                        curated_tournaments.push(tournament);
+                    if tourney_seed.is_some() {
+                        let tournament = Tournament::new(
+                            s.event.clone().unwrap().tournament.as_ref().unwrap().id,
+                            s.event.clone().unwrap().id.unwrap(),
+                            s.event.clone().unwrap().name.as_ref().unwrap(),
+                            &s.event.clone().unwrap().tournament.as_ref().unwrap().name,
+                            s.event
+                                .clone()
+                                .unwrap()
+                                .tournament
+                                .as_ref()
+                                .unwrap()
+                                .endAt
+                                .unwrap(),
+                            player.id,
+                            get_placement(&s, player.id),
+                            s.event.clone().unwrap().numEntrants.unwrap(),
+                            tourney_seed.unwrap(),
+                            format!(
+                                "https://www.start.gg/{}",
+                                s.event.clone().unwrap().slug.as_ref().unwrap()
+                            )
+                            .as_str(),
+                        );
+
+                        if !is_tournament_cached(player.id, &s)?
+                            && !curated_tournaments.contains(&tournament)
+                        {
+                            // ^^^ not found
+                            curated_tournaments.push(tournament);
+                        }
+                    } else {
+                        tracing::info!("🚫 tournament seed not found, skipping...");
+                        continue;
                     }
                 }
             }
@@ -379,29 +369,40 @@ where
             }
         }
 
+        tracing::info!("📦 inserting results into db...");
         for g in curated_games {
-            let res = insert_into(player_games).values(g).execute(&db_connection);
+            let res = insert_into(player_games)
+                .values(g)
+                .execute(&mut db_connection);
 
             if let Err(e) = res {
-                tracing::error!("🚨 error inserting game into db: {}", e);
+                let err_msg = format!("🚨 error inserting game into db: {}", e);
+                tracing::error!(err_msg);
+                insert_error_log(err_msg.to_string())?;
             }
         }
 
         for s in curated_sets {
-            let res = insert_into(player_sets).values(s).execute(&db_connection);
+            let res = insert_into(player_sets)
+                .values(s)
+                .execute(&mut db_connection);
 
             if let Err(e) = res {
-                tracing::error!("🚨 error inserting set into db: {}", e);
+                let err_msg = format!("🚨 error inserting set into db: {}", e);
+                tracing::error!(err_msg);
+                insert_error_log(err_msg.to_string())?;
             }
         }
 
         for t in curated_tournaments {
             let res = insert_into(player_tournaments)
                 .values(t)
-                .execute(&db_connection);
+                .execute(&mut db_connection);
 
             if let Err(e) = res {
-                tracing::error!("🚨 error inserting tournament into db: {}", e);
+                let err_msg = format!("🚨 error inserting tournament into db: {}", e);
+                tracing::error!(err_msg);
+                insert_error_log(err_msg.to_string())?;
             }
         }
 
@@ -411,7 +412,7 @@ where
 
 // get player's top two most played characters
 pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
-    let db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect()?;
 
     let top_two_characters = player_games
         .select(requester_char_played)
@@ -419,7 +420,7 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
         .group_by(requester_char_played)
         .order_by(count(requester_char_played).desc())
         .limit(2)
-        .get_results::<Option<String>>(&db_connection)?;
+        .get_results::<Option<String>>(&mut db_connection)?;
 
     Ok(top_two_characters)
 }

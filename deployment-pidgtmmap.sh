@@ -22,29 +22,6 @@ if [ ${#TOKENS[@]} -eq 0 ]; then
 fi
 
 # Read the data from id_ranges.txt and store it in arrays
-# We can get id_ranges w/ this query:
-#   WITH NumberedPlayers AS (
-#       SELECT 
-#           player_id,
-#           FLOOR((ROW_NUMBER() OVER (ORDER BY player_id) - 1) / 100000) AS JobNumber
-#       FROM 
-#           players
-#   ),
-#   JobRanges AS (
-#       SELECT 
-#           JobNumber,
-#           MIN(player_id) OVER (PARTITION BY JobNumber) as StartID,
-#           MAX(player_id) OVER (PARTITION BY JobNumber) as EndID
-#       FROM 
-#           NumberedPlayers
-#   )
-#   SELECT DISTINCT
-#       JobNumber,
-#       StartID || '-' || EndID as IDRange
-#   FROM 
-#       JobRanges
-#   ORDER BY 
-#       JobNumber;
 declare -a START_IDS
 declare -a END_IDS
 
@@ -68,11 +45,15 @@ create_job() {
   local job_number=$1
   local start_id=$2
   local end_id=$3
-  local job_definition="apiVersion: batch/v1
-kind: Job
+  local job_definition="apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: job-pidgtm-compile-$job_number
+  name: deployment-pidgtm-map-$job_number
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pidgtm
   template:
     metadata:
       labels:
@@ -82,7 +63,7 @@ spec:
       - name: pidgtm
         image: danstaken/pidgtm:latest
         imagePullPolicy: Always
-        args: [\"compile\", \"$start_id\", \"$end_id\"]
+        args: [\"map\", \"$start_id\", \"$end_id\"]
         env:
         - name: STARTGG_TOKEN
           valueFrom:
@@ -91,7 +72,7 @@ spec:
               key: STARTGG_TOKEN
         - name: PIDGTM_DATABASE_URL
           value: \"$DATABASE_URL\"
-      restartPolicy: OnFailure"
+"
   echo "$job_definition" | kubectl apply -f -
 }
 
