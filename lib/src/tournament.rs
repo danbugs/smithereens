@@ -88,10 +88,13 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
     Ok(tournaments)
 }
 
-pub fn is_ssbu_singles_double_elimination_tournament(s: &SGGSet) -> bool {
+pub fn is_ssbu_singles_and_supported_tournament(s: &SGGSet) -> bool {
     s.event.clone().unwrap().videogame.as_ref().unwrap().name == "Super Smash Bros. Ultimate"
         && s.phaseGroup.is_some()
-        && s.phaseGroup.clone().unwrap().bracketType == "DOUBLE_ELIMINATION"
+        && (s.phaseGroup.clone().unwrap().bracketType == "DOUBLE_ELIMINATION"
+            || s.phaseGroup.clone().unwrap().bracketType == "SINGLE_ELIMINATION"
+            || s.phaseGroup.clone().unwrap().bracketType == "ROUND_ROBIN"
+            || s.phaseGroup.clone().unwrap().bracketType == "SWISS")
         && s.event.clone().unwrap().teamRosterSize.is_none()
 }
 

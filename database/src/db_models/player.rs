@@ -81,7 +81,7 @@ impl std::fmt::Display for Player {
                 // ^^^ it is ok to unwrap here due to the first conditional
                 self.gamer_tag.clone()
             } else {
-                format!("({} | {}", self.prefix.as_ref().unwrap(), &self.gamer_tag)
+                format!("{} | {}", self.prefix.as_ref().unwrap(), &self.gamer_tag)
             };
         write!(f, "{}", gamer_tag_with_prefix)
     }
