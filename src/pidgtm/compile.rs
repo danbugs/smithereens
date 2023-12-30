@@ -61,3 +61,20 @@ pub async fn handle_compile(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use smithe_lib::common::init_logger;
+    use anyhow::Result;
+
+    use super::*;
+
+    const RANDOM_ID: i32 = 26324;
+
+    #[tokio::test]
+    async fn test_handle_compile() -> Result<()> {
+        init_logger()?;
+        handle_compile(Some(RANDOM_ID), Some(RANDOM_ID + 1)).await?;
+        Ok(())
+    }
+}

@@ -15,9 +15,10 @@ diesel::table! {
 }
 
 diesel::table! {
-    pidgtm_compile_times (time_in_seconds) {
+    pidgtm_compile_times (id) {
+        id -> Int4,
         time_in_seconds -> Int4,
-        calculation_timestamp -> Timestamp,
+        calculation_timestamp -> Nullable<Timestamp>,
     }
 }
 

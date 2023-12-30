@@ -1,7 +1,7 @@
 use crate::schema::pidgtm_compile_times;
 use diesel::prelude::*;
 
-#[derive(Debug, Insertable, Queryable, QueryableByName)]
+#[derive(Debug, Insertable)]
 #[diesel(table_name = pidgtm_compile_times)]
 pub struct PidgtmCompileTimes {
     pub time_in_seconds: i32,
