@@ -52,7 +52,7 @@ where
 {
     let running = Arc::new(AtomicUsize::new(0));
 
-    if is_cli {
+    if is_cli && std::env::var("CTRLC_HANDLER_SET").is_err() {
         let r = running.clone();
         ctrlc::set_handler(move || {
             let prev = r.fetch_add(1, Ordering::SeqCst);
@@ -62,6 +62,9 @@ where
                 process::exit(0);
             }
         })?;
+
+        // set env var indicating ctrlc handler is set
+        std::env::set_var("CTRLC_HANDLER_SET", "true");
     }
 
     let mut curr_page = start;
