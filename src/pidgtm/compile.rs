@@ -1,5 +1,7 @@
 use anyhow::Result;
-use smithe_lib::{tournament::get_tournaments_from_requester_id, pidgtm_compile_times::insert_pidgtm_compile_time};
+use smithe_lib::{
+    pidgtm_compile_times::insert_pidgtm_compile_time, tournament::get_tournaments_from_requester_id,
+};
 
 use super::map::{map_increment, map_operation};
 
@@ -49,7 +51,6 @@ pub async fn handle_compile(
 
         // end timer
         let elapsed = start.elapsed();
-
 
         // get time in seconds
         let tis = elapsed.as_secs();

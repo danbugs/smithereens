@@ -1,6 +1,8 @@
 use anyhow::Result;
 use diesel::prelude::*;
-use smithe_database::{db_models::pidgtm_compile_times::PidgtmCompileTimes, schema::pidgtm_compile_times::dsl::*};
+use smithe_database::{
+    db_models::pidgtm_compile_times::PidgtmCompileTimes, schema::pidgtm_compile_times::dsl::*,
+};
 
 pub fn insert_pidgtm_compile_time(tis: i32) -> Result<()> {
     let new_pidgtm_compile_time = PidgtmCompileTimes::from(tis);
