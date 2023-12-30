@@ -64,8 +64,8 @@ pub async fn handle_compile(
 
 #[cfg(test)]
 mod tests {
-    use smithe_lib::common::init_logger;
     use anyhow::Result;
+    use smithe_lib::common::init_logger;
 
     use super::*;
 
