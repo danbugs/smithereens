@@ -29,8 +29,7 @@ use crate::{
     set::{get_opponent_set_slot, get_requester_set_slot},
     tournament::{
         get_placement, get_requester_id_from_standings, get_seed,
-        is_ssbu_singles_and_supported_tournament, is_tournament_cached,
-        is_tournament_finished,
+        is_ssbu_singles_and_supported_tournament, is_tournament_cached, is_tournament_finished,
     },
 };
 
