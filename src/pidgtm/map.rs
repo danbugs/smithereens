@@ -39,7 +39,7 @@ pub async fn map_operation(start_at_player_id: i32, end_at_player_id: Option<i32
         start_at_player_id,
         end_at_player_id,
         execute,
-        increment_map,
+        map_increment,
         |_gqlv| Ok(()),
         |_gqlv| Ok(()),
     )
@@ -72,7 +72,7 @@ where
     Ok(false)
 }
 
-fn increment_map(curr_player_id: i32) -> Result<i32> {
+pub fn map_increment(curr_player_id: i32) -> Result<i32> {
     // Check if there is a consecutive grouping larger than 1144 players.
     // If so, that means we probably reached the last page of players.
     if check_if_large_consecutive_playerid_grouping_exists()? {

@@ -187,15 +187,7 @@ pub fn get_max_player_id() -> Result<i32> {
     }
 }
 
-pub fn get_subsequent_player_id_without_circle_back(some_id: i32) -> Result<Option<i32>> {
-    let mut db_connection = smithe_database::connect()?;
-    Ok(players
-        .select(smithe_database::schema::players::player_id)
-        .filter(smithe_database::schema::players::player_id.gt(some_id))
-        .order(smithe_database::schema::players::player_id.asc())
-        .first(&mut db_connection)
-        .optional()?)
-}
+
 pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
     let mut db_connection = smithe_database::connect()?;
     let some_slug = players
