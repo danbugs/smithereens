@@ -268,22 +268,34 @@ where
                     // tournaments could be finished, but not have actually finished
                     // some sets only have a reported winner, ignore them
                     // e.g., https://www.start.gg/tournament/mainstage-2021/event/ultimate-singles/brackets/952392/1513154
-                    if let (Some(r_standing_stats), Some(o_standing_stats), Some(s_completed_at), Some(r_seed_num), Some(o_seed_num)) = (
-                        r.standing.as_ref().and_then(|standing| standing.stats.as_ref()).and_then(|stats| stats.score.value.as_ref()),
-                        o.standing.as_ref().and_then(|standing| standing.stats.as_ref()).and_then(|stats| stats.score.value.as_ref()),
+                    if let (
+                        Some(r_standing_stats),
+                        Some(o_standing_stats),
+                        Some(s_completed_at),
+                        Some(r_seed_num),
+                        Some(o_seed_num),
+                    ) = (
+                        r.standing
+                            .as_ref()
+                            .and_then(|standing| standing.stats.as_ref())
+                            .and_then(|stats| stats.score.value.as_ref()),
+                        o.standing
+                            .as_ref()
+                            .and_then(|standing| standing.stats.as_ref())
+                            .and_then(|stats| stats.score.value.as_ref()),
                         s.completedAt,
                         r.seed.as_ref().and_then(|s| s.seedNum),
-                        o.seed.as_ref().and_then(|s| s.seedNum)
+                        o.seed.as_ref().and_then(|s| s.seedNum),
                     ) {
                         if let (Some(r_entrant_name), Some(o_entrant_name)) = (
                             r.entrant.as_ref().and_then(|entrant| entrant.name.as_ref()),
-                            o.entrant.as_ref().and_then(|entrant| entrant.name.as_ref())
+                            o.entrant.as_ref().and_then(|entrant| entrant.name.as_ref()),
                         ) {
                             if let Some(s_event) = s.event.clone() {
                                 if let (Some(is_online), Some(eid), Some(tid)) = (
                                     s_event.isOnline,
                                     s_event.id,
-                                    s_event.tournament.as_ref().map(|t| t.id)
+                                    s_event.tournament.as_ref().map(|t| t.id),
                                 ) {
                                     curated_sets.push(Set::new(
                                         s.id,
@@ -302,7 +314,7 @@ where
                                 }
                             }
                         }
-                    }                   
+                    }
 
                     let tourney_seed = get_seed(requester_entrant_id, &s);
 
