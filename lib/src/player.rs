@@ -187,7 +187,6 @@ pub fn get_max_player_id() -> Result<i32> {
     }
 }
 
-
 pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
     let mut db_connection = smithe_database::connect()?;
     let some_slug = players

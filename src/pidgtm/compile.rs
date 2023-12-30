@@ -32,7 +32,10 @@ pub async fn handle_compile(
                 .contains("Record not found");
         if map_didnt_add {
             // res could be "Error: Record not found", meaning that ID doesn't belong to a player, if so, continue.
-            tracing::info!("⛔ record not found for player id: {}, moving on...", rid.unwrap());
+            tracing::info!(
+                "⛔ record not found for player id: {}, moving on...",
+                rid.unwrap()
+            );
             rid = Some(map_increment(rid.unwrap())?);
         } else if res.is_err() {
             // any other error is a problem
