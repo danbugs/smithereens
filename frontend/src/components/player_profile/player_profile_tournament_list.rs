@@ -75,6 +75,10 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                             html! {
                                                                                 <strong class="text-success">{"WIN "}</strong>
                                                                             }
+                                                                        } else if s.requester_score == s.opponent_score {
+                                                                            html! {
+                                                                                <strong class="text-warning">{"TIE "}</strong>
+                                                                            }
                                                                         } else {
                                                                             html! {
                                                                                 <strong class="text-danger">{"LOSS "}</strong>

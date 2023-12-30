@@ -65,6 +65,6 @@ fn determine_result_type(rscore: i32, oscore: i32) -> i32 {
     } else if rscore < oscore {
         -2
     } else {
-        panic!("unrecognizable result type for set");
+        0 // draw
     }
 }

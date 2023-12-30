@@ -29,7 +29,7 @@ use crate::{
     set::{get_opponent_set_slot, get_requester_set_slot},
     tournament::{
         get_placement, get_requester_id_from_standings, get_seed,
-        is_ssbu_singles_double_elimination_tournament, is_tournament_cached,
+        is_ssbu_singles_and_supported_tournament, is_tournament_cached,
         is_tournament_finished,
     },
 };
@@ -230,7 +230,7 @@ where
         for s in ss {
             // we only want to compile results for: double elimination single ssbu brackets
             if s.event.is_some()
-                && is_ssbu_singles_double_elimination_tournament(&s)
+                && is_ssbu_singles_and_supported_tournament(&s)
                 && s.completedAt.is_some()
                 && s.event.clone().unwrap().standings.is_some()
                 && !s
