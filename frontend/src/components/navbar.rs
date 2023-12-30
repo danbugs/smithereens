@@ -1,5 +1,5 @@
 use web_sys::KeyboardEvent;
-use yew::{function_component, html, Callback, Properties, Html};
+use yew::{function_component, html, Callback, Html, Properties};
 
 #[derive(Properties, PartialEq)]
 pub struct Props {

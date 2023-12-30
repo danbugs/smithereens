@@ -1,4 +1,4 @@
-use yew::{function_component, html, Properties, Html};
+use yew::{function_component, html, Html, Properties};
 
 use crate::components::loading_spinner::LoadingSpinner;
 

@@ -1,5 +1,5 @@
-use serde::Serialize;
 use crate::schema::player_tournaments;
+use serde::Serialize;
 
 #[derive(Debug, Insertable, Queryable, Serialize)]
 #[diesel(table_name = player_tournaments)]

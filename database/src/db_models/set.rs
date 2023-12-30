@@ -1,5 +1,5 @@
-use serde::Serialize;
 use crate::schema::player_sets;
+use serde::Serialize;
 
 #[derive(Debug, Serialize, Insertable, Queryable, QueryableByName)]
 #[diesel(table_name = player_sets)]

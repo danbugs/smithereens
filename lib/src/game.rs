@@ -1,5 +1,5 @@
-use startgg::Set as SGGSet;
 use anyhow::Result;
+use startgg::Set as SGGSet;
 
 use diesel::prelude::*;
 use smithe_database::{db_models::game::Game, schema::player_games::dsl::*};

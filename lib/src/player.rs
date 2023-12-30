@@ -19,19 +19,19 @@ use diesel::{
     sql_query, update,
 };
 use smithe_database::{
-    db_models::empty_player_ids::EmptyPlayerId,
-    schema::empty_player_ids::dsl::*,
+    db_models::empty_player_ids::EmptyPlayerId, schema::empty_player_ids::dsl::*,
 };
 use startgg::{queries::set_getter::SetGetterData, GQLData, Player as SGGPlayer, User};
 
 use crate::{
+    error_logs::insert_error_log,
     game::maybe_get_games_from_set,
     set::{get_opponent_set_slot, get_requester_set_slot},
     tournament::{
         get_placement, get_requester_id_from_standings, get_seed,
         is_ssbu_singles_double_elimination_tournament, is_tournament_cached,
         is_tournament_finished,
-    }, error_logs::insert_error_log,
+    },
 };
 
 pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
@@ -380,7 +380,9 @@ where
 
         tracing::info!("📦 inserting results into db...");
         for g in curated_games {
-            let res = insert_into(player_games).values(g).execute(&mut db_connection);
+            let res = insert_into(player_games)
+                .values(g)
+                .execute(&mut db_connection);
 
             if let Err(e) = res {
                 let err_msg = format!("🚨 error inserting game into db: {}", e);
@@ -390,7 +392,9 @@ where
         }
 
         for s in curated_sets {
-            let res = insert_into(player_sets).values(s).execute(&mut db_connection);
+            let res = insert_into(player_sets)
+                .values(s)
+                .execute(&mut db_connection);
 
             if let Err(e) = res {
                 let err_msg = format!("🚨 error inserting set into db: {}", e);

@@ -10,7 +10,7 @@ pub struct PidgtmCompileTimes {
 
 impl From<i32> for PidgtmCompileTimes {
     fn from(time_in_seconds: i32) -> Self {
-        Self { 
+        Self {
             time_in_seconds,
             calculation_timestamp: chrono::Utc::now().naive_utc(), // Current timestamp
         }

@@ -1,6 +1,6 @@
+use crate::schema::error_logs;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use crate::schema::error_logs;
 
 #[derive(Debug, Insertable)]
 #[diesel(table_name = error_logs)]
