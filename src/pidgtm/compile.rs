@@ -1,5 +1,5 @@
 use anyhow::Result;
-use smithe_lib::tournament::get_tournaments_from_requester_id;
+use smithe_lib::{tournament::get_tournaments_from_requester_id, pidgtm_compile_times::insert_pidgtm_compile_time};
 
 use super::map::{map_increment, map_operation};
 
@@ -20,6 +20,9 @@ pub async fn handle_compile(
 
     // loop while rid < end_at_player_id, or until rid is None
     while rid.is_some() && end_at_player_id.map(|e| rid.unwrap() < e).unwrap_or(true) {
+        // start timer
+        let start = std::time::Instant::now();
+
         map_operation(rid.unwrap(), Some(rid.unwrap() + 1)).await?; // essentially requesting to map 1 player
 
         let res = get_tournaments_from_requester_id(rid.unwrap_or(1000)).await;
@@ -43,6 +46,14 @@ pub async fn handle_compile(
         } else {
             rid = Some(map_increment(rid.unwrap())?);
         }
+
+        // end timer
+        let elapsed = start.elapsed();
+
+
+        // get time in seconds
+        let tis = elapsed.as_secs();
+        insert_pidgtm_compile_time(tis as i32)?; // insert time into db
     }
 
     tracing::info!("🏁 finished compiling player data to pidgtm db");

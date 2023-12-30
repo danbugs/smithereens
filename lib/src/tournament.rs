@@ -151,13 +151,13 @@ mod tests {
 
     use crate::common::init_logger;
 
-    const MANG0_PLAYER_ID: i32 = 1000;
+    const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     #[tokio::test]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
         init_logger()?;
         let now = std::time::Instant::now();
-        let _ = super::get_tournaments_from_requester_id(MANG0_PLAYER_ID).await?;
+        let _ = super::get_tournaments_from_requester_id(DANTOTTO_PLAYER_ID).await?;
         let elapsed = now.elapsed();
 
         tracing::info!("Test took: {:?} seconds", elapsed.as_secs());
