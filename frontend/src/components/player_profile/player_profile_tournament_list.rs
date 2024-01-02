@@ -107,6 +107,14 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                     }
                                                     ).collect::<Html>()
                                                 }
+                                                <div class="row justify-content-end p-2">
+                                                    <div class="col-auto">
+                                                        <a href={format!("{}", t.link)}
+                                                            target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+                                                            <i class="bi bi-trophy" aria-hidden="true"></i> {" View on StartGG"}
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </ul>
                                         </div>
                                     </div>
