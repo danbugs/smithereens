@@ -47,10 +47,14 @@ pub fn connect() -> Result<PgConnection> {
 }
 
 fn try_connect() -> ConnectionResult<PgConnection> {
-    PgConnection::establish(&env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).expect(&format!(
-        "{} environment variable not set",
-        PIDGTM_DATABASE_URL_ENVVAR_NAME
-    )))
+    PgConnection::establish(
+        &env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).unwrap_or_else(|_| {
+            panic!(
+                "{} environment variable not set",
+                PIDGTM_DATABASE_URL_ENVVAR_NAME
+            )
+        }),
+    )
 }
 
 #[cfg(test)]
