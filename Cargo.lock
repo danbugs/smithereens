@@ -2188,6 +2188,8 @@ dependencies = [
  "diesel",
  "serde",
  "startgg",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

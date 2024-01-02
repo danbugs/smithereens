@@ -11,22 +11,53 @@ pub mod schema;
 use std::env;
 
 use anyhow::Result;
-use diesel::{Connection, PgConnection};
+use diesel::{Connection, ConnectionResult, PgConnection};
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
 pub const PIDGTM_DATABASE_URL_ENVVAR_NAME: &str = "PIDGTM_DATABASE_URL";
 
+pub fn init_logger() -> Result<()> {
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber)?;
+
+    Ok(())
+}
+
 pub fn connect() -> Result<PgConnection> {
-    Ok(PgConnection::establish(&env::var(
-        PIDGTM_DATABASE_URL_ENVVAR_NAME,
-    )?)?)
+    // Try to connect forever until we succeed.
+    loop {
+        match try_connect() {
+            Ok(conn) => return Ok(conn),
+            Err(e) => {
+                tracing::error!("Failed to connect to database: {}", e);
+                tracing::info!("Retrying in 5 seconds...");
+                std::thread::sleep(std::time::Duration::from_secs(5));
+            }
+        }
+    }
+}
+
+fn try_connect() -> ConnectionResult<PgConnection> {
+    PgConnection::establish(&env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).expect(&format!(
+        "{} environment variable not set",
+        PIDGTM_DATABASE_URL_ENVVAR_NAME
+    )))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::Result;
 
     #[test]
-    fn test_connect() {
+    fn test_connect() -> Result<()> {
+        init_logger()?;
         assert!(connect().is_ok());
+
+        Ok(())
     }
 }
