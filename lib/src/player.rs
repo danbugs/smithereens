@@ -39,9 +39,11 @@ pub fn get_highest_id_with_sets_between(start_id: i32, end_id: i32) -> Result<Op
     let highest_id_player = smithe_database::schema::players::table
         .filter(smithe_database::schema::players::player_id.ge(start_id))
         .filter(smithe_database::schema::players::player_id.le(end_id))
-        .inner_join(smithe_database::schema::player_sets::table.on(
-            smithe_database::schema::players::player_id.eq(smithe_database::schema::player_sets::requester_id),
-        ))
+        .inner_join(
+            smithe_database::schema::player_sets::table
+                .on(smithe_database::schema::players::player_id
+                    .eq(smithe_database::schema::player_sets::requester_id)),
+        )
         .select(smithe_database::schema::players::player_id)
         .order(smithe_database::schema::players::player_id.desc())
         .first::<i32>(&mut db_connection)

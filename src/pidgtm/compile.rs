@@ -1,6 +1,7 @@
 use anyhow::Result;
 use smithe_lib::{
-    pidgtm_compile_times::insert_pidgtm_compile_time, tournament::get_tournaments_from_requester_id, player::get_highest_id_with_sets_between,
+    pidgtm_compile_times::insert_pidgtm_compile_time, player::get_highest_id_with_sets_between,
+    tournament::get_tournaments_from_requester_id,
 };
 
 use super::map::{map_increment, map_operation};
@@ -15,9 +16,14 @@ pub async fn handle_compile(
             start_at_player_id.unwrap(),
             end_at_player_id.unwrap(),
         )?;
-        
+
         if let Some(highest_id) = highest_id {
-            tracing::info!("📈 discovered cache! Highest id between {} and {} with data is {}", start_at_player_id.unwrap(), end_at_player_id.unwrap(), highest_id);
+            tracing::info!(
+                "📈 discovered cache! Highest id between {} and {} with data is {}",
+                start_at_player_id.unwrap(),
+                end_at_player_id.unwrap(),
+                highest_id
+            );
             Some(highest_id)
         } else {
             start_at_player_id
