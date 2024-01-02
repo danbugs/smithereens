@@ -1,6 +1,6 @@
-use web_sys::{KeyboardEvent, HtmlInputElement};
+use web_sys::{HtmlInputElement, KeyboardEvent};
 use yew::{function_component, html, Callback, Html, TargetCast};
-use yew_router::{hooks::use_navigator, components::Link};
+use yew_router::{components::Link, hooks::use_navigator};
 
 use crate::Route;
 

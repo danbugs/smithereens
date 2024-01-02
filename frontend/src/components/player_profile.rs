@@ -137,7 +137,6 @@ pub fn player_profile(props: &Props) -> Html {
                     format!("{}-{}", fetch_wins_without_dqs, fetch_losses_without_dqs);
                 let tournaments_attended = format!("{}", num_tournaments);
 
-
                 selected_player_summary_data.set(Some((
                     fetch_winrate,
                     fetch_competitor_type,
