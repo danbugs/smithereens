@@ -28,8 +28,9 @@ pub fn init_logger() -> Result<()> {
 }
 
 pub fn connect() -> Result<PgConnection> {
-    // Try to connect forever until we succeed.
-    loop {
+    // Try to connect forever until we succeed for a maximum of 100 (arbitraty) tries
+    let tries = 100;
+    for _ in 0..tries {
         match try_connect() {
             Ok(conn) => return Ok(conn),
             Err(e) => {
@@ -39,6 +40,10 @@ pub fn connect() -> Result<PgConnection> {
             }
         }
     }
+
+    Err(anyhow::anyhow!(
+        "Failed to connect to database after 100 tries"
+    ))
 }
 
 fn try_connect() -> ConnectionResult<PgConnection> {
