@@ -50,7 +50,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                             let canvas: web_sys::HtmlCanvasElement =
                                 canvas.dyn_into().unwrap_throw();
                             let data_url = canvas.to_data_url().unwrap_throw();
-                            
+
                             web_sys::console::log_1(&format!("{:?}", data_url).into());
 
                             image_data_url.set(Some(data_url));
