@@ -28,7 +28,7 @@ pub fn player_list(props: &Props) -> Html {
                 loading.set(true);
 
                 let endpoint = format!("{}/players/{}", env!("SERVER_ADDRESS"), gamer_tag);
-                let fetched_players: Vec<Player> = Request::get(&endpoint)
+                let mut fetched_players: Vec<Player> = Request::get(&endpoint)
                     .send()
                     .await
                     .unwrap()
@@ -36,7 +36,8 @@ pub fn player_list(props: &Props) -> Html {
                     .await
                     .unwrap();
 
-                web_sys::console::log_1(&format!("fetched_players: {:#?}", fetched_players).into());
+                fetched_players.sort_by_key(|e| e.player_id);
+
                 search_results.set(fetched_players);
 
                 loading.set(false);

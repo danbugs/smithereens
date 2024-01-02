@@ -52,7 +52,7 @@ pub fn player_profile(props: &Props) -> Html {
                 selected_player.set(Some(fetched_player));
 
                 // get tournaments, and sets
-                let fetched_tournaments: Vec<Tournament> =
+                let mut fetched_tournaments: Vec<Tournament> =
                     Request::get(&format!("{}/tournaments/{}", env!("SERVER_ADDRESS"), pid))
                         .send()
                         .await
@@ -60,6 +60,9 @@ pub fn player_profile(props: &Props) -> Html {
                         .json()
                         .await
                         .unwrap();
+
+                fetched_tournaments.sort_by_key(|e| e.tournament_id);
+                fetched_tournaments.reverse();
 
                 let fetched_sets: Vec<Set> =
                     Request::get(&format!("{}/sets/{}", env!("SERVER_ADDRESS"), pid))
