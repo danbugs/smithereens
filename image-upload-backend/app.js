@@ -1,8 +1,12 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+
+// Enable CORS for all requests
+app.use(cors());
 
 const RECAPTCHA_THRESHOLD = 0.5; // Set the threshold as per your requirement
 

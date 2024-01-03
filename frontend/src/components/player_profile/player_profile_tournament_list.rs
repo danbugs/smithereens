@@ -38,7 +38,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
     {
         let is_screenshotting = is_screenshotting.clone();
         let last_token = last_token.clone();
-        use_effect_with(is_screenshotting, move |is_screenshotting| {
+        use_effect_with(last_token, move |lt| {
             if (*is_screenshotting).is_some() {
                 let window = window().unwrap();
                 let document = window.document().unwrap();
@@ -51,11 +51,12 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                 let promise = html2canvas(&html_element);
 
                 let is_screenshotting = is_screenshotting.clone();
+                let lt = lt.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     let captcha_res =
                         Request::post(&format!("{}/check-captcha", env!("SERVER_ADDRESS_2")))
                             .json(&CaptchaRequest {
-                                token: (*last_token).clone().unwrap(),
+                                token: (*lt).clone().unwrap(),
                             })
                             .unwrap()
                             .send()
