@@ -1,11 +1,15 @@
+use gloo_net::http::Request;
 use web_sys::{window, HtmlElement};
 use yew::{function_component, html, use_effect_with, use_state, Callback, Html, Properties};
 
-use crate::models::{Set, Tournament};
+use crate::models::{CaptchaRequest, Set, Tournament};
 
 use crate::components::loading_spinner::LoadingSpinner;
 use crate::utils::calculate_spr_or_uf;
 use wasm_bindgen::prelude::*;
+use yew_recaptcha_v3::recaptcha::use_recaptcha;
+
+const RECAPTCHA_SITE_KEY: &str = std::env!("RECAPTCHA_SITE_KEY");
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -23,11 +27,17 @@ extern "C" {
 #[function_component(PlayerProfileTournamentList)]
 pub fn player_profile_tournament_list(props: &Props) -> Html {
     let is_screenshotting = use_state(|| None::<i32>);
-    let image_data_url = use_state(|| None::<String>);
+
+    let last_token = use_state(|| None);
+    let on_execute = use_state(|| None);
+
+    // Recaptcha will be called only when on_execute changes.
+    let on_execute_clone = on_execute.clone();
+    use_recaptcha(RECAPTCHA_SITE_KEY.to_string(), on_execute_clone);
 
     {
-        let image_data_url = image_data_url.clone();
         let is_screenshotting = is_screenshotting.clone();
+        let last_token = last_token.clone();
         use_effect_with(is_screenshotting, move |is_screenshotting| {
             if (*is_screenshotting).is_some() {
                 let window = window().unwrap();
@@ -41,21 +51,36 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                 let promise = html2canvas(&html_element);
 
                 let is_screenshotting = is_screenshotting.clone();
-                let image_data_url = image_data_url.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let result = wasm_bindgen_futures::JsFuture::from(promise).await;
+                    let captcha_res =
+                        Request::post(&format!("{}/check-captcha", env!("SERVER_ADDRESS_2")))
+                            .json(&CaptchaRequest {
+                                token: (*last_token).clone().unwrap(),
+                            })
+                            .unwrap()
+                            .send()
+                            .await;
 
-                    match result {
-                        Ok(canvas) => {
-                            let canvas: web_sys::HtmlCanvasElement =
-                                canvas.dyn_into().unwrap_throw();
-                            let data_url = canvas.to_data_url().unwrap_throw();
+                    match captcha_res {
+                        Ok(response) if response.ok() => {
+                            let result = wasm_bindgen_futures::JsFuture::from(promise).await;
+                            match result {
+                                Ok(canvas) => {
+                                    let canvas: web_sys::HtmlCanvasElement =
+                                        canvas.dyn_into().unwrap_throw();
+                                    let data_url = canvas.to_data_url().unwrap_throw();
 
-                            web_sys::console::log_1(&format!("{:?}", data_url).into());
-
-                            image_data_url.set(Some(data_url));
+                                    web_sys::console::log_1(&format!("{:?}", data_url).into());
+                                }
+                                Err(e) => {
+                                    web_sys::console::log_1(&format!("Error: {:?}", e).into())
+                                }
+                            }
                         }
-                        Err(e) => web_sys::console::log_1(&format!("Error: {:?}", e).into()),
+                        _ => {
+                            // Handle captcha verification failure
+                            web_sys::console::log_1(&"Captcha verification failed".into());
+                        }
                     }
 
                     is_screenshotting.set(None);
@@ -72,14 +97,23 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                     {
                         props.selected_player_tournaments.as_ref().unwrap().iter().map(|t| {
                             let onclick = {
+                                let last_token = last_token.clone();
+                                let on_execute = on_execute.clone();
                                 let is_screenshotting = is_screenshotting.clone();
                                 let tid = t.tournament_id;
                                 Callback::from(move |_| {
+                                    let last_token = last_token.clone();
+                                    // setting the on_execute callback will force recaptcha to be recalculated.
+                                    on_execute.set(Some(Callback::from(move |token| {
+                                        last_token.set(Some(token));
+                                    })));
+
                                     is_screenshotting.set(Some(tid));
+                                    ()
                                 })
                             };
                             html! {
-                                <div class="accordion-item" id={format!("result-section-{}", t.tournament_id)}>
+                                <div class="accordion-item">
                                     <h2 class="accordion-header" id={format!("heading-{}", t.tournament_id)}>
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={format!("#collapse-{}", t.tournament_id)} aria-expanded="false" aria-controls={format!("collapse-{}", t.tournament_id)}>
                                             <div class="col-md-10">
@@ -184,10 +218,31 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                             }
                                                         } else {
                                                             html! {
-                                                                <div class="col-12 text-center">
-                                                                    <span class="screenshot-message">
-                                                                        {format!("See my full results at smithe.net/player/{}", t.requester_id)}
-                                                                    </span>
+                                                                <div class="screenshot-container" id={format!("result-section-{}", t.tournament_id)}>
+                                                                    <div class="tournament-info">
+                                                                        <h3 class="tournament-title">{(&t.event_name).to_string()}</h3>
+                                                                        <p class="tournament-details">
+                                                                            {format!("Seed: {}, Placement: {}/{}", &t.seed, &t.placement, &t.num_entrants)}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div class="match-results">
+                                                                        {
+                                                                            for props.selected_tournament_sets.as_ref().unwrap().iter().filter(|s| s.tournament_id == t.tournament_id).map(|s| {
+                                                                                html! {
+                                                                                    <div class="match-result">
+                                                                                        <span class={if s.requester_score > s.opponent_score { "win" } else if s.requester_score < s.opponent_score { "loss" } else { "tie" }}>
+                                                                                            {format!("{} - {} vs {} (Seed: {})", s.requester_score, s.opponent_score, s.opponent_tag_with_prefix, s.opponent_seed)}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                }
+                                                                            })
+                                                                        }
+                                                                    </div>
+                                                                    <div class="twitter-footer">
+                                                                        <span class="screenshot-message">
+                                                                            {format!("See my full results at smithe.net/player/{}", t.requester_id)}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             }
                                                         }

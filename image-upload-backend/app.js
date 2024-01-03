@@ -4,6 +4,8 @@ const path = require('path');
 
 const app = express();
 
+const RECAPTCHA_THRESHOLD = 0.5; // Set the threshold as per your requirement
+
 // Middleware to handle JSON payloads
 app.use(express.json({ limit: '50mb' }));
 
@@ -22,12 +24,40 @@ app.post('/upload', (req, res) => {
             console.error(err);
             return res.status(500).send('Error saving the image');
         }
-        res.json({ message: 'Image uploaded successfully', filePath: filePath });
+        res.json({ message: 'Image uploaded successfully', filename: filename });
     });
 });
 
 // Serve images directly
 app.use('/images', express.static(path.join(__dirname, 'uploads')));
+
+// Check captcha token
+app.post('/check-captcha', (req, res) => {
+    const captchaToken = req.body.token;
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY; // Make sure this environment variable is set
+    const verificationUrl = `https://www.google.com/recaptcha/api/siteverify`;
+
+    // Make a request to verify the captcha token
+    fetch(verificationUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `secret=${secretKey}&response=${captchaToken}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.score >= RECAPTCHA_THRESHOLD) {
+            res.json({ message: 'Captcha verification successful', score: data.score });
+        } else {
+            res.status(400).json({ message: 'Captcha verification failed', score: data.score });
+        }
+    })
+    .catch(error => {
+        console.error('Error verifying captcha:', error);
+        res.status(500).json({ message: 'Error verifying captcha' });
+    });
+});
 
 // Endpoint to serve the HTML with Twitter Card metadata
 app.get('/image/:imageName', (req, res) => {
@@ -45,7 +75,7 @@ app.get('/image/:imageName', (req, res) => {
             <head>
                 <meta name="twitter:card" content="summary_large_image">
                 <meta name="twitter:image" content="${'http://smithe.pictures/images/' + imageName}">
-                <meta name="twitter:title" content="Tourney Result">
+                <meta name="twitter:title" content="smithe.net">
             </head>
             <body>
                 <img src="${'/images/' + imageName}" alt="Image">
