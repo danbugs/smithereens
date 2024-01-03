@@ -18,8 +18,8 @@ app.use(express.json({ limit: '50mb' }));
 
 // Endpoint for uploading base64 encoded image
 app.post('/upload', (req, res) => {
-    const base64Image = req.body.image;
-    
+    var base64Image = req.body.image;
+
     // Remove the prefix "data:image/png;base64,"
     const prefix = /^data:image\/\w+;base64,/;
     base64Image = base64Image.replace(prefix, "");
