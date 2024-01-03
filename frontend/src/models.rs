@@ -1,6 +1,29 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+pub struct ImageData {
+    pub image: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UploadSuccessResponse {
+    pub message: String,
+    pub filename: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UploadErrorResponse {
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum UploadResponse {
+    Success(UploadSuccessResponse),
+    Error(UploadErrorResponse),
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct CaptchaRequest {
     pub token: String,
 }

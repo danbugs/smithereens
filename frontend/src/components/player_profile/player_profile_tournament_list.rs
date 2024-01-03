@@ -1,8 +1,9 @@
 use gloo_net::http::Request;
+use js_sys::encode_uri_component;
 use web_sys::{window, HtmlElement};
 use yew::{function_component, html, use_effect_with, use_state, Callback, Html, Properties};
 
-use crate::models::{CaptchaRequest, Set, Tournament};
+use crate::models::{CaptchaRequest, ImageData, Set, Tournament, UploadResponse};
 
 use crate::components::loading_spinner::LoadingSpinner;
 use crate::utils::calculate_spr_or_uf;
@@ -71,7 +72,58 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                         canvas.dyn_into().unwrap_throw();
                                     let data_url = canvas.to_data_url().unwrap_throw();
 
-                                    web_sys::console::log_1(&format!("{:?}", data_url).into());
+                                    let upload_res = Request::post(&format!(
+                                        "{}/upload",
+                                        env!("SERVER_ADDRESS_2")
+                                    ))
+                                    .header("Content-Type", "application/json")
+                                    .json(&ImageData { image: data_url })
+                                    .unwrap()
+                                    .send()
+                                    .await;
+
+                                    if let Ok(upload_response) = upload_res {
+                                        if upload_response.ok() {
+                                            let json_result: Result<UploadResponse, _> =
+                                                upload_response.json().await;
+                                            match json_result {
+                                                Ok(UploadResponse::Success(success)) => {
+                                                    // Construct Twitter Web Intent URL
+                                                    let twitter_message = "Heads up, the URL below will be rendered as an image once you send out the tweet - feel free to delete this message and add your own comment about your run while leaving the URL at the bottom.\n";
+                                                    let image_url = format!(
+                                                        "https://smithe.pictures/image/{}",
+                                                        success.filename
+                                                    );
+                                                    let tweet_intent_url = format!("https://twitter.com/intent/tweet?text={}%0A{}", encode_uri_component(twitter_message), encode_uri_component(&image_url));
+
+                                                    // Open the Twitter Intent URL in a new tab/window
+                                                    let window = web_sys::window().unwrap();
+                                                    let _ = window.open_with_url(&tweet_intent_url);
+                                                }
+                                                Ok(UploadResponse::Error(error)) => {
+                                                    web_sys::console::log_1(
+                                                        &format!("Error: {}", error.message).into(),
+                                                    );
+                                                }
+                                                Err(e) => {
+                                                    web_sys::console::log_1(
+                                                        &format!(
+                                                            "Failed to parse JSON response: {:?}",
+                                                            e
+                                                        )
+                                                        .into(),
+                                                    );
+                                                }
+                                            }
+                                        } else {
+                                            web_sys::console::log_1(
+                                                &"Image upload failed with non-success status"
+                                                    .into(),
+                                            );
+                                        }
+                                    } else {
+                                        web_sys::console::log_1(&"Failed to send image".into());
+                                    }
                                 }
                                 Err(e) => {
                                     web_sys::console::log_1(&format!("Error: {:?}", e).into())
