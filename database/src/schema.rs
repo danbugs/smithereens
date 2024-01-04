@@ -36,6 +36,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    player_page_views (id) {
+        id -> Int4,
+        access_timestamp -> Timestamp,
+        player_id -> Int4,
+    }
+}
+
+diesel::table! {
     player_sets (id, requester_id) {
         id -> Int4,
         completed_at -> Int8,
@@ -92,6 +100,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     error_logs,
     pidgtm_compile_times,
     player_games,
+    player_page_views,
     player_sets,
     player_tournaments,
     players,
