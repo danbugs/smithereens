@@ -4,7 +4,9 @@ use gloo_net::http::Request;
 use yew::{function_component, html, use_effect_with, use_state, Callback, Html, Properties};
 use yew_router::hooks::use_navigator;
 
-use crate::{components::loading_spinner::LoadingSpinner, models::Player, utils::create_page_numbers};
+use crate::{
+    components::loading_spinner::LoadingSpinner, models::Player, utils::create_page_numbers,
+};
 
 const PAGE_SIZE: usize = 10; // Number of items per page
 

@@ -72,10 +72,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
         use_effect_with(tournament_list_current_page.clone(), move |_| {
             if let Some(spt) = selected_player_tournaments {
                 let start = (*tournament_list_current_page - 1) * TOURNAMENT_PAGE_SIZE;
-                let end = usize::min(
-                    start + TOURNAMENT_PAGE_SIZE,
-                    spt.len(),
-                );
+                let end = usize::min(start + TOURNAMENT_PAGE_SIZE, spt.len());
 
                 tournament_list_start_index.set(start);
                 tournament_list_end_index.set(end);
