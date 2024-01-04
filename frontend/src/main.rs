@@ -32,7 +32,6 @@ fn app() -> Html {
 }
 
 fn switch(routes: Route) -> Html {
-    web_sys::console::log_1(&format!("route: {:#?}", routes).into());
     html! {
         <div>
         <header>

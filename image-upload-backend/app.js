@@ -4,36 +4,74 @@ const path = require('path');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const bodyParser = require('body-parser');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
 // Enable CORS for all requests
-app.use(cors());
+
+// CORS configuration to allow only smithe.net
+const corsOptions = {
+    origin: 'https://smithe.net', // Replace with your specific domain, include http or https as needed
+    optionsSuccessStatus: 200 // For legacy browser support
+  };
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 const RECAPTCHA_THRESHOLD = 0.5; // Set the threshold as per your requirement
 
+// Check if RECAPTCHA_SECRET_KEY is set
+if (!process.env.RECAPTCHA_SECRET_KEY) {
+    console.error('RECAPTCHA_SECRET_KEY is not set. Exiting.');
+    process.exit(1);
+}
+
 // Middleware to handle JSON payloads
 app.use(express.json({ limit: '50mb' }));
+
+// Apply rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    handler: function (req, res /*, next */) {
+        console.error(`Rate limit exceeded for IP: ${req.ip}`);
+        res.status(429).send('Too many requests, please try again later.');
+    }
+});
+app.use(limiter);
+
+// File type validation function
+const isValidImageType = (dataString) => {
+    const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,/);
+    if (!matches) return false;
+    const mimeType = matches[1].toLowerCase();
+    return mimeType.startsWith('image/');
+};
 
 // Endpoint for uploading base64 encoded image
 app.post('/upload', (req, res) => {
     var base64Image = req.body.image;
+
+    // Validate image type
+    if (!isValidImageType(base64Image)) {
+        return res.status(400).send('Invalid image type');
+    }
 
     // Remove the prefix "data:image/png;base64,"
     const prefix = /^data:image\/\w+;base64,/;
     base64Image = base64Image.replace(prefix, "");
 
     const filename = 'image_' + Date.now() + '.png'; // or any other extension
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = path.join(__dirname, 'uploads', path.basename(filename));
 
     // Decode the base64 string to binary data
     const binaryData = Buffer.from(base64Image, 'base64');
-    
+
     // Save the binary data as an image file
     fs.writeFile(filePath, binaryData, (err) => {
         if (err) {
-            console.error(err);
+            console.error('Internal Error: Unable to save image.');
             return res.status(500).send('Error saving the image');
         }
         res.json({ message: 'Image uploaded successfully', filename: filename });
@@ -94,6 +132,10 @@ app.get('/image/:imageName', (req, res) => {
             </body>
         </html>
     `);
+});
+
+app.get('/', (req, res) => {
+    res.send('Hello, World!');
 });
 
 const PORT = process.env.PORT || 3000;
