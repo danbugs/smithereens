@@ -18,4 +18,61 @@ ul.list-group.list-group-hover button:hover{
     color: black !important;
     background-color: rgb(198, 38, 62, 0.6) !important;
   }
-  
+
+/* screenshot stuff */
+.screenshot-container {
+    width: 800px; /* Fixed width */
+    height: 418px; /* Fixed height */
+    border-radius: 25px; /* Rounded edges, considering Twitter's card style */
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 15px; /* Further reduced padding to fit the title */
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Distribute space evenly */
+}
+
+.tournament-info {
+    width: 100%;
+    text-align: center;
+}
+
+.tournament-title {
+    font-size: 22px; /* Slightly reduced font size to prevent cutting off */
+    margin-bottom: 2px; /* Minimized bottom margin */
+}
+
+.tournament-details {
+    font-size: 16px; /* Adjusted for space */
+}
+
+.match-results {
+    width: 770px; /* Width to fit within the padding */
+    text-align: center;
+    font-size: 15px; /* Slightly reduced font size to fit more content */
+}
+
+.match-result {
+    background: #f2f2f2;
+    padding: 6px 10px; /* Slightly reduced padding */
+    margin: 3px 0; /* Reduced margin to fit more items */
+    border-radius: 10px; /* Adjusted border radius */
+}
+
+.win {
+    color: green;
+}
+
+.loss {
+    color: red;
+}
+
+.tie {
+    color: #FFCC00;
+}
+
+.twitter-footer {
+    font-size: 15px; /* Slightly reduced font size */
+}

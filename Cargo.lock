@@ -2205,6 +2205,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "yew",
+ "yew-recaptcha-v3",
  "yew-router",
 ]
 
@@ -3108,6 +3109,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.42",
+]
+
+[[package]]
+name = "yew-recaptcha-v3"
+version = "0.2.0"
+source = "git+https://github.com/danbugs/yew-recaptcha/?rev=196f089158ea192b4e7db5b6c32d977cc5681d3c#196f089158ea192b4e7db5b6c32d977cc5681d3c"
+dependencies = [
+ "anyhow",
+ "gloo-console 0.3.0",
+ "gloo-utils 0.2.0",
+ "js-sys",
+ "serde",
+ "serde-wasm-bindgen 0.6.3",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]
