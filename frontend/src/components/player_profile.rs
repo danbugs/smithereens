@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use yew::{function_component, html, use_effect_with, use_state, Html, Properties};
 
 use crate::components::player_profile::player_profile_head_to_head_list::PlayerProfileHeadToHeadList;
-use crate::models::{Player, Set, Tournament, HeadToHeadResult};
+use crate::models::{HeadToHeadResult, Player, Set, Tournament};
 
 pub mod player_profile_header;
 use crate::components::player_profile::player_profile_header::PlayerProfileHeader;
@@ -85,15 +85,18 @@ pub fn player_profile(props: &Props) -> Html {
                 selected_tournament_sets.set(Some(fetched_sets));
 
                 // get head to head data
-                let mut fetch_head_to_heads: Vec<HeadToHeadResult> =
-                    Request::get(&format!("{}/player/{}/head_to_head", env!("SERVER_ADDRESS"), pid))
-                        .send()
-                        .await
-                        .unwrap()
-                        .json()
-                        .await
-                        .unwrap();
-                
+                let mut fetch_head_to_heads: Vec<HeadToHeadResult> = Request::get(&format!(
+                    "{}/player/{}/head_to_head",
+                    env!("SERVER_ADDRESS"),
+                    pid
+                ))
+                .send()
+                .await
+                .unwrap()
+                .json()
+                .await
+                .unwrap();
+
                 // sort by total sets
                 fetch_head_to_heads.sort_by_key(|e| e.total_sets);
                 fetch_head_to_heads.reverse();

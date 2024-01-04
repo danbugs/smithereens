@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct HeadToHeadResult {
     pub opponent_tag: String,

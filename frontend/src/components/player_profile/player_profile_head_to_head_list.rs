@@ -1,6 +1,9 @@
-use yew::{function_component, Properties, Html, html, use_effect_with, use_state, Callback};
+use yew::{function_component, html, use_effect_with, use_state, Callback, Html, Properties};
 
-use crate::{models::HeadToHeadResult, utils::create_page_numbers, components::loading_spinner::LoadingSpinner};
+use crate::{
+    components::loading_spinner::LoadingSpinner, models::HeadToHeadResult,
+    utils::create_page_numbers,
+};
 
 const PAGE_SIZE: usize = 10; // Number of items per page
 
@@ -27,11 +30,9 @@ pub fn player_profile_head_to_head_list(props: &Props) -> Html {
 
         use_effect_with(props.selected_player_head_to_heads.clone(), move |_| {
             // Calculate total pages
-            let t_pages = selected_player_head_to_heads
-                .as_ref()
-                .map_or(0, |hxhs| {
-                    (hxhs.len() as f32 / PAGE_SIZE as f32).ceil() as usize
-                });
+            let t_pages = selected_player_head_to_heads.as_ref().map_or(0, |hxhs| {
+                (hxhs.len() as f32 / PAGE_SIZE as f32).ceil() as usize
+            });
 
             // Update total pages state
             total_pages.set(t_pages);

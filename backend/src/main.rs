@@ -10,8 +10,9 @@ use rocket_cors::{AllowedHeaders, AllowedOrigins};
 use smithe_lib::{
     player::{get_all_like, get_player, get_top_two_characters},
     set::{
-        get_competitor_type, get_set_losses_by_dq, get_set_losses_without_dqs, get_set_wins_by_dq,
-        get_set_wins_without_dqs, get_sets_per_player_id, get_winrate, get_head_to_head_record,
+        get_competitor_type, get_head_to_head_record, get_set_losses_by_dq,
+        get_set_losses_without_dqs, get_set_wins_by_dq, get_set_wins_without_dqs,
+        get_sets_per_player_id, get_winrate,
     },
     tournament::get_tournaments_from_requester_id,
 };
@@ -129,7 +130,11 @@ fn rocket() -> Rocket<Build> {
         .mount("/players", routes![search_players])
         .mount(
             "/player",
-            routes![view_player, get_player_top_two_characters, get_player_head_to_head],
+            routes![
+                view_player,
+                get_player_top_two_characters,
+                get_player_head_to_head
+            ],
         )
         .mount("/tournaments", routes![get_player_tournaments])
         .mount(
