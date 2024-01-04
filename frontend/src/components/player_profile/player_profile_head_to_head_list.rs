@@ -12,21 +12,55 @@ pub struct Props {
 
 #[function_component(PlayerProfileHeadToHeadList)]
 pub fn player_profile_head_to_head_list(props: &Props) -> Html {
-    let head_to_heads = props.selected_player_head_to_heads.clone().unwrap_or_default();
-
     let current_page = use_state(|| 1);
-    let total_pages = use_state(|| (head_to_heads.len() as f32 / PAGE_SIZE as f32).ceil() as usize);
+    let total_pages = use_state(|| 0);
+    let start_index = use_state(|| 0);
+    let end_index = use_state(|| 0);
+
     let paginated_head_to_heads = use_state(|| Vec::<HeadToHeadResult>::new());
 
     {
-        let current_page = current_page.clone();
-        let head_to_heads = head_to_heads.clone();
+        let selected_player_head_to_heads = props.selected_player_head_to_heads.clone();
+        let total_pages = total_pages.clone();
+        let end_index = end_index.clone();
         let paginated_head_to_heads = paginated_head_to_heads.clone();
+
+        use_effect_with(props.selected_player_head_to_heads.clone(), move |_| {
+            // Calculate total pages
+            let t_pages = selected_player_head_to_heads
+                .as_ref()
+                .map_or(0, |hxhs| {
+                    (hxhs.len() as f32 / PAGE_SIZE as f32).ceil() as usize
+                });
+
+            // Update total pages state
+            total_pages.set(t_pages);
+
+            // Calculate paginated tournaments
+            if let Some(hxhs) = selected_player_head_to_heads.as_ref() {
+                let end = usize::min(PAGE_SIZE, hxhs.len());
+                end_index.set(end);
+                paginated_head_to_heads.set(hxhs[0..end].to_vec());
+            }
+        });
+    }
+
+    {
+        let start_index = start_index.clone();
+        let end_index = end_index.clone();
+        let paginated_head_to_heads = paginated_head_to_heads.clone();
+        let current_page = current_page.clone();
+        let selected_player_head_to_heads = props.selected_player_head_to_heads.clone();
         use_effect_with(current_page.clone(), move |_| {
-            let start = (*current_page - 1) * PAGE_SIZE;
-            let end = usize::min(start + PAGE_SIZE, head_to_heads.len());
-            paginated_head_to_heads.set(head_to_heads[start..end].to_vec());
-            || ()
+            if let Some(sphxhs) = selected_player_head_to_heads {
+                let start = (*current_page - 1) * PAGE_SIZE;
+                let end = usize::min(start + PAGE_SIZE, sphxhs.len());
+
+                start_index.set(start);
+                end_index.set(end);
+
+                paginated_head_to_heads.set(sphxhs[start..end].to_vec());
+            }
         });
     }
 
@@ -37,7 +71,7 @@ pub fn player_profile_head_to_head_list(props: &Props) -> Html {
     html! {
         if !props.display {
             <LoadingSpinner/>
-        } else if head_to_heads.is_empty() {
+        } else if (*paginated_head_to_heads).is_empty() {
             <div class="text-center" style="color:#C6263E">
                 <br/>
                 <br/>
@@ -46,8 +80,10 @@ pub fn player_profile_head_to_head_list(props: &Props) -> Html {
         } else {
             <>
                 <div class="col-md-12 mb-5">
-                <br/>
-                <br/>
+                    <div class="head-to-head-title">
+                        <h3 class="text-center text-uppercase font-weight-bold">{"Head-to-heads"}</h3>
+                        <hr class="my-4"/> // Stylish horizontal rule to separate title from content
+                    </div>
                     <ul class="list-group list-group-hover list-group-striped">
                     {
                         for (*paginated_head_to_heads).iter().map(|h2h| {
@@ -69,10 +105,10 @@ pub fn player_profile_head_to_head_list(props: &Props) -> Html {
                     <nav>
                         <ul class="pagination justify-content-center">
                             <li class={if curr_page == 1 { "page-item disabled" } else { "page-item" }}>
-                                <a class="page-link" href="#" onclick={
+                                <button class="page-link" onclick={
                                     let current_page = current_page.clone();
                                     Callback::from(move |_| current_page.set(usize::max(1, curr_page - 1)))
-                                }>{"Previous"}</a>
+                                }>{"Previous"}</button>
                             </li>
                             {
                                 for pagination_numbers.iter().map(|&num| {
@@ -82,22 +118,21 @@ pub fn player_profile_head_to_head_list(props: &Props) -> Html {
                                         let is_active = num == curr_page;
                                         html! {
                                             <li class={if is_active { "page-item active" } else { "page-item" }}>
-                                                <a class="page-link" href="#"
-                                                    onclick={
+                                                <button class="page-link" onclick={
                                                         let current_page = current_page.clone();
                                                         Callback::from(move |_| current_page.set(num))}>
                                                     { num.to_string() }
-                                                </a>
+                                                </button>
                                             </li>
                                         }
                                     }
                                 })
                             }
                             <li class={if curr_page == tot_pages { "page-item disabled" } else { "page-item" }}>
-                                <a class="page-link" href="#" onclick={
+                                <button class="page-link" onclick={
                                     let current_page = current_page.clone();
                                     Callback::from(move |_| current_page.set(usize::min(tot_pages, curr_page + 1)))
-                                }>{"Next"}</a>
+                                }>{"Next"}</button>
                             </li>
                         </ul>
                     </nav>

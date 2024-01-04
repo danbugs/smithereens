@@ -162,10 +162,10 @@ pub fn player_list(props: &Props) -> Html {
                 <nav>
                     <ul class="pagination justify-content-center">
                         <li class={if *current_page == 1 { "page-item disabled" } else { "page-item" }}>
-                            <a class="page-link" href="#" onclick={
+                        <button class="page-link" onclick={
                                 let current_page = current_page.clone();
                                 Callback::from(move |_| current_page.set(usize::max(1, *current_page - 1)))
-                            }>{"Previous"}</a>
+                            }>{"Previous"}</button>
                         </li>
                         {
                             for pagination_numbers.iter().map(|&num| {
@@ -175,22 +175,21 @@ pub fn player_list(props: &Props) -> Html {
                                     let is_active = num == *current_page;
                                     html! {
                                         <li class={if is_active { "page-item active" } else { "page-item" }}>
-                                            <a class="page-link" href="#"
-                                                onclick={
+                                        <button class="page-link" onclick={
                                                     let current_page = current_page.clone();
                                                     Callback::from(move |_| current_page.set(num))}>
                                                 { num.to_string() }
-                                            </a>
+                                            </button>
                                         </li>
                                     }
                                 }
                             })
                         }
                         <li class={if *current_page == *total_pages { "page-item disabled" } else { "page-item" }}>
-                            <a class="page-link" href="#" onclick={
+                        <button class="page-link" onclick={
                                 let current_page = current_page.clone();
                                 Callback::from(move |_| current_page.set(usize::min(*total_pages, *current_page + 1)))
-                            }>{"Next"}</a>
+                            }>{"Next"}</button>
                         </li>
                     </ul>
                 </nav>

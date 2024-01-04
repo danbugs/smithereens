@@ -96,6 +96,7 @@ pub fn player_profile(props: &Props) -> Html {
                 
                 // sort by total sets
                 fetch_head_to_heads.sort_by_key(|e| e.total_sets);
+                fetch_head_to_heads.reverse();
 
                 selected_player_head_to_heads.set(Some(fetch_head_to_heads));
 
