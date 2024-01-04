@@ -2218,6 +2218,7 @@ dependencies = [
  "chrono",
  "ctrlc",
  "diesel",
+ "serde",
  "smithe_database",
  "startgg",
  "tokio",

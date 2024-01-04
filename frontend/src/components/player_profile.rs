@@ -1,7 +1,8 @@
 use gloo_net::http::Request;
 use yew::{function_component, html, use_effect_with, use_state, Html, Properties};
 
-use crate::models::{Player, Set, Tournament};
+use crate::components::player_profile::player_profile_head_to_head_list::PlayerProfileHeadToHeadList;
+use crate::models::{Player, Set, Tournament, HeadToHeadResult};
 
 pub mod player_profile_header;
 use crate::components::player_profile::player_profile_header::PlayerProfileHeader;
@@ -12,6 +13,8 @@ use crate::components::player_profile::player_profile_tournament_list::PlayerPro
 pub mod player_profile_summary_data;
 use crate::components::player_profile::player_profile_summary_data::PlayerProfileSummaryData;
 use crate::utils::parse_text_vector;
+
+pub mod player_profile_head_to_head_list;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -26,11 +29,14 @@ pub fn player_profile(props: &Props) -> Html {
         use_state(|| None::<(String, String, String, String, Vec<String>)>);
     let selected_player_tournaments = use_state(|| None::<Vec<Tournament>>);
     let selected_tournament_sets = use_state(|| None::<Vec<Set>>);
+    let selected_player_head_to_heads = use_state(|| None::<Vec<HeadToHeadResult>>);
+
     {
         let selected_player = selected_player.clone();
         let selected_player_summary_data = selected_player_summary_data.clone();
         let selected_player_tournaments = selected_player_tournaments.clone();
         let selected_tournament_sets = selected_tournament_sets.clone();
+        let selected_player_head_to_heads = selected_player_head_to_heads.clone();
 
         use_effect_with((), move |_| {
             let selected_player = selected_player.clone();
@@ -77,6 +83,21 @@ pub fn player_profile(props: &Props) -> Html {
 
                 selected_player_tournaments.set(Some(fetched_tournaments));
                 selected_tournament_sets.set(Some(fetched_sets));
+
+                // get head to head data
+                let mut fetch_head_to_heads: Vec<HeadToHeadResult> =
+                    Request::get(&format!("{}/player/{}/head_to_head", env!("SERVER_ADDRESS"), pid))
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
+                
+                // sort by total sets
+                fetch_head_to_heads.sort_by_key(|e| e.total_sets);
+
+                selected_player_head_to_heads.set(Some(fetch_head_to_heads));
 
                 // get summary data
                 let fetch_winrate: String =
@@ -173,6 +194,11 @@ pub fn player_profile(props: &Props) -> Html {
                                 display={(*selected_player_tournaments).is_some()}
                                 selected_player_tournaments={(*selected_player_tournaments).clone()}
                                 selected_tournament_sets={(*selected_tournament_sets).clone()}
+                            />
+
+                            <PlayerProfileHeadToHeadList
+                                display={(*selected_player_head_to_heads).is_some()}
+                                selected_player_head_to_heads={(*selected_player_head_to_heads).clone()}
                             />
                         </div>
                     </div>

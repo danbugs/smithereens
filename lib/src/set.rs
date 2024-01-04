@@ -1,9 +1,44 @@
 use anyhow::Result;
-use diesel::{dsl::sql, prelude::*, sql_types::BigInt};
+use diesel::{
+    dsl::sql,
+    prelude::*,
+    sql_types::{BigInt, Integer, VarChar},
+};
 
+use serde::Serialize;
 use smithe_database::{db_models::set::Set, schema::player_sets::dsl::*};
 
 use startgg::{Set as SGGSet, SetSlot as SGGSetSlot};
+
+#[derive(Debug, Serialize, QueryableByName)]
+pub struct HeadToHeadResult {
+    #[diesel(sql_type = VarChar)]
+    pub opponent_tag: String,
+    #[diesel(sql_type = BigInt)]
+    pub total_sets: i64,
+    #[diesel(sql_type = BigInt)]
+    pub wins: i64,
+    #[diesel(sql_type = BigInt)]
+    pub losses: i64,
+}
+
+pub fn get_head_to_head_record(requester_id_param: i32) -> Result<Vec<HeadToHeadResult>> {
+    let mut db_connection = smithe_database::connect()?;
+
+    let results = diesel::sql_query(
+        "SELECT opponent_tag_with_prefix AS opponent_tag, COUNT(*) AS total_sets, 
+        SUM(CASE WHEN requester_score > opponent_score THEN 1 ELSE 0 END) AS wins, 
+        SUM(CASE WHEN requester_score < opponent_score THEN 1 ELSE 0 END) AS losses 
+        FROM player_sets 
+        WHERE requester_id = $1 
+        GROUP BY opponent_tag_with_prefix 
+        ORDER BY random()",
+    )
+    .bind::<Integer, _>(requester_id_param)
+    .load::<HeadToHeadResult>(&mut db_connection)?;
+
+    Ok(results)
+}
 
 pub fn get_all_from_player_id(player_id: i32) -> Result<Vec<Set>> {
     let mut db_connection = smithe_database::connect()?;
@@ -163,4 +198,17 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
         ((player_results.iter().map(|i| i.2).sum::<u32>() as f32) / (player_results.len() as f32))
             .round() as u32,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DANTOTTO_PLAYER_ID: i32 = 1178271;
+
+    #[test]
+    fn test_get_head_to_head_record() -> Result<()> {
+        dbg!(get_head_to_head_record(DANTOTTO_PLAYER_ID)?);
+        Ok(())
+    }
 }
