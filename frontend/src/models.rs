@@ -1,5 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+pub struct HeadToHeadResult {
+    pub opponent_tag: String,
+    pub total_sets: i64,
+    pub wins: i64,
+    pub losses: i64,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ImageData {
     pub image: String,

@@ -77,9 +77,6 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                 tournament_list_start_index.set(start);
                 tournament_list_end_index.set(end);
 
-                let spt = spt.clone();
-                let paginated_tournaments = paginated_tournaments.clone();
-
                 paginated_tournaments.set(spt[start..end].to_vec());
             }
         });
@@ -378,11 +375,10 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                     <nav>
                     <ul class="pagination justify-content-center">
                         <li class={if *tournament_list_current_page == 1 { "page-item disabled" } else { "page-item" }}>
-                        <a class="page-link" href="#"
-                            onclick={
+                        <button class="page-link" onclick={
                                 let tournament_list_current_page = tournament_list_current_page.clone();
                                 Callback::from(move |_| tournament_list_current_page.set(usize::max(1, *tournament_list_current_page - 1)))
-                            }>{"Previous"}</a>
+                            }>{"Previous"}</button>
                         </li>
                         {
                             for tournament_list_pagination_numbers.iter().map(|&num| {
@@ -392,24 +388,22 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                     let is_active = num == *tournament_list_current_page;
                                     html! {
                                         <li class={if is_active { "page-item active" } else { "page-item" }}>
-                                        <a class="page-link" href="#"
-                                            onclick={
+                                        <button class="page-link" onclick={
                                                 let tournament_list_current_page = tournament_list_current_page.clone();
                                                 Callback::from(move |_| tournament_list_current_page.set(num))}>
                                             { num.to_string() }
-                                        </a>
+                                        </button>
                                         </li>
                                     }
                                 }
                             })
                         }
                         <li class={if *tournament_list_current_page == *tournament_list_total_pages { "page-item disabled" } else { "page-item" }}>
-                        <a class="page-link" href="#"
-                            onclick={
+                        <button class="page-link" onclick={
                                 let tournament_list_current_page = tournament_list_current_page.clone();
                                 Callback::from(move |_| tournament_list_current_page.set(usize::min(*tournament_list_total_pages, *tournament_list_current_page + 1)))
                             }
-                        >{"Next"}</a>
+                        >{"Next"}</button>
                         </li>
                     </ul>
                 </nav>

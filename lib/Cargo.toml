@@ -12,6 +12,7 @@ test = false
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+serde = { version = "1", features = ["derive"]}
 diesel = { version = "2.1", features = ["postgres", "chrono"] }
 smithe_database = { path = "../database" }
 startgg = { path = "../startgg_api" }
