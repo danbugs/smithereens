@@ -47,6 +47,8 @@ fn search_players(tag: String) -> Result<String, Error> {
 
 #[get("/<id>")]
 fn view_player(id: i32) -> Result<String, Error> {
+    // insert player page view
+    smithe_lib::player_page_views::insert_player_page_view(id).unwrap();
     Ok(serde_json::to_string(&get_player(id)?)?)
 }
 
