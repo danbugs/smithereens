@@ -76,3 +76,15 @@ ul.list-group.list-group-hover button:hover{
 .twitter-footer {
     font-size: 15px; /* Slightly reduced font size */
 }
+
+.grecaptcha-badge {
+    z-index: 1000; /* Set z-index to a high value */
+    position: relative; /* Make sure it's positioned relative or absolute */
+}
+
+footer {
+    z-index: 10; /* Lower z-index than the reCAPTCHA */
+    position: fixed; /* Or use 'absolute' if 'fixed' is not necessary */
+    bottom: 0;
+    width: 100%;
+  }

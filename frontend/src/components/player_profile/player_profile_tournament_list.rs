@@ -6,11 +6,12 @@ use yew::{function_component, html, use_effect_with, use_state, Callback, Html, 
 use crate::models::{CaptchaRequest, ImageData, Set, Tournament, UploadResponse};
 
 use crate::components::loading_spinner::LoadingSpinner;
-use crate::utils::calculate_spr_or_uf;
+use crate::utils::{calculate_spr_or_uf, create_page_numbers};
 use wasm_bindgen::prelude::*;
 use yew_recaptcha_v3::recaptcha::use_recaptcha;
 
 const RECAPTCHA_SITE_KEY: &str = std::env!("RECAPTCHA_SITE_KEY");
+const TOURNAMENT_PAGE_SIZE: usize = 5;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -27,6 +28,72 @@ extern "C" {
 
 #[function_component(PlayerProfileTournamentList)]
 pub fn player_profile_tournament_list(props: &Props) -> Html {
+    let tournament_list_current_page = use_state(|| 1);
+    let tournament_list_total_pages = use_state(|| 0);
+    let tournament_list_start_index = use_state(|| 0);
+    let tournament_list_end_index = use_state(|| 0);
+
+    let paginated_tournaments = use_state(Vec::<Tournament>::new);
+
+    // Use effect that updates pagination state when selected_player_tournaments changes
+    {
+        let selected_player_tournaments = props.selected_player_tournaments.clone();
+        let tournament_list_total_pages = tournament_list_total_pages.clone();
+        let tournament_list_end_index = tournament_list_end_index.clone();
+        let paginated_tournaments = paginated_tournaments.clone();
+
+        use_effect_with(props.selected_player_tournaments.clone(), move |_| {
+            // Calculate total pages
+            let total_pages = selected_player_tournaments
+                .as_ref()
+                .map_or(0, |tournaments| {
+                    (tournaments.len() as f32 / TOURNAMENT_PAGE_SIZE as f32).ceil() as usize
+                });
+
+            // Update total pages state
+            tournament_list_total_pages.set(total_pages);
+
+            // Calculate paginated tournaments
+            if let Some(tournaments) = selected_player_tournaments.as_ref() {
+                let end = usize::min(TOURNAMENT_PAGE_SIZE, tournaments.len());
+                tournament_list_end_index.set(end);
+                paginated_tournaments.set(tournaments[0..end].to_vec());
+            }
+        });
+    }
+
+    {
+        let tournament_list_start_index = tournament_list_start_index.clone();
+        let tournament_list_end_index = tournament_list_end_index.clone();
+        let paginated_tournaments = paginated_tournaments.clone();
+        let tournament_list_current_page = tournament_list_current_page.clone();
+        let selected_player_tournaments = props.selected_player_tournaments.clone();
+
+        use_effect_with(tournament_list_current_page.clone(), move |_| {
+            if let Some(spt) = selected_player_tournaments {
+                let start = (*tournament_list_current_page - 1) * TOURNAMENT_PAGE_SIZE;
+                let end = usize::min(
+                    start + TOURNAMENT_PAGE_SIZE,
+                    spt.len(),
+                );
+
+                tournament_list_start_index.set(start);
+                tournament_list_end_index.set(end);
+
+                let spt = spt.clone();
+                let paginated_tournaments = paginated_tournaments.clone();
+
+                paginated_tournaments.set(spt[start..end].to_vec());
+            }
+        });
+    }
+
+    let tournament_list_curr_page = (*tournament_list_current_page).clone();
+    let tournament_list_tot_pages = (*tournament_list_total_pages).clone();
+
+    let tournament_list_pagination_numbers =
+        create_page_numbers(tournament_list_curr_page, tournament_list_tot_pages);
+
     let is_screenshotting = use_state(|| None::<i32>);
 
     let last_token = use_state(|| None);
@@ -148,7 +215,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                 <div>
                     <div class="accordion" id="accordion">
                     {
-                        props.selected_player_tournaments.as_ref().unwrap().iter().map(|t| {
+                        paginated_tournaments.iter().map(|t| {
                             let onclick = {
                                 let last_token = last_token.clone();
                                 let on_execute = on_execute.clone();
@@ -311,6 +378,46 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                     </div>
                     <br/>
                     <br/>
+                    <nav>
+                    <ul class="pagination justify-content-center">
+                        <li class={if *tournament_list_current_page == 1 { "page-item disabled" } else { "page-item" }}>
+                        <a class="page-link" href="#"
+                            onclick={
+                                let tournament_list_current_page = tournament_list_current_page.clone();
+                                Callback::from(move |_| tournament_list_current_page.set(usize::max(1, *tournament_list_current_page - 1)))
+                            }>{"Previous"}</a>
+                        </li>
+                        {
+                            for tournament_list_pagination_numbers.iter().map(|&num| {
+                                if num == 0 {
+                                    html! { <li class="page-item disabled"><span class="page-link">{"..."}</span></li> }
+                                } else {
+                                    let is_active = num == *tournament_list_current_page;
+                                    html! {
+                                        <li class={if is_active { "page-item active" } else { "page-item" }}>
+                                        <a class="page-link" href="#"
+                                            onclick={
+                                                let tournament_list_current_page = tournament_list_current_page.clone();
+                                                Callback::from(move |_| tournament_list_current_page.set(num))}>
+                                            { num.to_string() }
+                                        </a>
+                                        </li>
+                                    }
+                                }
+                            })
+                        }
+                        <li class={if *tournament_list_current_page == *tournament_list_total_pages { "page-item disabled" } else { "page-item" }}>
+                        <a class="page-link" href="#"
+                            onclick={
+                                let tournament_list_current_page = tournament_list_current_page.clone();
+                                Callback::from(move |_| tournament_list_current_page.set(usize::min(*tournament_list_total_pages, *tournament_list_current_page + 1)))
+                            }
+                        >{"Next"}</a>
+                        </li>
+                    </ul>
+                </nav>
+                <br/>
+                <br/>
                 </div>
             }
         }
