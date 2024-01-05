@@ -79,7 +79,11 @@ jobs:
 
     # We use cargo-llvm-cov for tests rather than cargo test to also evaluate test coverage
     - name: Install cargo-llvm-cov
-      run: cargo install cargo-llvm-cov        
+      uses: taiki-e/install-action@v1
+      with:
+        tool: cargo-llvm-cov
+    - name: Install llvm-tools-preview for cargo-llvm-cov
+      run: rustup component add llvm-tools-preview
 
     - name: Cache Rust targets
       uses: actions/cache@v3
