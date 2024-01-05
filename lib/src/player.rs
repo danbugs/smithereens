@@ -103,7 +103,10 @@ fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
     update_player_in_pidgtm_db_provided_connection(pti, &mut db_connection)
 }
 
-fn update_player_in_pidgtm_db_provided_connection(pti: &SGGPlayer, db_connection: &mut PgConnection) -> Result<()> {
+fn update_player_in_pidgtm_db_provided_connection(
+    pti: &SGGPlayer,
+    db_connection: &mut PgConnection,
+) -> Result<()> {
     let player = Player::from(pti.clone());
     update(players)
         .filter(smithe_database::schema::players::player_id.eq(player.player_id))
@@ -481,7 +484,7 @@ mod tests {
     fn test_check_if_large_consecutive_playerid_grouping_exists() {
         let res = check_if_large_consecutive_playerid_grouping_exists();
         assert!(res.is_ok());
-        assert_eq!(res.unwrap(), false);
+        assert!(!res.unwrap());
     }
 
     #[test]
@@ -556,23 +559,26 @@ mod tests {
     fn test_add_new_player_to_pidgtm_db() {
         let mut db_connection = smithe_database::connect().unwrap();
         let err = db_connection.transaction::<(), _, _>(|db_connection| {
-            add_new_player_to_pidgtm_db_provided_connection(&SGGPlayer {
-                id: 999,
-                prefix: None,
-                gamerTag: Some("Orinorae Thaamtekelud".to_string()),
-                rankings: None,
-                user: Some(User {
-                    name: None,
-                    location: None,
-                    bio: None,
-                    birthday: None,
-                    images: None,
-                    slug: Some("user/123a4bc5".to_string()),
-                    genderPronoun: None,
-                    authorizations: None,
-                }),
-                sets: None,
-            }, db_connection)
+            add_new_player_to_pidgtm_db_provided_connection(
+                &SGGPlayer {
+                    id: 999,
+                    prefix: None,
+                    gamerTag: Some("Orinorae Thaamtekelud".to_string()),
+                    rankings: None,
+                    user: Some(User {
+                        name: None,
+                        location: None,
+                        bio: None,
+                        birthday: None,
+                        images: None,
+                        slug: Some("user/123a4bc5".to_string()),
+                        genderPronoun: None,
+                        authorizations: None,
+                    }),
+                    sets: None,
+                },
+                db_connection,
+            )
             .expect("failed to add new player to pidgtm db");
 
             // check that the player id was added
@@ -620,5 +626,5 @@ mod tests {
         let res = get_highest_id_with_sets_between(1000, 1001);
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), Some(1000));
-    }    
+    }
 }

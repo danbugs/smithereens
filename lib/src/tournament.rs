@@ -156,8 +156,7 @@ fn delete_tournaments_from_requester_id_provided_connection(
     player_id: i32,
     db_connection: &mut PgConnection,
 ) -> Result<()> {
-    diesel::delete(player_tournaments.filter(requester_id.eq(player_id)))
-        .execute(db_connection)?;
+    diesel::delete(player_tournaments.filter(requester_id.eq(player_id))).execute(db_connection)?;
 
     Ok(())
 }
@@ -167,7 +166,7 @@ mod tests {
     use anyhow::Result;
     use diesel::Connection;
 
-    use crate::common::{init_logger, get_sggset_test_data};
+    use crate::common::{get_sggset_test_data, init_logger};
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
     const TYRESE_PLAYER_ID: i32 = 2021528;
@@ -187,7 +186,7 @@ mod tests {
     fn is_tournament_finished_test() {
         let s = get_sggset_test_data();
 
-        assert_eq!(super::is_tournament_finished(&s), true);
+        assert!(super::is_tournament_finished(&s));
     }
 
     #[test]
@@ -201,14 +200,17 @@ mod tests {
     fn get_requester_id_from_standings_test() {
         let s = get_sggset_test_data();
 
-        assert_eq!(super::get_requester_id_from_standings(&s, TYRESE_PLAYER_ID), 9410060);
+        assert_eq!(
+            super::get_requester_id_from_standings(&s, TYRESE_PLAYER_ID),
+            9410060
+        );
     }
 
     #[test]
     fn is_ssbu_singles_and_supported_tournament_test() {
         let s = get_sggset_test_data();
 
-        assert_eq!(super::is_ssbu_singles_and_supported_tournament(&s), true);
+        assert!(super::is_ssbu_singles_and_supported_tournament(&s));
     }
 
     #[test]
@@ -232,10 +234,7 @@ mod tests {
     fn is_tournament_cached_test() -> Result<()> {
         let s = get_sggset_test_data();
 
-        assert_eq!(
-            super::is_tournament_cached(TYRESE_PLAYER_ID, &s)?,
-            true
-        );
+        assert!(super::is_tournament_cached(TYRESE_PLAYER_ID, &s)?);
 
         Ok(())
     }
@@ -243,15 +242,23 @@ mod tests {
     #[test]
     fn delete_tournaments_from_requester_id_test() -> Result<()> {
         let mut db_connection = smithe_database::connect()?;
-        
-        let err = db_connection.transaction::<(),_ , _>(|db_connection| {
-            super::delete_tournaments_from_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection).expect("failed to delete tournaments");
+
+        let err = db_connection.transaction::<(), _, _>(|db_connection| {
+            super::delete_tournaments_from_requester_id_provided_connection(
+                DANTOTTO_PLAYER_ID,
+                db_connection,
+            )
+            .expect("failed to delete tournaments");
 
             // check player doesn't have any tournaments
             assert_eq!(
-                super::get_num_tournaments_attended_provided_connection(DANTOTTO_PLAYER_ID, db_connection).expect("failed to get num tournaments"),
+                super::get_num_tournaments_attended_provided_connection(
+                    DANTOTTO_PLAYER_ID,
+                    db_connection
+                )
+                .expect("failed to get num tournaments"),
                 0
-            );            
+            );
 
             Err(diesel::result::Error::RollbackTransaction)
         });
@@ -259,9 +266,7 @@ mod tests {
         assert!(err.is_err());
 
         // check player has tournaments again
-        assert!(
-            super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)? > 0
-        );
+        assert!(super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)? > 0);
 
         Ok(())
     }

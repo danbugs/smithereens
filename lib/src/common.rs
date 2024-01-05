@@ -2,9 +2,12 @@
 
 use anyhow::Result;
 use as_any::Downcast;
+use startgg::{
+    Entrant, Event, PhaseGroup, Player, Score, Seed, Set as SGGSet, SetSlot, Standing,
+    StandingConnection, StandingStats, Tournament, User, Videogame,
+};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use startgg::{Set as SGGSet, SetSlot, Entrant, Standing, StandingStats, Score, Seed, PhaseGroup, Videogame, Tournament, Event, StandingConnection, Player, User};
 
 use std::{
     future::Future,
@@ -174,127 +177,92 @@ pub fn get_sggset_test_data() -> SGGSet {
         games: None,
         slots: vec![
             SetSlot {
-                entrant: Some(
-                    Entrant {
-                        id: Some(9412484),
-                        name: Some("Ancient 3 scrub".to_string()),
-                    },
-                ),
-                seed: Some(
-                    Seed {
-                        seedNum: Some(2),
-                        entrant: None,
-                    },
-                ),
-                standing: Some(
-                    Standing {
-                        entrant: None,
-                        player: None,
-                        stats: Some(
-                            StandingStats {
-                                score: Score {
-                                    value: Some(2.0),
-                                },
-                            },
-                        ),
-                        placement: None,
-                    },
-                ),
+                entrant: Some(Entrant {
+                    id: Some(9412484),
+                    name: Some("Ancient 3 scrub".to_string()),
+                }),
+                seed: Some(Seed {
+                    seedNum: Some(2),
+                    entrant: None,
+                }),
+                standing: Some(Standing {
+                    entrant: None,
+                    player: None,
+                    stats: Some(StandingStats {
+                        score: Score { value: Some(2.0) },
+                    }),
+                    placement: None,
+                }),
             },
             SetSlot {
-                entrant: Some(
-                    Entrant {
-                        id: Some(9410060),
-                        name: Some("tyrese".to_string()),
-                    },
-                ),
-                seed: Some(
-                    Seed {
-                        seedNum: Some(10),
-                        entrant: None,
-                    },
-                ),
-                standing: Some(
-                    Standing {
-                        entrant: None,
-                        player: None,
-                        stats: Some(
-                            StandingStats {
-                                score: Score {
-                                    value: Some(0.0),
-                                },
-                            },
-                        ),
-                        placement: None,
-                    },
-                ),
+                entrant: Some(Entrant {
+                    id: Some(9410060),
+                    name: Some("tyrese".to_string()),
+                }),
+                seed: Some(Seed {
+                    seedNum: Some(10),
+                    entrant: None,
+                }),
+                standing: Some(Standing {
+                    entrant: None,
+                    player: None,
+                    stats: Some(StandingStats {
+                        score: Score { value: Some(0.0) },
+                    }),
+                    placement: None,
+                }),
             },
         ],
         completedAt: Some(1645848034),
-        phaseGroup: Some(
-            PhaseGroup {
-                bracketType: "DOUBLE_ELIMINATION".to_string(),
-            },
-        ),
-        event: Some(
-            Event {
-                id: Some(685122),
-                slug: Some("tournament/vsb-novice-friday-17/event/novice-ultimate-singles-bc-cooler-set".to_string()),
-                phases: None,
-                name: Some("Novice Ultimate Singles (BC Cooler Set 😎)".to_string()),
-                numEntrants: Some(12),
-                isOnline: Some(false),
-                videogame: Some(
-                    Videogame {
-                        name: "Super Smash Bros. Ultimate".to_string(),
-                    },
-                ),
-                tournament: Some(
-                    Tournament {
-                        id: 423456,
-                        name: "VSB - Novice Friday #17".to_string(),
-                        endAt: Some(1645862340),
-                    },
-                ),
-                standings: Some(
-                    StandingConnection {
-                        nodes: vec![
-                            Standing {
-                                entrant: Some(
-                                    Entrant {
-                                        id: Some(9410060),
-                                        name: None,
-                                    },
-                                ),
-                                player: Some(
-                                    Player {
-                                        id: 2021528,
-                                        prefix: None,
-                                        gamerTag: None,
-                                        user: Some(
-                                            User {
-                                                name: None,
-                                                location: None,
-                                                bio: None,
-                                                birthday: None,
-                                                images: None,
-                                                slug: Some("user/1f1bee01".to_string()),
-                                                genderPronoun: None,
-                                                authorizations: None,
-                                            },
-                                        ),
-                                        rankings: None,
-                                        sets: None,
-                                    },
-                                ),
-                                stats: None,
-                                placement: Some(5),
-                            },
-                        ],
-                    },
-                ),
-                teamRosterSize: None,
-            },
-        ),
+        phaseGroup: Some(PhaseGroup {
+            bracketType: "DOUBLE_ELIMINATION".to_string(),
+        }),
+        event: Some(Event {
+            id: Some(685122),
+            slug: Some(
+                "tournament/vsb-novice-friday-17/event/novice-ultimate-singles-bc-cooler-set"
+                    .to_string(),
+            ),
+            phases: None,
+            name: Some("Novice Ultimate Singles (BC Cooler Set 😎)".to_string()),
+            numEntrants: Some(12),
+            isOnline: Some(false),
+            videogame: Some(Videogame {
+                name: "Super Smash Bros. Ultimate".to_string(),
+            }),
+            tournament: Some(Tournament {
+                id: 423456,
+                name: "VSB - Novice Friday #17".to_string(),
+                endAt: Some(1645862340),
+            }),
+            standings: Some(StandingConnection {
+                nodes: vec![Standing {
+                    entrant: Some(Entrant {
+                        id: Some(9410060),
+                        name: None,
+                    }),
+                    player: Some(Player {
+                        id: 2021528,
+                        prefix: None,
+                        gamerTag: None,
+                        user: Some(User {
+                            name: None,
+                            location: None,
+                            bio: None,
+                            birthday: None,
+                            images: None,
+                            slug: Some("user/1f1bee01".to_string()),
+                            genderPronoun: None,
+                            authorizations: None,
+                        }),
+                        rankings: None,
+                        sets: None,
+                    }),
+                    stats: None,
+                    placement: Some(5),
+                }],
+            }),
+            teamRosterSize: None,
+        }),
     }
 }
