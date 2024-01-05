@@ -208,7 +208,7 @@ mod tests {
 
     #[test]
     fn test_get_head_to_head_record() -> Result<()> {
-        dbg!(get_head_to_head_record(DANTOTTO_PLAYER_ID)?);
+        get_head_to_head_record(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 }
