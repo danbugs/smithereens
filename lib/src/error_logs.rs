@@ -20,16 +20,22 @@ mod tests {
         // get count of all error_logs w/ "test error" message
         let mut db_connection = smithe_database::connect().unwrap();
         let err_logs = error_logs.filter(error_message.eq("test error"));
-        let count = err_logs.count().get_result::<i64>(&mut db_connection).unwrap();
+        let count = err_logs
+            .count()
+            .get_result::<i64>(&mut db_connection)
+            .unwrap();
 
         // insert error
         let err = "test error".to_string();
         insert_error_log(err.clone())?;
 
         // get count again and check that it increased by 1
-        let new_count = err_logs.count().get_result::<i64>(&mut db_connection).unwrap();
+        let new_count = err_logs
+            .count()
+            .get_result::<i64>(&mut db_connection)
+            .unwrap();
         assert_eq!(new_count, count + 1);
-        
+
         // delete all error_logs w/ "test error" message
         diesel::delete(err_logs).execute(&mut db_connection)?;
 
