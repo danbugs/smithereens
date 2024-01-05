@@ -30,7 +30,7 @@ pub struct SeedConnection {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Seed {
     pub seedNum: Option<i32>,
-    entrant: Option<Entrant>,
+    pub entrant: Option<Entrant>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

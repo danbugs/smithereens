@@ -76,9 +76,16 @@ pub fn get_player(pid: i32) -> Result<Player> {
 pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
     let mut db_connection = smithe_database::connect()?;
 
+    add_new_player_to_pidgtm_db_provided_connection(pti, &mut db_connection)
+}
+
+fn add_new_player_to_pidgtm_db_provided_connection(
+    pti: &SGGPlayer,
+    db_connection: &mut PgConnection,
+) -> Result<()> {
     match insert_into(players)
         .values(Player::from(pti.clone()))
-        .execute(&mut db_connection)
+        .execute(db_connection)
     {
         Ok(_) => Ok(()),
         Err(e) => match e {
@@ -93,6 +100,10 @@ pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
 
 fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
     let mut db_connection = smithe_database::connect()?;
+    update_player_in_pidgtm_db_provided_connection(pti, &mut db_connection)
+}
+
+fn update_player_in_pidgtm_db_provided_connection(pti: &SGGPlayer, db_connection: &mut PgConnection) -> Result<()> {
     let player = Player::from(pti.clone());
     update(players)
         .filter(smithe_database::schema::players::player_id.eq(player.player_id))
@@ -110,11 +121,11 @@ fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
             bio.eq(player.bio),
             rankings.eq(player.rankings),
         ))
-        .execute(&mut db_connection)?;
+        .execute(db_connection)?;
     Ok(())
 }
 
-pub fn update_and_handle_deleted(pti: &SGGPlayer) -> Result<()> {
+fn update_and_handle_deleted(pti: &SGGPlayer) -> Result<()> {
     if pti.user.is_none() {
         tracing::info!("❎ caught a deleted account #1 (id: '{}')...", pti.id);
         pti.clone().user = get_empty_user_with_slug(pti.id)?;
@@ -134,10 +145,18 @@ pub fn update_and_handle_deleted(pti: &SGGPlayer) -> Result<()> {
 
 pub fn add_new_empty_player_record(pid: i32) -> Result<()> {
     let mut db_connection = smithe_database::connect()?;
+    add_new_empty_player_record_provided_connection(pid, &mut db_connection)?;
+    Ok(())
+}
+
+fn add_new_empty_player_record_provided_connection(
+    pid: i32,
+    db_connection: &mut PgConnection,
+) -> Result<()> {
     insert_into(empty_player_ids)
         .values(EmptyPlayerId::from(pid))
         .on_conflict_do_nothing()
-        .execute(&mut db_connection)?;
+        .execute(db_connection)?;
     Ok(())
 }
 
@@ -207,10 +226,17 @@ pub fn get_max_player_id() -> Result<i32> {
 
 pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
     let mut db_connection = smithe_database::connect()?;
+    get_empty_user_with_slug_provided_connection(pid, &mut db_connection)
+}
+
+fn get_empty_user_with_slug_provided_connection(
+    pid: i32,
+    db_connection: &mut PgConnection,
+) -> Result<Option<User>> {
     let some_slug = players
         .select(user_slug)
         .filter(smithe_database::schema::players::player_id.eq(pid))
-        .get_result(&mut db_connection)
+        .get_result(db_connection)
         .optional()?;
 
     Ok(Some(User {
@@ -449,8 +475,150 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
 mod tests {
     use super::*;
 
+    const DANTOTTO_PLAYER_ID: i32 = 1178271;
+
     #[test]
     fn test_check_if_large_consecutive_playerid_grouping_exists() {
-        check_if_large_consecutive_playerid_grouping_exists().unwrap();
+        let res = check_if_large_consecutive_playerid_grouping_exists();
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), false);
     }
+
+    #[test]
+    fn test_get_max_player_id() {
+        let res = get_max_player_id();
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_get_top_two_characters() {
+        let res = get_top_two_characters(DANTOTTO_PLAYER_ID);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.unwrap(),
+            vec![Some("King Dedede".to_string()), Some("Steve".to_string())]
+        );
+    }
+
+    #[test]
+    fn test_get_subsequent_player_id_with_circle_back() {
+        let res = get_subsequent_player_id_with_circle_back(DANTOTTO_PLAYER_ID);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), 1178566);
+    }
+
+    #[test]
+    fn test_get_empty_user_with_slug() {
+        let res = get_empty_user_with_slug(DANTOTTO_PLAYER_ID);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.unwrap().unwrap().slug,
+            Some("user/566b1fb5".to_string())
+        );
+    }
+
+    #[test]
+    fn test_add_new_empty_player_record() {
+        let mut db_connection = smithe_database::connect().unwrap();
+        let err = db_connection.transaction::<(), _, _>(|db_connection| {
+            add_new_empty_player_record_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                .expect("failed to add new empty player record");
+
+            // check that the player id was added
+            assert_eq!(
+                empty_player_ids
+                    .filter(
+                        smithe_database::schema::empty_player_ids::player_id.eq(DANTOTTO_PLAYER_ID)
+                    )
+                    .count()
+                    .get_result::<i64>(db_connection)
+                    .unwrap(),
+                1
+            );
+
+            Err(diesel::result::Error::RollbackTransaction)
+        });
+
+        assert!(err.is_err());
+
+        // check no id in empty_player_ids
+        assert_eq!(
+            empty_player_ids
+                .filter(smithe_database::schema::empty_player_ids::player_id.eq(DANTOTTO_PLAYER_ID))
+                .count()
+                .get_result::<i64>(&mut db_connection)
+                .unwrap(),
+            0
+        );
+    }
+
+    #[test]
+    fn test_add_new_player_to_pidgtm_db() {
+        let mut db_connection = smithe_database::connect().unwrap();
+        let err = db_connection.transaction::<(), _, _>(|db_connection| {
+            add_new_player_to_pidgtm_db_provided_connection(&SGGPlayer {
+                id: 999,
+                prefix: None,
+                gamerTag: Some("Orinorae Thaamtekelud".to_string()),
+                rankings: None,
+                user: Some(User {
+                    name: None,
+                    location: None,
+                    bio: None,
+                    birthday: None,
+                    images: None,
+                    slug: Some("user/123a4bc5".to_string()),
+                    genderPronoun: None,
+                    authorizations: None,
+                }),
+                sets: None,
+            }, db_connection)
+            .expect("failed to add new player to pidgtm db");
+
+            // check that the player id was added
+            assert_eq!(
+                players
+                    .filter(smithe_database::schema::players::player_id.eq(999))
+                    .count()
+                    .get_result::<i64>(db_connection)
+                    .unwrap(),
+                1
+            );
+
+            Err(diesel::result::Error::RollbackTransaction)
+        });
+
+        assert!(err.is_err());
+
+        // check no id in empty_player_ids
+        assert_eq!(
+            players
+                .filter(smithe_database::schema::players::player_id.eq(999))
+                .count()
+                .get_result::<i64>(&mut db_connection)
+                .unwrap(),
+            0
+        );
+    }
+
+    #[test]
+    fn test_get_all_like() {
+        let res = get_all_like("dantotto");
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_get_player() {
+        let res = get_player(DANTOTTO_PLAYER_ID);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().player_id, DANTOTTO_PLAYER_ID);
+    }
+
+    #[test]
+    fn test_get_highest_id_with_sets_between() {
+        let res = get_highest_id_with_sets_between(1000, 1001);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), Some(1000));
+    }    
 }

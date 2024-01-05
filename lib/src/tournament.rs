@@ -100,10 +100,17 @@ pub fn is_ssbu_singles_and_supported_tournament(s: &SGGSet) -> bool {
 
 pub fn get_num_tournaments_attended(pid: i32) -> Result<i64> {
     let mut db_connection = smithe_database::connect()?;
+    get_num_tournaments_attended_provided_connection(pid, &mut db_connection)
+}
+
+fn get_num_tournaments_attended_provided_connection(
+    pid: i32,
+    db_connection: &mut PgConnection,
+) -> Result<i64> {
     let count: i64 = player_tournaments
         .select(count_star())
         .filter(requester_id.eq(pid))
-        .first(&mut db_connection)?;
+        .first(db_connection)?;
 
     Ok(count)
 }
@@ -142,8 +149,15 @@ pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
 // delete a player's tournaments given a requester id
 pub fn delete_tournaments_from_requester_id(player_id: i32) -> Result<()> {
     let mut db_connection = smithe_database::connect()?;
+    delete_tournaments_from_requester_id_provided_connection(player_id, &mut db_connection)
+}
+
+fn delete_tournaments_from_requester_id_provided_connection(
+    player_id: i32,
+    db_connection: &mut PgConnection,
+) -> Result<()> {
     diesel::delete(player_tournaments.filter(requester_id.eq(player_id)))
-        .execute(&mut db_connection)?;
+        .execute(db_connection)?;
 
     Ok(())
 }
@@ -151,10 +165,12 @@ pub fn delete_tournaments_from_requester_id(player_id: i32) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
+    use diesel::Connection;
 
-    use crate::common::init_logger;
+    use crate::common::{init_logger, get_sggset_test_data};
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
+    const TYRESE_PLAYER_ID: i32 = 2021528;
 
     #[tokio::test]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
@@ -164,6 +180,89 @@ mod tests {
         let elapsed = now.elapsed();
 
         tracing::info!("Test took: {:?} seconds", elapsed.as_secs());
+        Ok(())
+    }
+
+    #[test]
+    fn is_tournament_finished_test() {
+        let s = get_sggset_test_data();
+
+        assert_eq!(super::is_tournament_finished(&s), true);
+    }
+
+    #[test]
+    fn get_placement_test() {
+        let s = get_sggset_test_data();
+
+        assert_eq!(super::get_placement(&s, TYRESE_PLAYER_ID), 5);
+    }
+
+    #[test]
+    fn get_requester_id_from_standings_test() {
+        let s = get_sggset_test_data();
+
+        assert_eq!(super::get_requester_id_from_standings(&s, TYRESE_PLAYER_ID), 9410060);
+    }
+
+    #[test]
+    fn is_ssbu_singles_and_supported_tournament_test() {
+        let s = get_sggset_test_data();
+
+        assert_eq!(super::is_ssbu_singles_and_supported_tournament(&s), true);
+    }
+
+    #[test]
+    fn get_num_tournaments_attended_test() -> Result<()> {
+        let count = super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)?;
+
+        // check that it is greater than or equalt to 237
+        assert!(count >= 237);
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_seed_test() {
+        let s = get_sggset_test_data();
+
+        assert_eq!(super::get_seed(9410060, &s), Some(10));
+    }
+
+    #[test]
+    fn is_tournament_cached_test() -> Result<()> {
+        let s = get_sggset_test_data();
+
+        assert_eq!(
+            super::is_tournament_cached(TYRESE_PLAYER_ID, &s)?,
+            true
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn delete_tournaments_from_requester_id_test() -> Result<()> {
+        let mut db_connection = smithe_database::connect()?;
+        
+        let err = db_connection.transaction::<(),_ , _>(|db_connection| {
+            super::delete_tournaments_from_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection).expect("failed to delete tournaments");
+
+            // check player doesn't have any tournaments
+            assert_eq!(
+                super::get_num_tournaments_attended_provided_connection(DANTOTTO_PLAYER_ID, db_connection).expect("failed to get num tournaments"),
+                0
+            );            
+
+            Err(diesel::result::Error::RollbackTransaction)
+        });
+
+        assert!(err.is_err());
+
+        // check player has tournaments again
+        assert!(
+            super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)? > 0
+        );
+
         Ok(())
     }
 }

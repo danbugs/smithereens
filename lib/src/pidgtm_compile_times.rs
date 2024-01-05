@@ -19,20 +19,20 @@ mod tests {
 
     #[test]
     fn test_insert_pidgtm_compile_time() -> Result<()> {
-        // get count of all pidgtm_compile_times w/ 1 ti
+        // get count of all pidgtm_compile_times w/ -999 ti
         let mut db_connection = smithe_database::connect().unwrap();
-        let pct = pidgtm_compile_times.filter(time_in_seconds.eq(1));
+        let pct = pidgtm_compile_times.filter(time_in_seconds.eq(-999));
         let count = pct.count().get_result::<i64>(&mut db_connection).unwrap();
 
         // insert pidgtm_compile_time
-        let tis = 1;
+        let tis = -999;
         insert_pidgtm_compile_time(tis)?;
 
         // get count again and check that it increased by 1
         let new_count = pct.count().get_result::<i64>(&mut db_connection).unwrap();
         assert_eq!(new_count, count + 1);
 
-        // delete all pidgtm_compile_times w/ 1 ti
+        // delete all pidgtm_compile_times w/ -999 ti
         diesel::delete(pct).execute(&mut db_connection)?;
 
         Ok(())
