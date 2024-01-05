@@ -44,7 +44,7 @@ If all tests pass, you should be good to go!
 
 ## Building from source pre-requisites
 
-- Rust toolchain with the `wasm32-unknown-unknown`` target,
+- Rust toolchain with the `wasm32-unknown-unknown` target,
 - Diesel-Rs,
 - Trunk-Rs, and
 - Postgres (system library).
