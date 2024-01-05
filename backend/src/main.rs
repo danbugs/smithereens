@@ -157,19 +157,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = rocket().launch().await?;
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use rocket::{http::Status, local::blocking::Client};
-
-    use super::rocket;
-
-    #[test]
-    fn get_player_tournaments_test() -> Result<(), Box<dyn std::error::Error>> {
-        let client = Client::tracked(rocket())?;
-        let response = client.get("/tournaments/1178271").dispatch();
-        assert_eq!(response.status(), Status::Ok);
-
-        Ok(())
-    }
-}

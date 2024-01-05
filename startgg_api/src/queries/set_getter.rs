@@ -150,6 +150,7 @@ pub async fn make_set_getter_query(
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]
     use std::sync::Arc;
     use std::sync::Mutex;
 

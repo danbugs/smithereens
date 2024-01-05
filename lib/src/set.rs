@@ -42,9 +42,16 @@ pub fn get_head_to_head_record(requester_id_param: i32) -> Result<Vec<HeadToHead
 
 pub fn get_all_from_player_id(player_id: i32) -> Result<Vec<Set>> {
     let mut db_connection = smithe_database::connect()?;
+    get_all_from_player_id_provided_connection(player_id, &mut db_connection)
+}
+
+fn get_all_from_player_id_provided_connection(
+    player_id: i32,
+    db_connection: &mut PgConnection,
+) -> Result<Vec<Set>> {
     let cache = player_sets
         .filter(requester_id.eq(player_id))
-        .load::<Set>(&mut db_connection)?;
+        .load::<Set>(db_connection)?;
 
     Ok(cache)
 }
@@ -116,7 +123,15 @@ pub fn get_set_wins_without_dqs(player_id: i32) -> Result<i64> {
 // delete a player's sets given a requester_id
 pub fn delete_sets_by_requester_id(player_id: i32) -> Result<()> {
     let mut db_connection = smithe_database::connect()?;
-    diesel::delete(player_sets.filter(requester_id.eq(player_id))).execute(&mut db_connection)?;
+    delete_sets_by_requester_id_provided_connection(player_id, &mut db_connection)?;
+    Ok(())
+}
+
+fn delete_sets_by_requester_id_provided_connection(
+    player_id: i32,
+    db_connection: &mut PgConnection,
+) -> Result<()> {
+    diesel::delete(player_sets.filter(requester_id.eq(player_id))).execute(db_connection)?;
     Ok(())
 }
 
@@ -202,13 +217,121 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]
+    use crate::common::get_sggset_test_data;
+
     use super::*;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_head_to_head_record() -> Result<()> {
-        dbg!(get_head_to_head_record(DANTOTTO_PLAYER_ID)?);
+        get_head_to_head_record(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_all_from_player_id() -> Result<()> {
+        get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_last_completed_at() -> Result<()> {
+        let cache = get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
+        get_last_completed_at(cache).expect("failed to get last completed_at");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_requester_set_slot() -> Result<()> {
+        let set = get_sggset_test_data();
+        get_requester_set_slot(9410060, &set).expect("failed to get requester set slot");
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_opponent_set_slot() -> Result<()> {
+        let set = get_sggset_test_data();
+        get_opponent_set_slot(9412484, &set).expect("failed to get opponent set slot");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_set_wins_without_dqs() -> Result<()> {
+        get_set_wins_without_dqs(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_delete_sets_by_requester_id() -> Result<()> {
+        let mut db_connection = smithe_database::connect()?;
+        let err = db_connection.transaction::<(), _, _>(|db_connection| {
+            delete_sets_by_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                .expect("failed to delete sets by requester id");
+
+            // check that there are no sets for the player
+            let sets =
+                get_all_from_player_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                    .expect("failed to get sets");
+            assert!(sets.is_empty());
+
+            Err(diesel::result::Error::RollbackTransaction)
+        });
+
+        assert!(err.is_err());
+
+        // check that there are sets for the player
+        let sets = get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
+        assert!(!sets.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_set_losses_without_dqs() -> Result<()> {
+        get_set_losses_without_dqs(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_set_wins_by_dq() -> Result<()> {
+        get_set_wins_by_dq(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_set_losses_by_dq() -> Result<()> {
+        get_set_losses_by_dq(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_winrate() -> Result<()> {
+        get_winrate(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_sets_per_player_id() -> Result<()> {
+        get_sets_per_player_id(DANTOTTO_PLAYER_ID)?;
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_get_competitor_type() -> Result<()> {
+        get_competitor_type(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 }

@@ -59,7 +59,61 @@ pub fn maybe_get_games_from_set(
 // delete a player's games given a requester id
 pub fn delete_games_from_requester_id(player_id: i32) -> Result<()> {
     let mut db_connection = smithe_database::connect()?;
-    diesel::delete(player_games.filter(requester_id.eq(player_id))).execute(&mut db_connection)?;
+    delete_games_from_requester_id_provided_connection(player_id, &mut db_connection)?;
 
     Ok(())
+}
+
+// delete a player's games given a requester id
+fn delete_games_from_requester_id_provided_connection(
+    player_id: i32,
+    db_connection: &mut PgConnection,
+) -> Result<()> {
+    diesel::delete(player_games.filter(requester_id.eq(player_id))).execute(db_connection)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(unused)]
+    use super::*;
+    use anyhow::Result;
+
+    const DANTOTTO_PLAYER_ID: i32 = 1178271;
+
+    // test delete_games_from_requester_id w/ transactions
+    #[test]
+    #[cfg(feature = "skip_db_tests")]
+    fn test_delete_games_from_requester_id() -> Result<()> {
+        let mut db_connection = smithe_database::connect().unwrap();
+
+        let err = db_connection.transaction::<(), _, _>(|db_connection| {
+            delete_games_from_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                .expect("failed to delete games");
+            assert_eq!(
+                player_games
+                    .filter(requester_id.eq(DANTOTTO_PLAYER_ID))
+                    .count()
+                    .get_result::<i64>(db_connection)
+                    .unwrap(),
+                0
+            );
+
+            Err(diesel::result::Error::RollbackTransaction)
+        });
+
+        assert!(err.is_err());
+
+        // check that there are still games under the player's id
+        assert_ne!(
+            player_games
+                .filter(requester_id.eq(DANTOTTO_PLAYER_ID))
+                .count()
+                .get_result::<i64>(&mut db_connection)
+                .unwrap(),
+            0
+        );
+
+        Ok(())
+    }
 }

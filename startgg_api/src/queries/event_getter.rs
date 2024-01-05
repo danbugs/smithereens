@@ -65,6 +65,7 @@ pub async fn get_phase_id_from_event_slug(event_slug: &str) -> Result<i32> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]
     use anyhow::Result;
 
     use crate::queries::event_getter::make_event_getter_query;

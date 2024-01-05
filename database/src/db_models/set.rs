@@ -4,7 +4,7 @@ use serde::Serialize;
 #[derive(Debug, Serialize, Insertable, Queryable, QueryableByName)]
 #[diesel(table_name = player_sets)]
 pub struct Set {
-    id: i32,
+    pub id: i32,
     pub completed_at: i64,
     requester_id: i32,
     requester_tag_with_prefix: String,

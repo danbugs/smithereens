@@ -23,7 +23,7 @@ In the future, I hope to make it possible for you to claim your profile (i.e., v
 ## What Can It Do Right Now?
 
 Smithereens is not yet available as a website, only as a command-line tool. With it, you can:
-- ✅ view the hidden seeding for an event, 
+- ✅ view the hidden seeding for an event (only in the CLI), 
 - ✅ view a player's overall results,
 - ✅ view a 'digested' tournament result, and
 - ❎ claim your profile, and make it your own.
