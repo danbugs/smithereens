@@ -108,7 +108,7 @@ jobs:
     - name: Run tests (w/ cargo llvm-cov)
       run: |
         cargo llvm-cov clean --workspace
-        cargo llvm-cov -no-report --package smithe_lib --lib -- --exact --nocapture --test-threads=1
+        cargo llvm-cov --no-report --package smithe_lib --lib -- --exact --nocapture --test-threads=1
         cargo llvm-cov report --lcov --output-path ./coverage.lcov
       env:
         PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
