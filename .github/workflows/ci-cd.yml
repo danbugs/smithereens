@@ -107,10 +107,9 @@ jobs:
     # We need `--test-threads=1` due to a Diesel/postgres bug
     - name: Run tests and get coverage
       run: |
-        cargo test --package smithe_lib --lib -- --exact --nocapture
-        # cargo llvm-cov clean --workspace
-        # cargo llvm-cov --no-report --package smithe_lib --lib -- --exact --nocapture --test-threads=1
-        # cargo llvm-cov report --lcov --output-path ./coverage.lcov
+        cargo llvm-cov clean --workspace
+        cargo llvm-cov --no-report --package smithe_lib --no-default-features -- --exact --nocapture --test-threads=1
+        cargo llvm-cov report --lcov --output-path ./coverage.lcov
       env:
         PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
         STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}

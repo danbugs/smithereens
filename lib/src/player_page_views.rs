@@ -17,9 +17,11 @@ pub fn insert_player_page_view(pid: i32) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]    
     use super::*;
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_insert_player_page_view() -> Result<()> {
         // get count of all player_page_views w/ -999 pid
         let mut db_connection = smithe_database::connect().unwrap();

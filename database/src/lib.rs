@@ -59,6 +59,7 @@ fn try_connect() -> ConnectionResult<PgConnection> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]    
     use super::*;
     use anyhow::Result;
 

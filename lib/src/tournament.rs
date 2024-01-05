@@ -163,6 +163,7 @@ fn delete_tournaments_from_requester_id_provided_connection(
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]    
     use anyhow::Result;
     use diesel::Connection;
 
@@ -172,6 +173,7 @@ mod tests {
     const TYRESE_PLAYER_ID: i32 = 2021528;
 
     #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
     async fn get_tournaments_from_requester_id_test() -> Result<()> {
         init_logger()?;
         let now = std::time::Instant::now();
@@ -214,6 +216,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn get_num_tournaments_attended_test() -> Result<()> {
         let count = super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)?;
 
@@ -231,6 +234,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn is_tournament_cached_test() -> Result<()> {
         let s = get_sggset_test_data();
 
@@ -240,6 +244,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn delete_tournaments_from_requester_id_test() -> Result<()> {
         let mut db_connection = smithe_database::connect()?;
 

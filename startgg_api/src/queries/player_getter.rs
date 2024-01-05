@@ -96,7 +96,7 @@ pub async fn make_pidgtm_player_getter_query(
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
+    #![allow(unused)]    use std::sync::{Arc, Mutex};
 
     use anyhow::Result;
 

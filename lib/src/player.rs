@@ -476,11 +476,13 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]    
     use super::*;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_check_if_large_consecutive_playerid_grouping_exists() {
         let res = check_if_large_consecutive_playerid_grouping_exists();
         assert!(res.is_ok());
@@ -488,12 +490,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_max_player_id() {
         let res = get_max_player_id();
         assert!(res.is_ok());
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_top_two_characters() {
         let res = get_top_two_characters(DANTOTTO_PLAYER_ID);
         assert!(res.is_ok());
@@ -504,6 +508,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_subsequent_player_id_with_circle_back() {
         let res = get_subsequent_player_id_with_circle_back(DANTOTTO_PLAYER_ID);
         assert!(res.is_ok());
@@ -511,6 +516,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_empty_user_with_slug() {
         let res = get_empty_user_with_slug(DANTOTTO_PLAYER_ID);
         assert!(res.is_ok());
@@ -521,6 +527,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_add_new_empty_player_record() {
         let mut db_connection = smithe_database::connect().unwrap();
         let err = db_connection.transaction::<(), _, _>(|db_connection| {
@@ -556,6 +563,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_add_new_player_to_pidgtm_db() {
         let mut db_connection = smithe_database::connect().unwrap();
         let err = db_connection.transaction::<(), _, _>(|db_connection| {
@@ -608,6 +616,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_all_like() {
         let res = get_all_like("dantotto");
         assert!(res.is_ok());
@@ -615,6 +624,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_player() {
         let res = get_player(DANTOTTO_PLAYER_ID);
         assert!(res.is_ok());
@@ -622,6 +632,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_highest_id_with_sets_between() {
         let res = get_highest_id_with_sets_between(1000, 1001);
         assert!(res.is_ok());

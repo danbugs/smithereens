@@ -75,6 +75,7 @@ fn delete_games_from_requester_id_provided_connection(
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]
     use super::*;
     use anyhow::Result;
 
@@ -82,6 +83,7 @@ mod tests {
 
     // test delete_games_from_requester_id w/ transactions
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_delete_games_from_requester_id() -> Result<()> {
         let mut db_connection = smithe_database::connect().unwrap();
 

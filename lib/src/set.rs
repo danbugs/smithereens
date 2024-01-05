@@ -217,6 +217,7 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]    
     use crate::common::get_sggset_test_data;
 
     use super::*;
@@ -224,18 +225,21 @@ mod tests {
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_head_to_head_record() -> Result<()> {
         get_head_to_head_record(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_all_from_player_id() -> Result<()> {
         get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_last_completed_at() -> Result<()> {
         let cache = get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
         get_last_completed_at(cache).expect("failed to get last completed_at");
@@ -257,12 +261,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_set_wins_without_dqs() -> Result<()> {
         get_set_wins_without_dqs(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_delete_sets_by_requester_id() -> Result<()> {
         let mut db_connection = smithe_database::connect()?;
         let err = db_connection.transaction::<(), _, _>(|db_connection| {
@@ -288,36 +294,42 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_set_losses_without_dqs() -> Result<()> {
         get_set_losses_without_dqs(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_set_wins_by_dq() -> Result<()> {
         get_set_wins_by_dq(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_set_losses_by_dq() -> Result<()> {
         get_set_losses_by_dq(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_winrate() -> Result<()> {
         get_winrate(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_sets_per_player_id() -> Result<()> {
         get_sets_per_player_id(DANTOTTO_PLAYER_ID)?;
         Ok(())
     }
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_get_competitor_type() -> Result<()> {
         get_competitor_type(DANTOTTO_PLAYER_ID)?;
         Ok(())

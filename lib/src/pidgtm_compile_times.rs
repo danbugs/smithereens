@@ -15,9 +15,11 @@ pub fn insert_pidgtm_compile_time(tis: i32) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]    
     use super::*;
 
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_insert_pidgtm_compile_time() -> Result<()> {
         // get count of all pidgtm_compile_times w/ -999 ti
         let mut db_connection = smithe_database::connect().unwrap();

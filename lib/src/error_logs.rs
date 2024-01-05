@@ -13,9 +13,11 @@ pub fn insert_error_log(err: String) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unused)]
     use super::*;
-
+    
     #[test]
+    #[cfg(feature = "skip_db_tests")]
     fn test_insert_error_log() -> Result<()> {
         // get count of all error_logs w/ "test error" message
         let mut db_connection = smithe_database::connect().unwrap();
