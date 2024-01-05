@@ -60,6 +60,7 @@ jobs:
       name: Install PostgreSQL
       uses: ikalnytskyi/action-setup-postgres@v4  
 
+    # This test is necessary to run cross build
     - if: matrix.os == 'ubuntu-latest'
       name: Install QEMU user emulation
       run: docker run --rm --privileged tonistiigi/binfmt --install all
@@ -74,7 +75,11 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-        target: ${{ matrix.target }}      
+        target: ${{ matrix.target }}
+
+    # We use cargo-llvm-cov for tests rather than cargo test to also evaluate test coverage
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov        
 
     - name: Cache Rust targets
       uses: actions/cache@v3
@@ -85,7 +90,22 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-cargo-   
+
+    - name: Build
+      run: cargo build --release --all
+      env:
+        SERVER_ADDRESS: 'http://127.0.0.1:8080'
+        SERVER_ADDRESS_2: ${{ secrets.SERVER_ADDRESS_2 }}
+        RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+        # ^^^ the front-end looks for keys at compile time, so we need these in
+
+    # We need `--test-threads=1` due to a Diesel/postgres bug
+    - name: Run tests (w/ cargo llvm-cov)
+      run: cargo llvm-cov --package smithe_lib --lib -- --exact --nocapture --test-threads=1
+      env:
+        PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
+        STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
 
     # Conditional step for standard Rust build for non-arm64 targets
     - if: matrix.os == 'ubuntu-latest'
@@ -95,12 +115,7 @@ jobs:
         ls -la target/aarch64-unknown-linux-gnu/
       env:
         SERVER_ADDRESS: 'http://127.0.0.1:8080'
-        CROSS_CONTAINER_OPTS: '--platform linux/arm64'      
-
-    - name: Build
-      run: cargo build --release --target ${{ matrix.target }}
-      env:
-        SERVER_ADDRESS: 'http://127.0.0.1:8080'
+        CROSS_CONTAINER_OPTS: '--platform linux/arm64'
 
     - if: matrix.os == 'ubuntu-latest'
       name: Upload arm64 pidgtm artifact
