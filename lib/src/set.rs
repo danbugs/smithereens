@@ -217,7 +217,7 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused)]    
+    #![allow(unused)]
     use crate::common::get_sggset_test_data;
 
     use super::*;

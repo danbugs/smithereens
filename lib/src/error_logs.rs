@@ -15,7 +15,7 @@ pub fn insert_error_log(err: String) -> Result<()> {
 mod tests {
     #![allow(unused)]
     use super::*;
-    
+
     #[test]
     #[cfg(feature = "skip_db_tests")]
     fn test_insert_error_log() -> Result<()> {

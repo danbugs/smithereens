@@ -476,7 +476,7 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused)]    
+    #![allow(unused)]
     use super::*;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;

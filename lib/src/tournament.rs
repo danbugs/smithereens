@@ -163,7 +163,7 @@ fn delete_tournaments_from_requester_id_provided_connection(
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused)]    
+    #![allow(unused)]
     use anyhow::Result;
     use diesel::Connection;
 

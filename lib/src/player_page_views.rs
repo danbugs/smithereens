@@ -17,7 +17,7 @@ pub fn insert_player_page_view(pid: i32) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused)]    
+    #![allow(unused)]
     use super::*;
 
     #[test]

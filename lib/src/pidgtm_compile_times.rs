@@ -15,7 +15,7 @@ pub fn insert_pidgtm_compile_time(tis: i32) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    #![allow(unused)]    
+    #![allow(unused)]
     use super::*;
 
     #[test]
