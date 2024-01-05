@@ -106,7 +106,7 @@ jobs:
 
     # We need `--test-threads=1` due to a Diesel/postgres bug
     - name: Run tests (w/ cargo llvm-cov)
-      run: cargo llvm-cov --package smithe_lib --lib -- --exact --nocapture --test-threads=1
+      run: cargo llvm-cov --profile ci --package smithe_lib --lib -- --exact --nocapture --test-threads=1
       env:
         PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
         STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
