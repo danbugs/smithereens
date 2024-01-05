@@ -106,10 +106,20 @@ jobs:
 
     # We need `--test-threads=1` due to a Diesel/postgres bug
     - name: Run tests (w/ cargo llvm-cov)
-      run: cargo llvm-cov --profile ci --package smithe_lib --lib -- --exact --nocapture --test-threads=1
+      run: |
+        cargo llvm-cov clean --workspace
+        cargo llvm-cov -no-report --package smithe_lib --lib -- --exact --nocapture --test-threads=1
+        cargo llvm-cov report --lcov --output-path ./coverage.lcov
       env:
         PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
         STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
+
+    - name: Upload Code Coverage Results
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.lcov
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}        
 
     # Conditional step for standard Rust build for non-arm64 targets
     - if: matrix.os == 'ubuntu-latest'
