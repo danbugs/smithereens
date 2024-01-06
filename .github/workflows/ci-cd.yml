@@ -184,5 +184,27 @@ jobs:
           file: Dockerfile-RustBuildEnvArm64
           push: true
           tags: danstaken/rust-build-env-arm64:latest
-          platforms: linux/arm64          
+          platforms: linux/arm64
+
+      - name: Build and push multi-architecture Docker smithe-backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile-SmitheBackend
+          push: true
+          tags: danstaken/smithe-backend:latest
+          platforms: linux/arm64
+
+      - name: Build and push multi-architecture Docker smithe-frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile-SmitheFrontend
+          push: true
+          tags: danstaken/smithe-frontend:latest
+          platforms: linux/arm64
+          build-args: |
+            SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS_KUBERNETES }}
+            RECAPTCHA_SITE_KEY=${{ secrets.RECAPTCHA_SITE_KEY }}
+            SERVER_ADDRESS_2=${{ secrets.SERVER_ADDRESS_2 }}                 
 
