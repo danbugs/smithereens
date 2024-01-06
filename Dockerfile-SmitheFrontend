@@ -1,0 +1,23 @@
+FROM rust:latest AS builder
+
+# Define build-time variables
+ARG SERVER_ADDRESS
+ARG RECAPTCHA_SITE_KEY
+ARG SERVER_ADDRESS_2
+
+WORKDIR /usr/src/smithereens
+COPY . .
+
+# Set environment variables for build
+ENV SERVER_ADDRESS=${SERVER_ADDRESS}
+ENV RECAPTCHA_SITE_KEY=${RECAPTCHA_SITE_KEY}
+ENV SERVER_ADDRESS_2=${SERVER_ADDRESS_2}
+
+# Add wasm32-unknown-unix to the toolchain
+RUN rustup target add wasm32-unknown-unknown
+
+RUN cargo install trunk
+RUN trunk build ./frontend/index.html --release
+
+FROM nginx:alpine
+COPY --from=builder /usr/src/smithereens/frontend/dist /usr/share/nginx/html

@@ -38,6 +38,50 @@ buildx-rsbuildenvarm64:
 buildx-pidgtm:
 	docker buildx build --platform linux/arm64 -t danstaken/pidgtm:latest -f Dockerfile-Pidgtm --push .
 
+.PHONY: buildx-backend
+buildx-backend:
+	docker buildx build --platform linux/arm64 -t danstaken/smithe-backend:latest -f Dockerfile-SmitheBackend --push .	
+
+.PHONY: buildx-frontend
+buildx-frontend:
+	docker buildx build --platform linux/arm64 -t danstaken/smithe-frontend:latest -f Dockerfile-SmitheFrontend --push .
+
+# KUBERNETES
+.PHONY: install-cert-manager
+install-cert-manager:
+	kubectl apply -f https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml
+
+.PHONY: create-clusterissuer
+create-clusterissuer:
+	kubectl apply -f ./clusterissuer.yml
+
+.PHONY: install-nginx-ingress
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/1bc745619d91b690c8985bbc16097e9fe804d2d2/deploy/static/provider/cloud/deploy.yaml
+
+.PHONY: get-ingress-ip
+get-ingress-ip:
+	kubectl get services -o wide -n ingress-nginx
+	# ^^^ look for the EXTERNAL_IP to setup DNS
+
+.PHONY: setup-backend-secrets
+setup-backend-secrets:
+	kubectl create secret generic backend-secrets --from-env-file=backend-secrets.env
+
+.PHONY: deploy-backend
+deploy-backend:
+	# setup-backend-secrets (done)
+	kubectl apply -f ./backend-deployment.yml
+	kubectl apply -f ./backend-service.yml
+
+.PHONY: deploy-frontend
+deploy-frontend:
+	# install-cert-manager (done)
+	# create-clusterissuer (done)
+	# install-nginx-ingress (to do)
+	kubectl apply -f ./frontend-deployment.yml
+	kubectl apply -f ./frontend-service.yml
+	kubectl apply -f ./frontend-ingress.yml
+
 # PIDGTM
 .PHONY: pidgtm
 pidgtm-map:

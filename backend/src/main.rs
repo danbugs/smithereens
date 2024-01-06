@@ -20,6 +20,7 @@ use thiserror::Error;
 
 pub const DEV_ADDRESS: &str = "http://localhost:8080/";
 pub const DEV_ADDRESS_2: &str = "http://127.0.0.1:8080/";
+pub const PROD_ADDRESS: &str = "https://smithe.net";
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -110,7 +111,11 @@ async fn get_player_head_to_head(id: i32) -> Result<String, Error> {
 }
 
 fn rocket() -> Rocket<Build> {
+    #[cfg(debug_assertions)]
     let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
+    
+    #[cfg(not(debug_assertions))]
+    let allowed_origins = AllowedOrigins::some_exact(&[PROD_ADDRESS]);
 
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
