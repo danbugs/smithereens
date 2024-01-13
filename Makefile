@@ -18,16 +18,20 @@ install:
 
 .PHONY: build
 build:
-	cargo build --release
+	cargo build --release --all
 
 .PHONY: build-install
 build-install:
-	cargo build --release
+	cargo build --release --all
 	cargo install --path .
 	
-.PHONY: cross-build
-cross-build:
-	cross build --release --target aarch64-unknown-linux-gnu
+.PHONY: cross-build-backend
+cross-build-backend:
+	cross build --release -p smithe_backend --target aarch64-unknown-linux-gnu
+
+.PHONY: cross-build-frontend
+cross-build-frontend:
+	cross build --release -p smithe_frontend --target aarch64-unknown-linux-gnu
 
 # DOCKER
 .PHONY: buildx-rsbuildenvarm64
@@ -54,6 +58,7 @@ install-cert-manager:
 .PHONY: create-clusterissuer
 create-clusterissuer:
 	kubectl apply -f ./clusterissuer.yml
+	# if fails, kubectl delete secret cert-manager-webhook-ca -n cert-manager
 
 .PHONY: install-nginx-ingress
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/1bc745619d91b690c8985bbc16097e9fe804d2d2/deploy/static/provider/cloud/deploy.yaml
@@ -69,15 +74,15 @@ setup-backend-secrets:
 
 .PHONY: deploy-backend
 deploy-backend:
-	# setup-backend-secrets (done)
+	# setup-backend-secrets
 	kubectl apply -f ./backend-deployment.yml
 	kubectl apply -f ./backend-service.yml
 
 .PHONY: deploy-frontend
 deploy-frontend:
-	# install-cert-manager (done)
-	# create-clusterissuer (done)
-	# install-nginx-ingress (to do)
+	# install-nginx-ingress
+	# install-cert-manager
+	# create-clusterissuer
 	kubectl apply -f ./frontend-deployment.yml
 	kubectl apply -f ./frontend-service.yml
 	kubectl apply -f ./frontend-ingress.yml
