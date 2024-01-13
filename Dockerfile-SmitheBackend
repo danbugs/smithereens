@@ -3,6 +3,9 @@ FROM rust:latest
 # Set the working directory in the container
 WORKDIR /usr/src/smithereens
 
+# Set proper profile
+ENV ROCKET_PROFILE=release
+
 # Copy the entire workspace
 COPY . .
 
