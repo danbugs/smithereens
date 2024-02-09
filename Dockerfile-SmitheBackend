@@ -1,16 +1,13 @@
-FROM rust:latest
+FROM debian:bookworm-slim
 
 # Set the working directory in the container
 WORKDIR /usr/src/smithereens
 
-# Set proper profile
-ENV ROCKET_PROFILE=release
+# Install any runtime dependencies your application needs
+# RUN apt-get update && apt-get install -y [dependencies]
 
-# Copy the entire workspace
-COPY . .
-
-# Build the project
-RUN cargo build --release --package smithe_backend
+# Copy only the smithe_backend binary
+COPY target/aarch64-unknown-linux-gnu/release/smithe_backend .
 
 # Specify the command to run the binary
-CMD ["./target/release/smithe_backend"]
+CMD ["./smithe_backend"]

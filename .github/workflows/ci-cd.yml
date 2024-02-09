@@ -85,6 +85,9 @@ jobs:
     - name: Install llvm-tools-preview for cargo-llvm-cov
       run: rustup component add llvm-tools-preview
 
+    - name: Install trunk
+      run: cargo install trunk
+
     - name: Cache Rust targets
       uses: actions/cache@v3
       with:
@@ -123,20 +126,45 @@ jobs:
 
     # Conditional step for standard Rust build for non-arm64 targets
     - if: matrix.os == 'ubuntu-latest'
-      name: Cross build for arm64
+      name: Cross build pidgtm for arm64
       run: |
         cross build --release --target aarch64-unknown-linux-gnu
         ls -la target/aarch64-unknown-linux-gnu/
       env:
         SERVER_ADDRESS: 'http://127.0.0.1:8080'
         CROSS_CONTAINER_OPTS: '--platform linux/arm64'
-
     - if: matrix.os == 'ubuntu-latest'
       name: Upload arm64 pidgtm artifact
       uses: actions/upload-artifact@v2
       with:
         name: pidgtm-aarch64-unknown-linux-gnu
         path: target/aarch64-unknown-linux-gnu/release/pidgtm
+    
+    - if: matrix.os == 'ubuntu-latest'
+      name: Cross build smithe-backend for arm64
+      run: |
+        cross build --release -p smithe_backend --target aarch64-unknown-linux-gnu
+        ls -la target/aarch64-unknown-linux-gnu/release/
+    - if: matrix.os == 'ubuntu-latest'
+      name: Upload arm64 smithe-backend artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: smithe-backend-aarch64-unknown-linux-gnu
+        path: target/aarch64-unknown-linux-gnu/release/smithe_backend
+
+    # Trunk build for smithe-frontend
+    - name: Build smithe-frontend
+      run: trunk build --release ./frontend/index.html
+      env:
+        SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS_KUBERNETES }}
+        SERVER_ADDRESS_2: ${{ secrets.SERVER_ADDRESS_2 }}
+        RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+    - if: matrix.os == 'ubuntu-latest'
+      name: Upload Trunk smithe-frontend artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: smithe-frontend-trunk
+        path: ./frontend/dist
 
   docker-deploy:
     needs: build
@@ -150,17 +178,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Download artifact
+      - name: Download pidgtm artifact
         uses: actions/download-artifact@v2
         with:
           name: pidgtm-aarch64-unknown-linux-gnu
           path: target/aarch64-unknown-linux-gnu/release/
-
-      - name: Display artifact
+      - name: Display pidgtm artifact
         run: ls -la target/aarch64-unknown-linux-gnu/release/pidgtm
-
       - name: Set Executable Permissions
         run: chmod +x target/aarch64-unknown-linux-gnu/release/pidgtm
+
+      - name: Download smithe-backend artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: smithe-backend-aarch64-unknown-linux-gnu
+          path: target/aarch64-unknown-linux-gnu/release/\
+      - name: Display smithe-backend artifact
+        run: ls -la target/aarch64-unknown-linux-gnu/release/smithe_backend
+      - name: Set Executable Permissions
+        run: chmod +x target/aarch64-unknown-linux-gnu/release/smithe_backend
+
+      - name: Download smithe-frontend artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: smithe-frontend-trunk
+          path: ./frontend/dist
+      - name: Display smithe-frontend artifact
+        run: ls -la ./frontend/dist
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -202,9 +246,5 @@ jobs:
           file: Dockerfile-SmitheFrontend
           push: true
           tags: danstaken/smithe-frontend:latest
-          platforms: linux/arm64
-          build-args: |
-            SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS_KUBERNETES }}
-            RECAPTCHA_SITE_KEY=${{ secrets.RECAPTCHA_SITE_KEY }}
-            SERVER_ADDRESS_2=${{ secrets.SERVER_ADDRESS_2 }}                 
+          platforms: linux/arm64         
 

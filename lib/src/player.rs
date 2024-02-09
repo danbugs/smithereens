@@ -21,15 +21,19 @@ use diesel::{
 use smithe_database::{
     db_models::empty_player_ids::EmptyPlayerId, schema::empty_player_ids::dsl::*,
 };
-use startgg::{queries::set_getter::SetGetterData, GQLData, Player as SGGPlayer, User};
+use startgg::{
+    queries::set_getter::{SetGetterData, SetGetterVars},
+    GQLData, GQLVars, Player as SGGPlayer, User,
+};
 
 use crate::{
     error_logs::insert_error_log,
-    game::maybe_get_games_from_set,
-    set::{get_opponent_set_slot, get_requester_set_slot},
+    game::{delete_games_from_requester_id, maybe_get_games_from_set},
+    set::{delete_sets_by_requester_id, get_opponent_set_slot, get_requester_set_slot},
     tournament::{
-        get_placement, get_requester_id_from_standings, get_seed,
-        is_ssbu_singles_and_supported_tournament, is_tournament_cached, is_tournament_finished,
+        delete_tournaments_from_requester_id, get_placement, get_requester_id_from_standings,
+        get_seed, is_ssbu_singles_and_supported_tournament, is_tournament_cached,
+        is_tournament_finished,
     },
 };
 
@@ -252,6 +256,25 @@ fn get_empty_user_with_slug_provided_connection(
         authorizations: None,
         slug: some_slug,
     }))
+}
+
+pub fn maybe_delete_player_records<V>(maybe_sgv: V) -> Result<bool>
+where
+    V: GQLVars + Clone + 'static,
+{
+    if let Some(set_getter_vars) = maybe_sgv.downcast_ref::<SetGetterVars>() {
+        let err_msg = format!("❌ something went wrong when aggregating data for player id: {}, deleting all of this player's games/sets/tourneys and skipping for now...", set_getter_vars.playerId);
+        tracing::error!(err_msg);
+        insert_error_log(err_msg.to_string())?;
+        // delete all player's games, sets, and tournaments
+        delete_games_from_requester_id(set_getter_vars.playerId)?;
+        delete_sets_by_requester_id(set_getter_vars.playerId)?;
+        delete_tournaments_from_requester_id(set_getter_vars.playerId)?;
+
+        return Ok(true);
+    }
+
+    Ok(false)
 }
 
 pub fn execute<T>(_: i32, set_getter_data: T) -> Result<bool>

@@ -20,7 +20,8 @@ use thiserror::Error;
 
 pub const DEV_ADDRESS: &str = "http://localhost:8080/";
 pub const DEV_ADDRESS_2: &str = "http://127.0.0.1:8080/";
-pub const PROD_ADDRESS: &str = "https://smithe.net";
+pub const PROD_ADDRESS: &str = "http://smithe.net";
+pub const PROD_ADDRESS_2: &str = "https://smithe.net";
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -115,7 +116,7 @@ fn rocket() -> Rocket<Build> {
     let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
 
     #[cfg(not(debug_assertions))]
-    let allowed_origins = AllowedOrigins::some_exact(&[PROD_ADDRESS]);
+    let allowed_origins = AllowedOrigins::some_exact(&[PROD_ADDRESS, PROD_ADDRESS_2]);
 
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
