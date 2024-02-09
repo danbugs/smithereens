@@ -24,7 +24,8 @@ use startgg::{queries::set_getter::SetGetterVars, GQLData, GQLVars};
 
 use crate::{
     error_logs::insert_error_log, game::delete_games_from_requester_id,
-    set::delete_sets_by_requester_id, tournament::delete_tournaments_from_requester_id,
+    player::maybe_delete_player_records, set::delete_sets_by_requester_id,
+    tournament::delete_tournaments_from_requester_id,
 };
 
 pub fn init_logger() -> Result<()> {
@@ -50,7 +51,7 @@ pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
     cancel: fn(i32) -> Result<()>,
 ) -> Result<()>
 where
-    V: GQLVars + Clone,
+    V: GQLVars + Clone + 'static,
     F: Future<Output = Result<D>>,
     D: GQLData,
 {
@@ -128,22 +129,18 @@ where
                             break 'outer;
                         }
 
-                        // downcast, if setgettervars do x, else ...
-                        let gql_vars_clone = gql_vars.clone();
-                        let mut gql_vars_lock = gql_vars_clone.lock().unwrap();
-                        if let Some(set_getter_vars) =
-                            gql_vars_clone.downcast_ref::<SetGetterVars>()
-                        {
-                            let err_msg = format!("❌ something went wrong when aggregating data for player id: {}, deleting all of this player's games/sets/tourneys and skipping for now...", set_getter_vars.playerId);
-                            tracing::error!(err_msg);
-                            insert_error_log(err_msg.to_string())?;
-                            // delete all player's games, sets, and tournaments
-                            delete_games_from_requester_id(set_getter_vars.playerId)?;
-                            delete_sets_by_requester_id(set_getter_vars.playerId)?;
-                            delete_tournaments_from_requester_id(set_getter_vars.playerId)?;
+                        let mut maybe_sgv = (*gql_vars.clone().lock().unwrap()).clone();
+                        if maybe_delete_player_records(maybe_sgv.clone())? {
+                            if e.to_string().contains("EOF while parsing a string") {
+                                tracing::error!(
+                                    "🏁 got 'EOF while parsing a string' at page {}!",
+                                    curr_page
+                                );
+                                curr_page = 1;
+                                continue;
+                            }
                         } else {
-                            let mut gql_vars_lock = gql_vars_clone.lock().unwrap();
-                            *gql_vars_lock = gql_vars_lock.update();
+                            maybe_sgv = maybe_sgv.update();
                         }
                     }
                 }

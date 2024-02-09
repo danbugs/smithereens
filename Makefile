@@ -33,6 +33,10 @@ cross-build-backend:
 cross-build-frontend:
 	cross build --release -p smithe_frontend --target aarch64-unknown-linux-gnu
 
+.PHONY: cross-build
+cross-build:
+	cross build --release --target aarch64-unknown-linux-gnu
+
 # DOCKER
 .PHONY: buildx-rsbuildenvarm64
 buildx-rsbuildenvarm64:
@@ -98,6 +102,10 @@ run-backend:
 	cargo run --manifest-path ./backend/Cargo.toml
 
 # FRONTEND
+.PHONY: build-frontend
+build-frontend:
+	trunk build --release ./frontend/index.html
+
 .PHONY: serve-frontend
 serve-frontend:
 	trunk serve ./frontend/index.html
