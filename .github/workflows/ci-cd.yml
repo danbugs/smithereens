@@ -152,6 +152,10 @@ jobs:
         name: smithe-backend-aarch64-unknown-linux-gnu
         path: target/aarch64-unknown-linux-gnu/release/smithe_backend
 
+    # Install wasm32-unknown-unknown target for smithe-frontend
+    - name: Install wasm32-unknown-unknown target
+      run: rustup target add wasm32-unknown-unknown
+
     # Trunk build for smithe-frontend
     - name: Build smithe-frontend
       run: trunk build --release ./frontend/index.html
