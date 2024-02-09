@@ -3,9 +3,6 @@ FROM debian:bookworm-slim
 # Set the working directory in the container
 WORKDIR /usr/src/smithereens
 
-# Install any runtime dependencies your application needs
-# RUN apt-get update && apt-get install -y [dependencies]
-
 # Copy only the smithe_backend binary
 COPY target/aarch64-unknown-linux-gnu/release/smithe_backend .
 
