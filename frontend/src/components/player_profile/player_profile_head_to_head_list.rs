@@ -20,7 +20,7 @@ pub fn player_profile_head_to_head_list(props: &Props) -> Html {
     let start_index = use_state(|| 0);
     let end_index = use_state(|| 0);
 
-    let paginated_head_to_heads = use_state(|| Vec::<HeadToHeadResult>::new());
+    let paginated_head_to_heads = use_state(Vec::<HeadToHeadResult>::new);
 
     {
         let selected_player_head_to_heads = props.selected_player_head_to_heads.clone();
