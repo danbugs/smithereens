@@ -40,5 +40,8 @@ impl Game {
 }
 
 fn get_character_from_id(id: i32) -> Option<String> {
-    SSBU_CHARACTERS.iter().find(|i| i.0.eq(&id)).map(|char| char.1.to_string())
+    SSBU_CHARACTERS
+        .iter()
+        .find(|i| i.0.eq(&id))
+        .map(|char| char.1.to_string())
 }
