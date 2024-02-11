@@ -31,19 +31,17 @@ impl Game {
             requester_id: rid,
             requester_win: rw,
             order_num: onum,
-            requester_char_played: rcp_num_o.map(get_character_from_id),
-            opponent_char_played: ocp_num_o.map(get_character_from_id),
+            requester_char_played: rcp_num_o.and_then(get_character_from_id),
+            opponent_char_played: ocp_num_o.and_then(get_character_from_id),
             stage: s,
             set_id: sid,
         }
     }
 }
 
-fn get_character_from_id(id: i32) -> String {
+fn get_character_from_id(id: i32) -> Option<String> {
     SSBU_CHARACTERS
         .iter()
         .find(|i| i.0.eq(&id))
-        .unwrap()
-        .1
-        .to_string()
+        .map(|char| char.1.to_string())
 }

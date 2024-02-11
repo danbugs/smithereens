@@ -21,14 +21,14 @@ pub fn player_list(props: &Props) -> Html {
 
     let gamer_tag = props.gamer_tag.clone();
     let loading = use_state(|| false);
-    let search_results = use_state(|| Vec::<Player>::new());
+    let search_results = use_state(Vec::<Player>::new);
 
     let current_page = use_state(|| 1);
     let total_pages = use_state(|| 0);
     let start_index = use_state(|| 0);
     let end_index = use_state(|| 0);
 
-    let paginated_results = use_state(|| Vec::<Player>::new());
+    let paginated_results = use_state(Vec::<Player>::new);
 
     {
         let search_results = search_results.clone();
@@ -87,8 +87,8 @@ pub fn player_list(props: &Props) -> Html {
         });
     }
 
-    let curr_page = (*current_page).clone();
-    let tot_pages = (*total_pages).clone();
+    let curr_page = *current_page;
+    let tot_pages = *total_pages;
 
     let pagination_numbers = create_page_numbers(curr_page, tot_pages);
 
@@ -137,7 +137,7 @@ pub fn player_list(props: &Props) -> Html {
                                             <p class="fw-bold mb-1">
                                             {
                                                 if p.prefix.is_none() || p.prefix.as_ref().unwrap().is_empty() {
-                                                    (&p.gamer_tag).to_string()
+                                                    p.gamer_tag.to_string()
                                                 } else {
                                                     format!("{} | {}", p.prefix.as_ref().unwrap(), &p.gamer_tag)
                                                 }

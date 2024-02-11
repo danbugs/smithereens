@@ -82,8 +82,8 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
         });
     }
 
-    let tournament_list_curr_page = (*tournament_list_current_page).clone();
-    let tournament_list_tot_pages = (*tournament_list_total_pages).clone();
+    let tournament_list_curr_page = *tournament_list_current_page;
+    let tournament_list_tot_pages = *tournament_list_total_pages;
 
     let tournament_list_pagination_numbers =
         create_page_numbers(tournament_list_curr_page, tournament_list_tot_pages);
@@ -223,7 +223,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                     })));
 
                                     is_screenshotting.set(Some(tid));
-                                    ()
+
                                 })
                             };
                             html! {
@@ -231,7 +231,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                     <h2 class="accordion-header" id={format!("heading-{}", t.tournament_id)}>
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={format!("#collapse-{}", t.tournament_id)} aria-expanded="false" aria-controls={format!("collapse-{}", t.tournament_id)}>
                                             <div class="col-md-10">
-                                                <h4 class="fw-bold">{(&t.event_name).to_string()}</h4>
+                                                <h4 class="fw-bold">{t.event_name.to_string()}</h4>
                                                 <hr/>
                                                 <div class="row">
                                                     <div class="col-md-2 col-10">
@@ -276,18 +276,16 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                 <div class="col-md-4">
                                                                     {format!("{} - {} ", s.requester_score, s.opponent_score)}
                                                                     {
-                                                                        if s.requester_score > s.opponent_score {
-                                                                            html! {
+                                                                        match s.requester_score.cmp(&s.opponent_score) {
+                                                                            std::cmp::Ordering::Greater => html! {
                                                                                 <strong class="text-success">{"WIN "}</strong>
-                                                                            }
-                                                                        } else if s.requester_score == s.opponent_score {
-                                                                            html! {
+                                                                            },
+                                                                            std::cmp::Ordering::Equal => html! {
                                                                                 <strong class="text-warning">{"TIE "}</strong>
-                                                                            }
-                                                                        } else {
-                                                                            html! {
+                                                                            },
+                                                                            std::cmp::Ordering::Less => html! {
                                                                                 <strong class="text-danger">{"LOSS "}</strong>
-                                                                            }
+                                                                            },
                                                                         }
                                                                     }
                                                                     {format!("against {} (seed: {})", s.opponent_tag_with_prefix, s.opponent_seed)}
@@ -318,7 +316,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                             html! {
                                                                 <>
                                                                     <div class="col-auto">
-                                                                        <a href={format!("{}", t.link)}
+                                                                        <a href={t.link.to_string()}
                                                                             target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
                                                                             <i class="bi bi-trophy" aria-hidden="true"></i> {" View on StartGG"}
                                                                         </a>
@@ -334,7 +332,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                             html! {
                                                                 <div class="screenshot-container" id={format!("result-section-{}", t.tournament_id)}>
                                                                     <div class="tournament-info">
-                                                                        <h3 class="tournament-title">{(&t.event_name).to_string()}</h3>
+                                                                        <h3 class="tournament-title">{t.event_name.to_string()}</h3>
                                                                         <p class="tournament-details">
                                                                             {format!("Seed: {}, Placement: {}/{}", &t.seed, &t.placement, &t.num_entrants)}
                                                                         </p>
@@ -344,7 +342,13 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                             for props.selected_tournament_sets.as_ref().unwrap().iter().filter(|s| s.tournament_id == t.tournament_id).map(|s| {
                                                                                 html! {
                                                                                     <div class="match-result">
-                                                                                        <span class={if s.requester_score > s.opponent_score { "win" } else if s.requester_score < s.opponent_score { "loss" } else { "tie" }}>
+                                                                                        <span class={
+                                                                                                match s.requester_score.cmp(&s.opponent_score) {
+                                                                                                    std::cmp::Ordering::Greater => "win",
+                                                                                                    std::cmp::Ordering::Less => "loss",
+                                                                                                    std::cmp::Ordering::Equal => "tie",
+                                                                                                }
+                                                                                            }>
                                                                                             {format!("{} - {} vs {} (Seed: {})", s.requester_score, s.opponent_score, s.opponent_tag_with_prefix, s.opponent_seed)}
                                                                                         </span>
                                                                                     </div>

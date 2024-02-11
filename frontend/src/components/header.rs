@@ -4,7 +4,7 @@ use yew_router::hooks::use_location;
 #[function_component(Header)]
 pub fn header() -> Html {
     let location = use_location().unwrap();
-    let display = if location.path() == "/" { true } else { false };
+    let display = location.path() == "/";
 
     if display {
         html! {
