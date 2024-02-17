@@ -152,7 +152,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                     // Construct Twitter Web Intent URL
                                                     let twitter_message = "Heads up, the URL below will be rendered as an image once you send out the tweet - feel free to delete this message and add your own comment about your run while leaving the URL at the bottom.\n";
                                                     let image_url = format!(
-                                                        "http://smithe.pictures/image/{}",
+                                                        "https://smithe.pictures/image/{}",
                                                         success.filename
                                                     );
                                                     let tweet_intent_url = format!("https://twitter.com/intent/tweet?text={}%0A{}", encode_uri_component(twitter_message), encode_uri_component(&image_url));
