@@ -65,7 +65,7 @@ create-clusterissuer:
 	# if fails, kubectl delete secret cert-manager-webhook-ca -n cert-manager
 
 .PHONY: install-nginx-ingress
-	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/1bc745619d91b690c8985bbc16097e9fe804d2d2/deploy/static/provider/cloud/deploy.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/1bc745619d91b690c8985bbc16097e9fe804d2d2/deploy/static/provider/baremetal/deploy.yaml
 
 .PHONY: get-ingress-ip
 get-ingress-ip:
