@@ -18,5 +18,5 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 80
-        nodeSelector:
-          node: rpileaf01
+      nodeSelector:
+        node: rpileaf01
