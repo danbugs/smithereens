@@ -22,7 +22,7 @@ pub fn maybe_get_games_from_set(
                                 false
                             }
                         })
-                        .map(|rgs| rgs.selectionValue)
+                        .and_then(|rgs| rgs.selectionValue)
                 } else {
                     None
                 };
@@ -36,7 +36,7 @@ pub fn maybe_get_games_from_set(
                                 false
                             }
                         })
-                        .map(|ogs| ogs.selectionValue)
+                        .and_then(|ogs| ogs.selectionValue)
                 } else {
                     None
                 };

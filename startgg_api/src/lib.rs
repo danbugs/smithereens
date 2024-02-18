@@ -150,7 +150,7 @@ pub struct Game {
 #[derive(Debug, Clone, Deserialize)]
 pub struct GameSelection {
     pub entrant: Option<Entrant>,
-    pub selectionValue: i32, // this will be an i32 that represents the character
+    pub selectionValue: Option<i32>, // this will be an i32 that represents the character
 }
 
 #[derive(Debug, Clone, Deserialize)]
