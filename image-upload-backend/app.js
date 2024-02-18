@@ -12,7 +12,7 @@ const app = express();
 
 // CORS configuration to allow only smithe.net
 const corsOptions = {
-    origin: ['http://smithe.net', 'https://smithe.net'], // Replace with your specific domain, include http or https as needed
+    origin: ['http://smithe.net', 'https://smithe.net'],
     optionsSuccessStatus: 200 // For legacy browser support
   };
 
@@ -124,7 +124,7 @@ app.get('/image/:imageName', (req, res) => {
         <html>
             <head>
                 <meta name="twitter:card" content="summary_large_image">
-                <meta name="twitter:image" content="${'http://smithe.pictures/images/' + imageName}">
+                <meta name="twitter:image" content="${'https://smithe.pictures/images/' + imageName}">
                 <meta name="twitter:title" content="smithe.net">
             </head>
             <body>
