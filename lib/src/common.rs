@@ -140,7 +140,9 @@ where
                                 continue;
                             } else {
                                 // quit program, we have an error that we can't recover from
-                                panic!("🚨 quitting program due to an error we can't recover from...");
+                                panic!(
+                                    "🚨 quitting program due to an error we can't recover from..."
+                                );
                             }
                         } else {
                             maybe_sgv = maybe_sgv.update();
