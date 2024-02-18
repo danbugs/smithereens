@@ -85,9 +85,8 @@ where
                     break 'inner;
                 }
                 Err(e) => {
-                    if e.to_string().contains("429")
-                        || e.to_string()
-                            .contains("Our services aren't available right now")
+                    if e.to_string()
+                        .contains("Our services aren't available right now")
                         || e.to_string().contains("error sending request for url")
                     {
                         // 429 (too many reqs) or outage, want to wait it out
@@ -138,6 +137,9 @@ where
                                 );
                                 curr_page = 1;
                                 continue;
+                            } else {
+                                // quit program, we have an error that we can't recover from
+                                panic!("🤔 got 'Failed to parse' at page {}!", curr_page);
                             }
                         } else {
                             maybe_sgv = maybe_sgv.update();
