@@ -73,6 +73,7 @@ kind: Job
 metadata:
   name: job-pidgtm-compile-$job_number
 spec:
+  ttlSecondsAfterFinished: 3600 # After 1 hour of completion, the Job will be deleted
   template:
     metadata:
       labels:
