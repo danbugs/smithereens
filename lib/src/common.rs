@@ -131,9 +131,9 @@ where
 
                         let mut maybe_sgv = (*gql_vars.clone().lock().unwrap()).clone();
                         if maybe_delete_player_records(maybe_sgv.clone())? {
-                            if e.to_string().contains("EOF while parsing a string") {
+                            if e.to_string().contains("EOF while parsing") {
                                 tracing::error!(
-                                    "🏁 got 'EOF while parsing a string' at page {}!",
+                                    "🏁 got 'EOF while parsing' at page {}!",
                                     curr_page
                                 );
                                 curr_page = 1;
