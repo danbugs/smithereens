@@ -152,7 +152,8 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                     // Construct Twitter Web Intent URL
                                                     let twitter_message = "Heads up, the URL below will be rendered as an image once you send out the tweet - feel free to delete this message and add your own comment about your run while leaving the URL at the bottom.\n";
                                                     let image_url = format!(
-                                                        "https://smithe.pictures/image/{}",
+                                                        "{}/image/{}",
+                                                        env!("SERVER_ADDRESS_2"),
                                                         success.filename
                                                     );
                                                     let tweet_intent_url = format!("https://twitter.com/intent/tweet?text={}%0A{}", encode_uri_component(twitter_message), encode_uri_component(&image_url));
@@ -334,7 +335,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                     <div class="tournament-info">
                                                                         <h3 class="tournament-title">{t.event_name.to_string()}</h3>
                                                                         <p class="tournament-details">
-                                                                            {format!("Seed: {}, Placement: {}/{}", &t.seed, &t.placement, &t.num_entrants)}
+                                                                            {format!("Placement: {}/{}", &t.placement, &t.num_entrants)}
                                                                         </p>
                                                                     </div>
                                                                     <div class="match-results">
@@ -349,7 +350,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                                                     std::cmp::Ordering::Equal => "tie",
                                                                                                 }
                                                                                             }>
-                                                                                            {format!("{} - {} vs {} (Seed: {})", s.requester_score, s.opponent_score, s.opponent_tag_with_prefix, s.opponent_seed)}
+                                                                                            {format!("{} - {} vs {}", s.requester_score, s.opponent_score, s.opponent_tag_with_prefix)}
                                                                                         </span>
                                                                                     </div>
                                                                                 }

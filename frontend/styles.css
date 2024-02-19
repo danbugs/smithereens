@@ -21,17 +21,16 @@ ul.list-group.list-group-hover button:hover{
 
 /* screenshot stuff */
 .screenshot-container {
-    width: 800px; /* Fixed width */
-    height: 418px; /* Fixed height */
-    border-radius: 25px; /* Rounded edges, considering Twitter's card style */
+    width: 800px;
+    height: 418px;
+    border-radius: 25px;
     overflow: hidden;
     background: white;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    padding: 15px; /* Further reduced padding to fit the title */
+    padding: 15px;
     font-family: 'Arial', sans-serif;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Distribute space evenly */
+    justify-content: space-between;
 }
 
 .tournament-info {
@@ -40,29 +39,29 @@ ul.list-group.list-group-hover button:hover{
 }
 
 .tournament-title {
-    font-size: 22px; /* Slightly reduced font size to prevent cutting off */
-    margin-bottom: 2px; /* Minimized bottom margin */
+    font-size: 22px;
+    margin-bottom: 2px;
 }
 
 .tournament-details {
-    font-size: 16px; /* Adjusted for space */
+    font-size: 16px;
 }
 
 .match-results {
-    width: 770px; /* Width to fit within the padding */
+    width: 770px;
     text-align: center;
-    font-size: 15px; /* Slightly reduced font size to fit more content */
+    font-size: 15px;
 }
 
 .match-result {
     background: #f2f2f2;
-    padding: 6px 10px; /* Slightly reduced padding */
-    margin: 3px 0; /* Reduced margin to fit more items */
-    border-radius: 10px; /* Adjusted border radius */
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
 }
 
 .win {
     color: green;
+    font-weight: bold;
 }
 
 .loss {
@@ -74,17 +73,17 @@ ul.list-group.list-group-hover button:hover{
 }
 
 .twitter-footer {
-    font-size: 15px; /* Slightly reduced font size */
+    font-size: 15px;
 }
 
 .grecaptcha-badge {
-    z-index: 1000; /* Set z-index to a high value */
-    position: relative; /* Make sure it's positioned relative or absolute */
+    z-index: 1000;
+    position: relative;
 }
 
 footer {
-    z-index: 10; /* Lower z-index than the reCAPTCHA */
-    position: fixed; /* Or use 'absolute' if 'fixed' is not necessary */
+    z-index: 10;
+    position: fixed;
     bottom: 0;
     width: 100%;
   }
