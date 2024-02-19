@@ -89,6 +89,10 @@ build-frontend:
 serve-frontend:
 	trunk serve ./frontend/index.html
 
+.PHONY: run-image-backend
+run-image-backend:
+	node ./image-upload-backend/app.js
+
 # PYTHON
 .PHONY: py-install-reqs
 py-install-reqs:

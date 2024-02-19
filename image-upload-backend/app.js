@@ -12,6 +12,8 @@ const app = express();
 
 // CORS configuration to allow only smithe.net
 const corsOptions = {
+    // when not in prod, uncomment below to allow all origins
+    // origin: '*',
     origin: ['http://smithe.net', 'https://smithe.net'],
     optionsSuccessStatus: 200 // For legacy browser support
   };
