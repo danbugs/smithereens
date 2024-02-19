@@ -14,7 +14,7 @@ const app = express();
 const corsOptions = {
     // when not in prod, uncomment below to allow all origins
     // origin: '*',
-    origin: ['http://127.0.0.1:8080', 'http://smithe.net', 'https://smithe.net'],
+    origin: ['http://smithe.net', 'https://smithe.net'],
     optionsSuccessStatus: 200 // For legacy browser support
   };
 
