@@ -116,6 +116,12 @@ jobs:
       env:
         PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
         STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
+        STARTGG_TOKEN_1: ${{ secrets.STARTGG_TOKEN_1 }}
+        STARTGG_TOKEN_2: ${{ secrets.STARTGG_TOKEN_2 }}
+        STARTGG_TOKEN_3: ${{ secrets.STARTGG_TOKEN_3 }}
+        STARTGG_TOKEN_4: ${{ secrets.STARTGG_TOKEN_4 }}
+        STARTGG_TOKEN_5: ${{ secrets.STARTGG_TOKEN_5 }}
+        STARTGG_TOKEN_6: ${{ secrets.STARTGG_TOKEN_6 }}
 
     - name: Upload Code Coverage Results
       uses: codecov/codecov-action@v3

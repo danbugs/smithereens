@@ -2275,6 +2275,7 @@ dependencies = [
  "anyhow",
  "as-any",
  "gql_client",
+ "rand",
  "serde",
  "tokio",
 ]

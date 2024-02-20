@@ -22,12 +22,42 @@ spec:
           - name: PIDGTM_DATABASE_URL
             valueFrom:
               secretKeyRef:
-                name: backend-secrets
+                name: backend-secrets-multiple-tokens
                 key: PIDGTM_DATABASE_URL
           - name: STARTGG_TOKEN
             valueFrom:
               secretKeyRef:
-                name: backend-secrets
+                name: backend-secrets-multiple-tokens
                 key: STARTGG_TOKEN
+          - name: STARTGG_TOKEN_1
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets-multiple-tokens
+                key: STARTGG_TOKEN_1
+          - name: STARTGG_TOKEN_2
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets-multiple-tokens
+                key: STARTGG_TOKEN_2
+          - name: STARTGG_TOKEN_3
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets-multiple-tokens
+                key: STARTGG_TOKEN_3
+          - name: STARTGG_TOKEN_4
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets-multiple-tokens
+                key: STARTGG_TOKEN_4
+          - name: STARTGG_TOKEN_5
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets-multiple-tokens
+                key: STARTGG_TOKEN_5
+          - name: STARTGG_TOKEN_6
+            valueFrom:
+              secretKeyRef:
+                name: backend-secrets-multiple-tokens
+                key: STARTGG_TOKEN_6
       nodeSelector:
         node: rpileaf02
