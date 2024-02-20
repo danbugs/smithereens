@@ -76,6 +76,12 @@ ul.list-group.list-group-hover button:hover{
     font-size: 15px;
 }
 
+@media (max-width: 767px) {
+    .show-on-desktop {
+        display: none;
+    }
+}
+
 .grecaptcha-badge {
     z-index: 1000;
     position: relative;

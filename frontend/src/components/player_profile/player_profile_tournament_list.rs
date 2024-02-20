@@ -322,7 +322,7 @@ pub fn player_profile_tournament_list(props: &Props) -> Html {
                                                                             <i class="bi bi-trophy" aria-hidden="true"></i> {" View on StartGG"}
                                                                         </a>
                                                                     </div>
-                                                                    <div class="col-auto">
+                                                                    <div class="col-auto show-on-desktop">
                                                                         <a {onclick} rel="noopener noreferrer" class="btn btn-secondary btn-sm">
                                                                             <i class="bi bi-twitter" aria-hidden="true"></i> {" Share on Twitter"}
                                                                         </a>
