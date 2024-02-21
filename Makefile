@@ -101,3 +101,14 @@ py-install-reqs:
 .PHONY: py-run
 py-run:
 	py TokenGenerationBot.py
+
+# DIGITAL OCEAN
+.PHONY: build-do # build on WSL
+build-do:
+	cargo build --release --all --target x86_64-unknown-linux-gnu
+
+.PHONY: deploy-do
+deploy-do:
+	docker build -t danstaken/smithe-backend-do -f Dockerfile-SmitheBackend-Do .
+	docker push danstaken/smithe-backend-do
+

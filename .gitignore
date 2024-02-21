@@ -4,3 +4,5 @@ frontend/dist
 tokens.txt
 id_ranges.txt
 coverage.lcov
+**.env
+**.pem
