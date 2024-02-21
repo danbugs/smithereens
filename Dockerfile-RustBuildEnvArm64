@@ -6,3 +6,6 @@ RUN apt-get update && \
     rustup target add aarch64-unknown-linux-gnu 
 
 ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+#ENV SERVER_ADDRESS
+#ENV SERVER_ADDRESS_2
+#ENV RECAPTCHA_SITE_KEY
