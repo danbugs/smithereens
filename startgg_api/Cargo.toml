@@ -13,3 +13,4 @@ gql_client = "1"
 serde = "1"
 as-any = "0.3"
 tokio = { version = "1.1", features = [ "rt", "macros" ] }
+rand = "0.8"

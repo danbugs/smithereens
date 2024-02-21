@@ -199,10 +199,7 @@ pub struct StartGG {
 impl StartGG {
     pub fn connect() -> Self {
         let mut headers = HashMap::new();
-        let bearer_token = format!(
-            "Bearer {}",
-            std::env::var("STARTGG_TOKEN").expect("could not find STARTGG_TOKEN env var")
-        );
+        let bearer_token = format!("Bearer {}", get_random_startgg_token());
         headers.insert("authorization", bearer_token.as_str());
         Self {
             gql_client: gql_client::Client::new_with_headers(STARTGG_ENDPOINT, headers),
@@ -211,6 +208,19 @@ impl StartGG {
 
     pub fn gql_client(&self) -> gql_client::Client {
         self.gql_client.clone()
+    }
+}
+
+// Function to randomly get a STARTGG_TOKEN between STARTGG_TOKEN_1 and STARTGG_TOKEN_6
+pub fn get_random_startgg_token() -> String {
+    let random_number = rand::random::<u8>() % 6 + 1;
+    let STARTGG_TOKEN = format!("STARTGG_TOKEN_{}", random_number);
+    match std::env::var(format!("STARTGG_TOKEN_{}", random_number)) {
+        Ok(token) => token,
+        Err(_) => {
+            eprintln!("Token not found for {}", STARTGG_TOKEN);
+            std::env::var("STARTGG_TOKEN").expect("STARTGG_TOKEN not found")
+        }
     }
 }
 
@@ -303,3 +313,11 @@ pub const SSBU_CHARACTERS: [(i32, &str); 87] = [
     (1846, "Kazuya"),
     (1897, "Sora"),
 ];
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_get_random_startgg_token() {
+        dbg!(crate::get_random_startgg_token());
+    }
+}
