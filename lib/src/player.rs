@@ -544,6 +544,7 @@ mod tests {
     use diesel_async::AsyncConnection;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
+    const DANTOTTO_PLAYER_SLUG: &str = "566b1fb5";
 
     #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
@@ -711,6 +712,14 @@ mod tests {
     #[cfg(feature = "skip_db_tests")]
     async fn test_get_player() {
         let res = get_player(DANTOTTO_PLAYER_ID).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().player_id, DANTOTTO_PLAYER_ID);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
+    async fn test_get_player_from_slug() {
+        let res = get_player_from_slug(DANTOTTO_PLAYER_SLUG).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().player_id, DANTOTTO_PLAYER_ID);
     }
