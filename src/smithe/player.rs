@@ -6,7 +6,7 @@ use smithe_database::db_models::player::Player;
 
 use smithe_lib::{
     common::start_read_all_by_increment_execute_finish_maybe_cancel,
-    player::{execute, get_all_like},
+    player::{execute, get_all_like, get_player},
     set::{
         get_all_from_player_id, get_competitor_type, get_last_completed_at, get_set_losses_by_dq,
         get_set_losses_without_dqs, get_set_wins_by_dq, get_set_wins_without_dqs, get_winrate,
@@ -15,6 +15,35 @@ use smithe_lib::{
 use startgg::queries::set_getter::{make_set_getter_query, SetGetterVars};
 
 use dialoguer::{theme::ColorfulTheme, Select};
+
+pub async fn handle_id(id: &i32) -> Result<()> {
+    tracing::info!("🔍 looking for player with id provided...");
+    let selected_player: Player = get_player(*id).await?;
+
+
+    tracing::info!("🤔 checking if player is cached...");
+    let cache = get_all_from_player_id(selected_player.player_id).await?;
+    let updated_after = get_last_completed_at(cache);
+
+    let usgv = SetGetterVars::unpaginated_new(
+        selected_player.player_id,
+        updated_after,
+        &selected_player.gamer_tag,
+    );
+
+    start_read_all_by_increment_execute_finish_maybe_cancel(
+        true,
+        Arc::new(Mutex::new(usgv)),
+        make_set_getter_query,
+        1,
+        None,
+        execute,
+        |curr_page| async move { Ok(curr_page + 1) },
+        finish,
+        |_curr_page| Ok(()),
+    )
+    .await
+}
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("🔍 looking for players with tags similar to the provided one...");

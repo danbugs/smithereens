@@ -3,7 +3,7 @@ use smithe_lib::common::init_logger;
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
-use smithereens::smithe::{event::handle_event, player::handle_player};
+use smithereens::smithe::{event::handle_event, player::handle_player, player::handle_id};
 use url::Url;
 
 /// Smithereens, or Smithe, is a digested open-source data visualizer tool for your Smash results.
@@ -22,6 +22,12 @@ enum Commands {
         tag: String,
     },
 
+    /// Gets player related info (using id)
+    Id {
+        #[clap(value_parser)]
+        id: i32,
+    },
+
     /// Gets tournament related info
     Event {
         #[clap(value_parser)]
@@ -38,5 +44,6 @@ async fn main() -> Result<()> {
     match &cli.command {
         Commands::Player { tag } => handle_player(tag).await,
         Commands::Event { url } => handle_event(Url::from_str(url)?).await,
+        Commands::Id { id } => handle_id(id).await,
     }
 }
