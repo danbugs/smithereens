@@ -154,10 +154,10 @@ async fn get_player_head_to_head(
 }
 
 fn rocket() -> Rocket<Build> {
-    #[cfg(debug_assertions)]
-    let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
+    // #[cfg(debug_assertions)]
+    // let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
 
-    #[cfg(not(debug_assertions))]
+    // #[cfg(not(debug_assertions))]
     let allowed_origins = AllowedOrigins::some_exact(&[PROD_ADDRESS, PROD_ADDRESS_2]);
 
     let cors = rocket_cors::CorsOptions {
