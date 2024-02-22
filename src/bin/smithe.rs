@@ -3,7 +3,9 @@ use smithe_lib::common::init_logger;
 use std::str::FromStr;
 
 use clap::{Parser, Subcommand};
-use smithereens::smithe::{event::handle_event, player::handle_player, player::handle_id, player::handle_slug};
+use smithereens::smithe::{
+    event::handle_event, player::handle_id, player::handle_player, player::handle_slug,
+};
 use url::Url;
 
 /// Smithereens, or Smithe, is a digested open-source data visualizer tool for your Smash results.

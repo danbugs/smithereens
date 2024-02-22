@@ -45,7 +45,7 @@ pub async fn handle_slug(slug: &str) -> Result<()> {
     tracing::info!("🔍 looking for player with slug provided...");
     let selected_player: Player = get_player_from_slug(slug).await?;
     handle_search(&selected_player).await?;
-    
+
     Ok(())
 }
 
@@ -68,7 +68,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         .default(0)
         .items(&matching_players[..])
         .interact()?;
-    
+
     let selected_player = &matching_players[selection];
     handle_search(selected_player).await?;
 
