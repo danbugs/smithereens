@@ -72,6 +72,17 @@ pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     Ok(matching_players)
 }
 
+pub async fn get_player_from_slug(slug: &str) -> Result<Player> {
+    let mut db_connection = smithe_database::connect().await?;
+    let db_user_slug = format!("user/{}", slug);
+    let matched_player = players
+        .filter(smithe_database::schema::players::user_slug.eq(db_user_slug))
+        .get_result::<Player>(&mut db_connection)
+        .await?;
+
+    Ok(matched_player)
+}
+
 pub async fn get_player(pid: i32) -> Result<Player> {
     let mut db_connection = smithe_database::connect().await?;
     let matched_player = players

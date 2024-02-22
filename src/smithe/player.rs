@@ -6,7 +6,7 @@ use smithe_database::db_models::player::Player;
 
 use smithe_lib::{
     common::start_read_all_by_increment_execute_finish_maybe_cancel,
-    player::{execute, get_all_like},
+    player::{execute, get_all_like, get_player, get_player_from_slug},
     set::{
         get_all_from_player_id, get_competitor_type, get_last_completed_at, get_set_losses_by_dq,
         get_set_losses_without_dqs, get_set_wins_by_dq, get_set_wins_without_dqs, get_winrate,
@@ -16,19 +16,7 @@ use startgg::queries::set_getter::{make_set_getter_query, SetGetterVars};
 
 use dialoguer::{theme::ColorfulTheme, Select};
 
-pub async fn handle_player(tag: &str) -> Result<()> {
-    tracing::info!("🔍 looking for players with tags similar to the provided one...");
-    let mut matching_players: Vec<Player> = get_all_like(tag).await?;
-    matching_players.sort_by_key(|e| e.player_id);
-
-    // cli display
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("❗ These players matched your search:")
-        .default(0)
-        .items(&matching_players[..])
-        .interact()?;
-    let selected_player = &matching_players[selection];
-
+pub async fn handle_search(selected_player: &Player) -> Result<()> {
     tracing::info!("🤔 checking if player is cached...");
     let cache = get_all_from_player_id(selected_player.player_id).await?;
     let updated_after = get_last_completed_at(cache);
@@ -51,6 +39,40 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         |_curr_page| Ok(()),
     )
     .await
+}
+
+pub async fn handle_slug(slug: &str) -> Result<()> {
+    tracing::info!("🔍 looking for player with slug provided...");
+    let selected_player: Player = get_player_from_slug(slug).await?;
+    handle_search(&selected_player).await?;
+    
+    Ok(())
+}
+
+pub async fn handle_id(id: &i32) -> Result<()> {
+    tracing::info!("🔍 looking for player with id provided...");
+    let selected_player: Player = get_player(*id).await?;
+    handle_search(&selected_player).await?;
+
+    Ok(())
+}
+
+pub async fn handle_player(tag: &str) -> Result<()> {
+    tracing::info!("🔍 looking for players with tags similar to the provided one...");
+    let mut matching_players: Vec<Player> = get_all_like(tag).await?;
+    matching_players.sort_by_key(|e| e.player_id);
+
+    // cli display
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("❗ These players matched your search:")
+        .default(0)
+        .items(&matching_players[..])
+        .interact()?;
+    
+    let selected_player = &matching_players[selection];
+    handle_search(selected_player).await?;
+
+    Ok(())
 }
 
 async fn finish(usgv: Arc<Mutex<SetGetterVars>>) -> Result<()> {
