@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use diesel::{dsl::count_star, prelude::*};
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
 use smithe_database::{db_models::tournament::Tournament, schema::player_tournaments::dsl::*};
 use startgg::{
@@ -60,9 +61,9 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
     tracing::info!("getting tournaments from requester id: {}", rid);
 
     // get player from pid
-    let p = get_player(rid)?;
+    let p = get_player(rid).await?;
 
-    let cache = get_all_from_player_id(p.player_id)?;
+    let cache = get_all_from_player_id(p.player_id).await?;
 
     let updated_after = get_last_completed_at(cache);
     let usgv = SetGetterVars::unpaginated_new(p.player_id, updated_after, &p.gamer_tag);
@@ -74,16 +75,17 @@ pub async fn get_tournaments_from_requester_id(rid: i32) -> Result<Vec<Tournamen
         1,
         None,
         execute,
-        |curr_page| Ok(curr_page + 1),
-        |_| Ok(()),
+        |curr_page| async move { Ok(curr_page + 1) },
+        |_| async move { Ok(()) },
         |_| Ok(()),
     )
     .await?;
 
-    let mut db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect().await?;
     let tournaments = player_tournaments
         .filter(requester_id.eq(rid))
-        .get_results::<Tournament>(&mut db_connection)?;
+        .get_results::<Tournament>(&mut db_connection)
+        .await?;
 
     Ok(tournaments)
 }
@@ -98,19 +100,20 @@ pub fn is_ssbu_singles_and_supported_tournament(s: &SGGSet) -> bool {
         && s.event.clone().unwrap().teamRosterSize.is_none()
 }
 
-pub fn get_num_tournaments_attended(pid: i32) -> Result<i64> {
-    let mut db_connection = smithe_database::connect()?;
-    get_num_tournaments_attended_provided_connection(pid, &mut db_connection)
+pub async fn get_num_tournaments_attended(pid: i32) -> Result<i64> {
+    let mut db_connection = smithe_database::connect().await?;
+    get_num_tournaments_attended_provided_connection(pid, &mut db_connection).await
 }
 
-fn get_num_tournaments_attended_provided_connection(
+async fn get_num_tournaments_attended_provided_connection(
     pid: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<i64> {
     let count: i64 = player_tournaments
         .select(count_star())
         .filter(requester_id.eq(pid))
-        .first(db_connection)?;
+        .first(db_connection)
+        .await?;
 
     Ok(count)
 }
@@ -134,8 +137,8 @@ pub fn get_seed(requester_entrant_id: i32, s: &SGGSet) -> Option<i32> {
         .seedNum
 }
 
-pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
+    let mut db_connection = smithe_database::connect().await?;
     Ok(player_tournaments
         .find((
             s.event.clone().unwrap().tournament.as_ref().unwrap().id,
@@ -143,20 +146,23 @@ pub fn is_tournament_cached(player_id: i32, s: &SGGSet) -> Result<bool> {
             player_id,
         ))
         .first::<Tournament>(&mut db_connection)
+        .await
         .is_ok())
 }
 
 // delete a player's tournaments given a requester id
-pub fn delete_tournaments_from_requester_id(player_id: i32) -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
-    delete_tournaments_from_requester_id_provided_connection(player_id, &mut db_connection)
+pub async fn delete_tournaments_from_requester_id(player_id: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
+    delete_tournaments_from_requester_id_provided_connection(player_id, &mut db_connection).await
 }
 
-fn delete_tournaments_from_requester_id_provided_connection(
+async fn delete_tournaments_from_requester_id_provided_connection(
     player_id: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<()> {
-    diesel::delete(player_tournaments.filter(requester_id.eq(player_id))).execute(db_connection)?;
+    diesel::delete(player_tournaments.filter(requester_id.eq(player_id)))
+        .execute(db_connection)
+        .await?;
 
     Ok(())
 }
@@ -165,7 +171,9 @@ fn delete_tournaments_from_requester_id_provided_connection(
 mod tests {
     #![allow(unused)]
     use anyhow::Result;
-    use diesel::Connection;
+
+    use diesel_async::scoped_futures::ScopedFutureExt;
+    use diesel_async::AsyncConnection;
 
     use crate::common::{get_sggset_test_data, init_logger};
 
@@ -215,10 +223,10 @@ mod tests {
         assert!(super::is_ssbu_singles_and_supported_tournament(&s));
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn get_num_tournaments_attended_test() -> Result<()> {
-        let count = super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)?;
+    async fn get_num_tournaments_attended_test() -> Result<()> {
+        let count = super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID).await?;
 
         // check that it is greater than or equalt to 237
         assert!(count >= 237);
@@ -233,45 +241,52 @@ mod tests {
         assert_eq!(super::get_seed(9410060, &s), Some(10));
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn is_tournament_cached_test() -> Result<()> {
+    async fn is_tournament_cached_test() -> Result<()> {
         let s = get_sggset_test_data();
 
-        assert!(super::is_tournament_cached(TYRESE_PLAYER_ID, &s)?);
+        assert!(super::is_tournament_cached(TYRESE_PLAYER_ID, &s).await?);
 
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn delete_tournaments_from_requester_id_test() -> Result<()> {
-        let mut db_connection = smithe_database::connect()?;
+    async fn delete_tournaments_from_requester_id_test() -> Result<()> {
+        let mut db_connection = smithe_database::connect().await?;
 
-        let err = db_connection.transaction::<(), _, _>(|db_connection| {
-            super::delete_tournaments_from_requester_id_provided_connection(
-                DANTOTTO_PLAYER_ID,
-                db_connection,
-            )
-            .expect("failed to delete tournaments");
+        let err = db_connection
+            .transaction::<(), _, _>(|db_connection| {
+                async {
+                    super::delete_tournaments_from_requester_id_provided_connection(
+                        DANTOTTO_PLAYER_ID,
+                        db_connection,
+                    )
+                    .await
+                    .expect("failed to delete tournaments");
 
-            // check player doesn't have any tournaments
-            assert_eq!(
-                super::get_num_tournaments_attended_provided_connection(
-                    DANTOTTO_PLAYER_ID,
-                    db_connection
-                )
-                .expect("failed to get num tournaments"),
-                0
-            );
+                    // check player doesn't have any tournaments
+                    assert_eq!(
+                        super::get_num_tournaments_attended_provided_connection(
+                            DANTOTTO_PLAYER_ID,
+                            db_connection
+                        )
+                        .await
+                        .expect("failed to get num tournaments"),
+                        0
+                    );
 
-            Err(diesel::result::Error::RollbackTransaction)
-        });
+                    Err(diesel::result::Error::RollbackTransaction)
+                }
+                .scope_boxed()
+            })
+            .await;
 
         assert!(err.is_err());
 
         // check player has tournaments again
-        assert!(super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID)? > 0);
+        assert!(super::get_num_tournaments_attended(DANTOTTO_PLAYER_ID).await? > 0);
 
         Ok(())
     }

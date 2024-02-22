@@ -8,10 +8,10 @@ extern crate diesel;
 pub mod db_models;
 pub mod schema;
 
-use std::env;
+use std::{env, io::Write};
 
 use anyhow::Result;
-use diesel::{Connection, ConnectionResult, PgConnection};
+use diesel_async::{AsyncConnection, AsyncPgConnection};
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -27,16 +27,18 @@ pub fn init_logger() -> Result<()> {
     Ok(())
 }
 
-pub fn connect() -> Result<PgConnection> {
+pub async fn connect() -> Result<AsyncPgConnection> {
     // Try to connect forever until we succeed for a maximum of 100 (arbitraty) tries
     let tries = 100;
     for _ in 0..tries {
-        match try_connect() {
+        match try_connect().await {
             Ok(conn) => return Ok(conn),
             Err(e) => {
+                println!("Failed to connect to database: {}", e);
+                std::io::stdout().flush().unwrap();
                 tracing::error!("Failed to connect to database: {}", e);
                 tracing::info!("Retrying in 5 seconds...");
-                std::thread::sleep(std::time::Duration::from_secs(5));
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             }
         }
     }
@@ -46,8 +48,10 @@ pub fn connect() -> Result<PgConnection> {
     ))
 }
 
-fn try_connect() -> ConnectionResult<PgConnection> {
-    PgConnection::establish(
+async fn try_connect() -> Result<AsyncPgConnection> {
+    println!("Connecting to database...");
+    std::io::stdout().flush().unwrap();
+    AsyncPgConnection::establish(
         &env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).unwrap_or_else(|_| {
             panic!(
                 "{} environment variable not set",
@@ -55,6 +59,8 @@ fn try_connect() -> ConnectionResult<PgConnection> {
             )
         }),
     )
+    .await
+    .map_err(|e| anyhow::anyhow!(e))
 }
 
 #[cfg(test)]
@@ -63,10 +69,10 @@ mod tests {
     use super::*;
     use anyhow::Result;
 
-    #[test]
-    fn test_connect() -> Result<()> {
+    #[tokio::test]
+    async fn test_connect() -> Result<()> {
         init_logger()?;
-        assert!(connect().is_ok());
+        assert!(connect().await.is_ok());
 
         Ok(())
     }

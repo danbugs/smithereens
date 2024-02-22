@@ -10,6 +10,8 @@ use smithe_database::{
     },
 };
 
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
+
 use diesel::{
     delete,
     dsl::{count, max},
@@ -37,8 +39,8 @@ use crate::{
     },
 };
 
-pub fn get_highest_id_with_sets_between(start_id: i32, end_id: i32) -> Result<Option<i32>> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_highest_id_with_sets_between(start_id: i32, end_id: i32) -> Result<Option<i32>> {
+    let mut db_connection = smithe_database::connect().await?;
 
     let highest_id_player = smithe_database::schema::players::table
         .filter(smithe_database::schema::players::player_id.ge(start_id))
@@ -51,65 +53,69 @@ pub fn get_highest_id_with_sets_between(start_id: i32, end_id: i32) -> Result<Op
         .select(smithe_database::schema::players::player_id)
         .order(smithe_database::schema::players::player_id.desc())
         .first::<i32>(&mut db_connection)
+        .await
         .optional()?;
 
     Ok(highest_id_player)
 }
 
-pub fn get_all_like(tag: &str) -> Result<Vec<Player>> {
+pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
     // ^^^ transform spaces into wildcards to make search more inclusive
 
-    let mut db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect().await?;
     let matching_players: Vec<Player> = players
         .filter(gamer_tag.ilike(format!("%{}%", processed_tag))) // case-insensitive like
-        .get_results::<Player>(&mut db_connection)?;
+        .get_results::<Player>(&mut db_connection)
+        .await?;
 
     Ok(matching_players)
 }
 
-pub fn get_player(pid: i32) -> Result<Player> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_player(pid: i32) -> Result<Player> {
+    let mut db_connection = smithe_database::connect().await?;
     let matched_player = players
         .filter(smithe_database::schema::players::player_id.eq(pid)) // case-insensitive like
-        .get_result::<Player>(&mut db_connection)?;
+        .get_result::<Player>(&mut db_connection)
+        .await?;
 
     Ok(matched_player)
 }
 
-pub fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn add_new_player_to_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
 
-    add_new_player_to_pidgtm_db_provided_connection(pti, &mut db_connection)
+    add_new_player_to_pidgtm_db_provided_connection(pti, &mut db_connection).await
 }
 
-fn add_new_player_to_pidgtm_db_provided_connection(
+async fn add_new_player_to_pidgtm_db_provided_connection(
     pti: &SGGPlayer,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<()> {
     match insert_into(players)
         .values(Player::from(pti.clone()))
         .execute(db_connection)
+        .await
     {
         Ok(_) => Ok(()),
         Err(e) => match e {
             DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
                 tracing::info!("👍 player already exists in pidgtm db, updating...");
-                update_and_handle_deleted(pti)
+                update_and_handle_deleted(pti).await
             }
             _ => Err(e.into()), // Propagate other errors
         },
     }
 }
 
-fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
-    update_player_in_pidgtm_db_provided_connection(pti, &mut db_connection)
+async fn update_player_in_pidgtm_db(pti: &SGGPlayer) -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
+    update_player_in_pidgtm_db_provided_connection(pti, &mut db_connection).await
 }
 
-fn update_player_in_pidgtm_db_provided_connection(
+async fn update_player_in_pidgtm_db_provided_connection(
     pti: &SGGPlayer,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<()> {
     let player = Player::from(pti.clone());
     update(players)
@@ -128,52 +134,66 @@ fn update_player_in_pidgtm_db_provided_connection(
             bio.eq(player.bio),
             rankings.eq(player.rankings),
         ))
-        .execute(db_connection)?;
+        .execute(db_connection)
+        .await?;
     Ok(())
 }
 
-fn update_and_handle_deleted(pti: &SGGPlayer) -> Result<()> {
+async fn update_and_handle_deleted(pti: &SGGPlayer) -> Result<()> {
     if pti.user.is_none() {
         tracing::info!("❎ caught a deleted account #1 (id: '{}')...", pti.id);
-        pti.clone().user = get_empty_user_with_slug(pti.id)?;
+        pti.clone().user = get_empty_user_with_slug(pti.id).await?;
     } else if pti.user.as_ref().unwrap().slug.is_none() {
         tracing::info!("❎ caught a deleted account #2 (id: '{}')...", pti.id);
-        pti.clone().user = pti.clone().user.as_mut().map(|u| {
-            u.slug = get_empty_user_with_slug(pti.id).unwrap().unwrap().slug;
-            // ^^^ didn't want to unwrap here, but I guess it's fine to panic
-            u.clone()
-        });
+        pti.clone().user = match pti.clone().user.as_mut() {
+            Some(u) => {
+                // Perform the asynchronous operation and await it outside of the map.
+                let future = async {
+                    u.slug = get_empty_user_with_slug(pti.id)
+                        .await
+                        .unwrap()
+                        .unwrap()
+                        .slug;
+                    u.clone()
+                };
+                // You now have a future that you can await.
+                Some(future.await)
+            }
+            None => None,
+        };
     } else {
         tracing::info!("💫 updating player (id: '{}')...", pti.id);
     }
 
-    update_player_in_pidgtm_db(pti)
+    update_player_in_pidgtm_db(pti).await
 }
 
-pub fn add_new_empty_player_record(pid: i32) -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
-    add_new_empty_player_record_provided_connection(pid, &mut db_connection)?;
+pub async fn add_new_empty_player_record(pid: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
+    add_new_empty_player_record_provided_connection(pid, &mut db_connection).await?;
     Ok(())
 }
 
-fn add_new_empty_player_record_provided_connection(
+async fn add_new_empty_player_record_provided_connection(
     pid: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<()> {
     insert_into(empty_player_ids)
         .values(EmptyPlayerId::from(pid))
         .on_conflict_do_nothing()
-        .execute(db_connection)?;
+        .execute(db_connection)
+        .await?;
     Ok(())
 }
 
-pub fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
+    let mut db_connection = smithe_database::connect().await?;
     let res = players
         .select(smithe_database::schema::players::player_id)
         .filter(smithe_database::schema::players::player_id.gt(some_id))
         .order(smithe_database::schema::players::player_id.asc())
         .first(&mut db_connection)
+        .await
         .optional()?;
 
     if let Some(r) = res {
@@ -183,8 +203,8 @@ pub fn get_subsequent_player_id_with_circle_back(some_id: i32) -> Result<i32> {
     }
 }
 
-pub fn check_if_large_consecutive_playerid_grouping_exists() -> Result<bool> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn check_if_large_consecutive_playerid_grouping_exists() -> Result<bool> {
+    let mut db_connection = smithe_database::connect().await?;
     let res: Vec<ConsecutiveGroupResult> = sql_query(
         r#"WITH RankedPlayerIDs AS (
             SELECT player_id, 
@@ -201,29 +221,32 @@ pub fn check_if_large_consecutive_playerid_grouping_exists() -> Result<bool> {
         GROUP BY grp
         HAVING COUNT(*) > 1144;"#,
     )
-    .load(&mut db_connection)?; // 1144 is the number of players in the largest consecutive grouping
+    .load(&mut db_connection)
+    .await?; // 1144 is the number of players in the largest consecutive grouping
 
     // if vec is not empty, then there is a large consecutive grouping
     Ok(!res.is_empty())
 }
 
-pub fn delete_large_consecutive_playerid_grouping() -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
-    let max_player_id = get_max_player_id()?;
+pub async fn delete_large_consecutive_playerid_grouping() -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
+    let max_player_id = get_max_player_id().await?;
 
     // delete all empty_player_ids that are greater than the max player id
     delete(empty_player_ids)
         .filter(smithe_database::schema::empty_player_ids::player_id.gt(max_player_id))
-        .execute(&mut db_connection)?;
+        .execute(&mut db_connection)
+        .await?;
 
     Ok(())
 }
 
-pub fn get_max_player_id() -> Result<i32> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_max_player_id() -> Result<i32> {
+    let mut db_connection = smithe_database::connect().await?;
     let max_player_id = players
         .select(max(smithe_database::schema::players::player_id))
-        .first::<Option<i32>>(&mut db_connection)?;
+        .first::<Option<i32>>(&mut db_connection)
+        .await?;
     if let Some(val) = max_player_id {
         Ok(val)
     } else {
@@ -231,19 +254,20 @@ pub fn get_max_player_id() -> Result<i32> {
     }
 }
 
-pub fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
-    let mut db_connection = smithe_database::connect()?;
-    get_empty_user_with_slug_provided_connection(pid, &mut db_connection)
+pub async fn get_empty_user_with_slug(pid: i32) -> Result<Option<User>> {
+    let mut db_connection = smithe_database::connect().await?;
+    get_empty_user_with_slug_provided_connection(pid, &mut db_connection).await
 }
 
-fn get_empty_user_with_slug_provided_connection(
+async fn get_empty_user_with_slug_provided_connection(
     pid: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<Option<User>> {
     let some_slug = players
         .select(user_slug)
         .filter(smithe_database::schema::players::player_id.eq(pid))
         .get_result(db_connection)
+        .await
         .optional()?;
 
     Ok(Some(User {
@@ -258,18 +282,18 @@ fn get_empty_user_with_slug_provided_connection(
     }))
 }
 
-pub fn maybe_delete_player_records<V>(maybe_sgv: V) -> Result<bool>
+pub async fn maybe_delete_player_records<V>(maybe_sgv: V) -> Result<bool>
 where
     V: GQLVars + Clone + 'static,
 {
     if let Some(set_getter_vars) = maybe_sgv.downcast_ref::<SetGetterVars>() {
         let err_msg = format!("❌ something went wrong when aggregating data for player id: {}, deleting all of this player's games/sets/tourneys and skipping for now...", set_getter_vars.playerId);
         tracing::error!(err_msg);
-        insert_error_log(err_msg.to_string())?;
+        insert_error_log(err_msg.to_string()).await?;
         // delete all player's games, sets, and tournaments
-        delete_games_from_requester_id(set_getter_vars.playerId)?;
-        delete_sets_by_requester_id(set_getter_vars.playerId)?;
-        delete_tournaments_from_requester_id(set_getter_vars.playerId)?;
+        delete_games_from_requester_id(set_getter_vars.playerId).await?;
+        delete_sets_by_requester_id(set_getter_vars.playerId).await?;
+        delete_tournaments_from_requester_id(set_getter_vars.playerId).await?;
 
         return Ok(true);
     }
@@ -277,7 +301,7 @@ where
     Ok(false)
 }
 
-pub fn execute<T>(_: i32, set_getter_data: T) -> Result<bool>
+pub async fn execute<T>(_: i32, set_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {
@@ -288,7 +312,7 @@ where
     let mut curated_games = vec![];
     let mut curated_tournaments = vec![];
 
-    let mut db_connection = smithe_database::connect()?;
+    let mut db_connection = smithe_database::connect().await?;
 
     let ss = player.sets.unwrap().nodes;
     // ^^^ guaranteed to have sets in this context, ok to unwrap
@@ -414,7 +438,7 @@ where
                             .as_str(),
                         );
 
-                        if !is_tournament_cached(player.id, &s)?
+                        if !is_tournament_cached(player.id, &s).await?
                             && !curated_tournaments.contains(&tournament)
                         {
                             // ^^^ not found
@@ -445,36 +469,39 @@ where
         for g in curated_games {
             let res = insert_into(player_games)
                 .values(g)
-                .execute(&mut db_connection);
+                .execute(&mut db_connection)
+                .await;
 
             if let Err(e) = res {
                 let err_msg = format!("🚨 error inserting game into db: {}", e);
                 tracing::error!(err_msg);
-                insert_error_log(err_msg.to_string())?;
+                insert_error_log(err_msg.to_string()).await?;
             }
         }
 
         for s in curated_sets {
             let res = insert_into(player_sets)
                 .values(s)
-                .execute(&mut db_connection);
+                .execute(&mut db_connection)
+                .await;
 
             if let Err(e) = res {
                 let err_msg = format!("🚨 error inserting set into db: {}", e);
                 tracing::error!(err_msg);
-                insert_error_log(err_msg.to_string())?;
+                insert_error_log(err_msg.to_string()).await?;
             }
         }
 
         for t in curated_tournaments {
             let res = insert_into(player_tournaments)
                 .values(t)
-                .execute(&mut db_connection);
+                .execute(&mut db_connection)
+                .await;
 
             if let Err(e) = res {
                 let err_msg = format!("🚨 error inserting tournament into db: {}", e);
                 tracing::error!(err_msg);
-                insert_error_log(err_msg.to_string())?;
+                insert_error_log(err_msg.to_string()).await?;
             }
         }
 
@@ -483,8 +510,8 @@ where
 }
 
 // get player's top two most played characters
-pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
+    let mut db_connection = smithe_database::connect().await?;
 
     let top_two_characters = player_games
         .select(requester_char_played)
@@ -492,7 +519,8 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
         .group_by(requester_char_played)
         .order_by(count(requester_char_played).desc())
         .limit(2)
-        .get_results::<Option<String>>(&mut db_connection)?;
+        .get_results::<Option<String>>(&mut db_connection)
+        .await?;
 
     Ok(top_two_characters)
 }
@@ -501,28 +529,30 @@ pub fn get_top_two_characters(pid: i32) -> Result<Vec<Option<String>>> {
 mod tests {
     #![allow(unused)]
     use super::*;
+    use diesel_async::scoped_futures::ScopedFutureExt;
+    use diesel_async::AsyncConnection;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_check_if_large_consecutive_playerid_grouping_exists() {
-        let res = check_if_large_consecutive_playerid_grouping_exists();
+    async fn test_check_if_large_consecutive_playerid_grouping_exists() {
+        let res = check_if_large_consecutive_playerid_grouping_exists().await;
         assert!(res.is_ok());
         assert!(!res.unwrap());
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_max_player_id() {
-        let res = get_max_player_id();
+    async fn test_get_max_player_id() {
+        let res = get_max_player_id().await;
         assert!(res.is_ok());
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_top_two_characters() {
-        let res = get_top_two_characters(DANTOTTO_PLAYER_ID);
+    async fn test_get_top_two_characters() {
+        let res = get_top_two_characters(DANTOTTO_PLAYER_ID).await;
         assert!(res.is_ok());
         assert_eq!(
             res.unwrap(),
@@ -530,18 +560,18 @@ mod tests {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_subsequent_player_id_with_circle_back() {
-        let res = get_subsequent_player_id_with_circle_back(DANTOTTO_PLAYER_ID);
+    async fn test_get_subsequent_player_id_with_circle_back() {
+        let res = get_subsequent_player_id_with_circle_back(DANTOTTO_PLAYER_ID).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), 1178566);
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_empty_user_with_slug() {
-        let res = get_empty_user_with_slug(DANTOTTO_PLAYER_ID);
+    async fn test_get_empty_user_with_slug() {
+        let res = get_empty_user_with_slug(DANTOTTO_PLAYER_ID).await;
         assert!(res.is_ok());
         assert_eq!(
             res.unwrap().unwrap().slug,
@@ -549,28 +579,38 @@ mod tests {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_add_new_empty_player_record() {
-        let mut db_connection = smithe_database::connect().unwrap();
-        let err = db_connection.transaction::<(), _, _>(|db_connection| {
-            add_new_empty_player_record_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
-                .expect("failed to add new empty player record");
-
-            // check that the player id was added
-            assert_eq!(
-                empty_player_ids
-                    .filter(
-                        smithe_database::schema::empty_player_ids::player_id.eq(DANTOTTO_PLAYER_ID)
+    async fn test_add_new_empty_player_record() -> Result<()> {
+        let mut db_connection = smithe_database::connect().await?;
+        let err = db_connection
+            .transaction::<(), _, _>(|db_connection| {
+                async {
+                    add_new_empty_player_record_provided_connection(
+                        DANTOTTO_PLAYER_ID,
+                        db_connection,
                     )
-                    .count()
-                    .get_result::<i64>(db_connection)
-                    .unwrap(),
-                1
-            );
+                    .await
+                    .expect("failed to add new empty player record");
 
-            Err(diesel::result::Error::RollbackTransaction)
-        });
+                    // check that the player id was added
+                    assert_eq!(
+                        empty_player_ids
+                            .filter(
+                                smithe_database::schema::empty_player_ids::player_id
+                                    .eq(DANTOTTO_PLAYER_ID)
+                            )
+                            .count()
+                            .get_result::<i64>(db_connection)
+                            .await?,
+                        1
+                    );
+
+                    Err(diesel::result::Error::RollbackTransaction)
+                }
+                .scope_boxed()
+            })
+            .await;
 
         assert!(err.is_err());
 
@@ -580,50 +620,58 @@ mod tests {
                 .filter(smithe_database::schema::empty_player_ids::player_id.eq(DANTOTTO_PLAYER_ID))
                 .count()
                 .get_result::<i64>(&mut db_connection)
-                .unwrap(),
+                .await?,
             0
         );
+
+        Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_add_new_player_to_pidgtm_db() {
-        let mut db_connection = smithe_database::connect().unwrap();
-        let err = db_connection.transaction::<(), _, _>(|db_connection| {
-            add_new_player_to_pidgtm_db_provided_connection(
-                &SGGPlayer {
-                    id: 999,
-                    prefix: None,
-                    gamerTag: Some("Orinorae Thaamtekelud".to_string()),
-                    rankings: None,
-                    user: Some(User {
-                        name: None,
-                        location: None,
-                        bio: None,
-                        birthday: None,
-                        images: None,
-                        slug: Some("user/123a4bc5".to_string()),
-                        genderPronoun: None,
-                        authorizations: None,
-                    }),
-                    sets: None,
-                },
-                db_connection,
-            )
-            .expect("failed to add new player to pidgtm db");
+    async fn test_add_new_player_to_pidgtm_db() -> Result<()> {
+        let mut db_connection = smithe_database::connect().await?;
+        let err = db_connection
+            .transaction::<(), _, _>(|db_connection| {
+                async {
+                    add_new_player_to_pidgtm_db_provided_connection(
+                        &SGGPlayer {
+                            id: 999,
+                            prefix: None,
+                            gamerTag: Some("Orinorae Thaamtekelud".to_string()),
+                            rankings: None,
+                            user: Some(User {
+                                name: None,
+                                location: None,
+                                bio: None,
+                                birthday: None,
+                                images: None,
+                                slug: Some("user/123a4bc5".to_string()),
+                                genderPronoun: None,
+                                authorizations: None,
+                            }),
+                            sets: None,
+                        },
+                        db_connection,
+                    )
+                    .await
+                    .expect("failed to add new player to pidgtm db");
 
-            // check that the player id was added
-            assert_eq!(
-                players
-                    .filter(smithe_database::schema::players::player_id.eq(999))
-                    .count()
-                    .get_result::<i64>(db_connection)
-                    .unwrap(),
-                1
-            );
+                    // check that the player id was added
+                    assert_eq!(
+                        players
+                            .filter(smithe_database::schema::players::player_id.eq(999))
+                            .count()
+                            .get_result::<i64>(db_connection)
+                            .await?,
+                        1
+                    );
 
-            Err(diesel::result::Error::RollbackTransaction)
-        });
+                    Err(diesel::result::Error::RollbackTransaction)
+                }
+                .scope_boxed()
+            })
+            .await;
 
         assert!(err.is_err());
 
@@ -633,31 +681,33 @@ mod tests {
                 .filter(smithe_database::schema::players::player_id.eq(999))
                 .count()
                 .get_result::<i64>(&mut db_connection)
-                .unwrap(),
+                .await?,
             0
         );
+
+        Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_all_like() {
-        let res = get_all_like("dantotto");
+    async fn test_get_all_like() {
+        let res = get_all_like("dantotto").await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().len(), 1);
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_player() {
-        let res = get_player(DANTOTTO_PLAYER_ID);
+    async fn test_get_player() {
+        let res = get_player(DANTOTTO_PLAYER_ID).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().player_id, DANTOTTO_PLAYER_ID);
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_highest_id_with_sets_between() {
-        let res = get_highest_id_with_sets_between(1000, 1001);
+    async fn test_get_highest_id_with_sets_between() {
+        let res = get_highest_id_with_sets_between(1000, 1001).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap(), Some(1000));
     }

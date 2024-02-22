@@ -18,7 +18,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("🔍 looking for players with tags similar to the provided one...");
-    let mut matching_players: Vec<Player> = get_all_like(tag)?;
+    let mut matching_players: Vec<Player> = get_all_like(tag).await?;
     matching_players.sort_by_key(|e| e.player_id);
 
     // cli display
@@ -30,7 +30,7 @@ pub async fn handle_player(tag: &str) -> Result<()> {
     let selected_player = &matching_players[selection];
 
     tracing::info!("🤔 checking if player is cached...");
-    let cache = get_all_from_player_id(selected_player.player_id)?;
+    let cache = get_all_from_player_id(selected_player.player_id).await?;
     let updated_after = get_last_completed_at(cache);
 
     let usgv = SetGetterVars::unpaginated_new(
@@ -46,28 +46,28 @@ pub async fn handle_player(tag: &str) -> Result<()> {
         1,
         None,
         execute,
-        |curr_page| Ok(curr_page + 1),
+        |curr_page| async move { Ok(curr_page + 1) },
         finish,
         |_curr_page| Ok(()),
     )
     .await
 }
 
-fn finish(usgv: Arc<Mutex<SetGetterVars>>) -> Result<()> {
+async fn finish(usgv: Arc<Mutex<SetGetterVars>>) -> Result<()> {
     let pid = usgv.lock().unwrap().playerId;
     println!(
         "🏆 set wins without DQs: {}",
-        get_set_wins_without_dqs(pid)?
+        get_set_wins_without_dqs(pid).await?
     );
     println!(
         "😭 set losses without DQs: {}",
-        get_set_losses_without_dqs(pid)?
+        get_set_losses_without_dqs(pid).await?
     );
-    println!("😎 set wins by DQs: {}", get_set_wins_by_dq(pid)?);
-    println!("🤷 set losses by DQs: {}", get_set_losses_by_dq(pid)?);
-    println!("🥇 win-rate: {}%", get_winrate(pid)?);
+    println!("😎 set wins by DQs: {}", get_set_wins_by_dq(pid).await?);
+    println!("🤷 set losses by DQs: {}", get_set_losses_by_dq(pid).await?);
+    println!("🥇 win-rate: {}%", get_winrate(pid).await?);
 
-    let competitor_type = get_competitor_type(pid)?;
+    let competitor_type = get_competitor_type(pid).await?;
     println!(
         "🌱 competitor type: {}-{}er",
         competitor_type.0, competitor_type.1
