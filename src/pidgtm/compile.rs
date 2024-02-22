@@ -15,7 +15,8 @@ pub async fn handle_compile(
         let highest_id = get_highest_id_with_sets_between(
             start_at_player_id.unwrap(),
             end_at_player_id.unwrap(),
-        ).await?;
+        )
+        .await?;
 
         if let Some(highest_id) = highest_id {
             tracing::info!(

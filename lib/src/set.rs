@@ -283,20 +283,30 @@ mod tests {
     #[cfg(feature = "skip_db_tests")]
     async fn test_delete_sets_by_requester_id() -> Result<()> {
         let mut db_connection = smithe_database::connect().await?;
-        let err = db_connection.transaction::<(), _, _>(|db_connection| async {
-            delete_sets_by_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
-                .await
-                .expect("failed to delete sets by requester id");
+        let err = db_connection
+            .transaction::<(), _, _>(|db_connection| {
+                async {
+                    delete_sets_by_requester_id_provided_connection(
+                        DANTOTTO_PLAYER_ID,
+                        db_connection,
+                    )
+                    .await
+                    .expect("failed to delete sets by requester id");
 
-            // check that there are no sets for the player
-            let sets =
-                get_all_from_player_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                    // check that there are no sets for the player
+                    let sets = get_all_from_player_id_provided_connection(
+                        DANTOTTO_PLAYER_ID,
+                        db_connection,
+                    )
                     .await
                     .expect("failed to get sets");
-            assert!(sets.is_empty());
+                    assert!(sets.is_empty());
 
-            Err(diesel::result::Error::RollbackTransaction)
-        }.scope_boxed()).await;
+                    Err(diesel::result::Error::RollbackTransaction)
+                }
+                .scope_boxed()
+            })
+            .await;
 
         assert!(err.is_err());
 

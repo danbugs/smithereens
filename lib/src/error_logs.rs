@@ -7,7 +7,8 @@ pub async fn insert_error_log(err: String) -> Result<()> {
     let mut db_connection = smithe_database::connect().await?;
     diesel::insert_into(error_logs)
         .values(&new_error_log)
-        .execute(&mut db_connection).await?;
+        .execute(&mut db_connection)
+        .await?;
     Ok(())
 }
 

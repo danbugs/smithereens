@@ -54,9 +54,14 @@ async fn search_players(
 }
 
 #[get("/<id>")]
-async fn view_player(id: i32, _limitguard: RocketGovernor<'_, RateLimitGuard>) -> Result<String, Error> {
+async fn view_player(
+    id: i32,
+    _limitguard: RocketGovernor<'_, RateLimitGuard>,
+) -> Result<String, Error> {
     // insert player page view
-    smithe_lib::player_page_views::insert_player_page_view(id).await.unwrap();
+    smithe_lib::player_page_views::insert_player_page_view(id)
+        .await
+        .unwrap();
     Ok(serde_json::to_string(&get_player(id).await?)?)
 }
 
@@ -83,7 +88,9 @@ async fn get_player_set_losses_without_dqs(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_losses_without_dqs(id).await?)?)
+    Ok(serde_json::to_string(
+        &get_set_losses_without_dqs(id).await?,
+    )?)
 }
 
 #[get("/<id>/wins_by_dqs")]

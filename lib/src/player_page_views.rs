@@ -10,7 +10,8 @@ pub async fn insert_player_page_view(pid: i32) -> Result<()> {
 
     diesel::insert_into(player_page_views)
         .values(&new_player_page_view)
-        .execute(&mut db_connection).await?;
+        .execute(&mut db_connection)
+        .await?;
 
     Ok(())
 }
