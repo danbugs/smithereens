@@ -39,21 +39,24 @@ pub fn init_logger() -> Result<()> {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D>(
+pub async fn start_read_all_by_increment_execute_finish_maybe_cancel<V, F, D, E, G, H>(
     is_cli: bool,
     gql_vars: Arc<Mutex<V>>,
     get_pages: fn(i32, Arc<Mutex<V>>) -> F,
     start: i32,
     end: Option<i32>,
-    execute: fn(i32, D) -> Result<bool>,
-    increment: fn(i32) -> Result<i32>,
-    finish: fn(Arc<Mutex<V>>) -> Result<()>,
+    execute: fn(i32, D) -> E,
+    increment: fn(i32) -> G,
+    finish: fn(Arc<Mutex<V>>) -> H,
     cancel: fn(i32) -> Result<()>,
 ) -> Result<()>
 where
     V: GQLVars + Clone + 'static,
     F: Future<Output = Result<D>>,
     D: GQLData,
+    E: Future<Output = Result<bool>>,
+    G: Future<Output = Result<i32>>,
+    H: Future<Output = Result<()>>,
 {
     let running = Arc::new(AtomicUsize::new(0));
 
@@ -115,7 +118,7 @@ where
                             e.to_string()
                         );
                         tracing::error!(err_msg);
-                        insert_error_log(err_msg.to_string())?;
+                        insert_error_log(err_msg.to_string()).await?;
 
                         // weird error, skip this iteration
                         if e.to_string()
@@ -130,7 +133,7 @@ where
                         }
 
                         let mut maybe_sgv = (*gql_vars.clone().lock().unwrap()).clone();
-                        if maybe_delete_player_records(maybe_sgv.clone())? {
+                        if maybe_delete_player_records(maybe_sgv.clone()).await? {
                             if e.to_string().contains("EOF while parsing") {
                                 tracing::error!(
                                     "🏁 got 'EOF while parsing' at page {}!",
@@ -152,10 +155,10 @@ where
             }
         }
 
-        if execute(curr_page, result)? {
+        if execute(curr_page, result).await? {
             break 'outer;
         } else {
-            curr_page = increment(curr_page)?;
+            curr_page = increment(curr_page).await?;
         }
 
         if Some(curr_page) == end {
@@ -169,7 +172,7 @@ where
         }
     }
 
-    finish(gql_vars)?;
+    finish(gql_vars).await?;
     Ok(())
 }
 

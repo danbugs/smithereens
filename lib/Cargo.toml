@@ -19,6 +19,8 @@ ctrlc = "3.4"
 as-any = "0.3"
 tokio = { version = "1.1", features = [ "rt", "macros" ] }
 chrono = "0.4"
+diesel-async = { version = "0.4.1", features = ["postgres"] }
+
 
 [features]
 default = ["skip_db_tests"]

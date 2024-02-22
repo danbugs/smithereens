@@ -42,22 +42,22 @@ impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
 
 #[get("/")]
 fn index(_limitguard: RocketGovernor<'_, RateLimitGuard>) -> &'static str {
-    "Hello, world!"
+    "Hello, world! (backend)"
 }
 
 #[get("/<tag>")]
-fn search_players(
+async fn search_players(
     tag: String,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_all_like(&tag)?)?)
+    Ok(serde_json::to_string(&get_all_like(&tag).await?)?)
 }
 
 #[get("/<id>")]
-fn view_player(id: i32, _limitguard: RocketGovernor<'_, RateLimitGuard>) -> Result<String, Error> {
+async fn view_player(id: i32, _limitguard: RocketGovernor<'_, RateLimitGuard>) -> Result<String, Error> {
     // insert player page view
-    smithe_lib::player_page_views::insert_player_page_view(id).unwrap();
-    Ok(serde_json::to_string(&get_player(id)?)?)
+    smithe_lib::player_page_views::insert_player_page_view(id).await.unwrap();
+    Ok(serde_json::to_string(&get_player(id).await?)?)
 }
 
 #[get("/<id>")]
@@ -75,7 +75,7 @@ async fn get_player_set_wins_without_dqs(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_wins_without_dqs(id)?)?)
+    Ok(serde_json::to_string(&get_set_wins_without_dqs(id).await?)?)
 }
 
 #[get("/<id>/losses_without_dqs")]
@@ -83,7 +83,7 @@ async fn get_player_set_losses_without_dqs(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_losses_without_dqs(id)?)?)
+    Ok(serde_json::to_string(&get_set_losses_without_dqs(id).await?)?)
 }
 
 #[get("/<id>/wins_by_dqs")]
@@ -91,7 +91,7 @@ async fn get_player_set_wins_by_dqs(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_wins_by_dq(id)?)?)
+    Ok(serde_json::to_string(&get_set_wins_by_dq(id).await?)?)
 }
 
 #[get("/<id>/losses_by_dqs")]
@@ -99,7 +99,7 @@ async fn get_player_set_losses_by_dqs(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_losses_by_dq(id)?)?)
+    Ok(serde_json::to_string(&get_set_losses_by_dq(id).await?)?)
 }
 
 #[get("/<id>/winrate")]
@@ -107,7 +107,7 @@ async fn get_player_winrate(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_winrate(id)?)?)
+    Ok(serde_json::to_string(&get_winrate(id).await?)?)
 }
 
 #[get("/<id>/competitor_type")]
@@ -115,7 +115,7 @@ async fn get_player_competitor_type(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    let ct = get_competitor_type(id)?;
+    let ct = get_competitor_type(id).await?;
     Ok(serde_json::to_string(&format!("{}-{}er", ct.0, ct.1))?)
 }
 
@@ -125,7 +125,7 @@ async fn get_player_top_two_characters(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_top_two_characters(id)?)?)
+    Ok(serde_json::to_string(&get_top_two_characters(id).await?)?)
 }
 
 // get sets by player id
@@ -134,7 +134,7 @@ async fn get_player_sets(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_sets_per_player_id(id)?)?)
+    Ok(serde_json::to_string(&get_sets_per_player_id(id).await?)?)
 }
 
 // get head to head by player id
@@ -143,7 +143,7 @@ async fn get_player_head_to_head(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_head_to_head_record(id)?)?)
+    Ok(serde_json::to_string(&get_head_to_head_record(id).await?)?)
 }
 
 fn rocket() -> Rocket<Build> {

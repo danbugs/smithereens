@@ -18,7 +18,7 @@ pub async fn handle_map(
     start_at_player_id: Option<i32>,
     end_at_player_id: Option<i32>,
 ) -> Result<()> {
-    let start = start_at_player_id.unwrap_or(get_max_player_id()?);
+    let start = start_at_player_id.unwrap_or(get_max_player_id().await?);
 
     // set end_at_player_id to None if it is less than or equal start
     let end_at_player_id = if end_at_player_id.is_some() && end_at_player_id.unwrap() <= start {
@@ -40,13 +40,13 @@ pub async fn map_operation(start_at_player_id: i32, end_at_player_id: Option<i32
         end_at_player_id,
         execute,
         map_increment,
-        |_gqlv| Ok(()),
+        |_gqlv| async move { Ok(()) },
         |_gqlv| Ok(()),
     )
     .await
 }
 
-fn execute<T>(curr_player_id: i32, player_getter_data: T) -> Result<bool>
+async fn execute<T>(curr_player_id: i32, player_getter_data: T) -> Result<bool>
 where
     T: GQLData,
 {
@@ -62,25 +62,25 @@ where
                 "💫 appending player (id: '{}') to pidgtm db...",
                 curr_player_id
             );
-            add_new_player_to_pidgtm_db(pti)?;
+            add_new_player_to_pidgtm_db(pti).await?;
         }
     } else {
         tracing::info!("⛔ no player under id '{}', moving on...", curr_player_id);
-        add_new_empty_player_record(curr_player_id)?;
+        add_new_empty_player_record(curr_player_id).await?;
     }
 
     Ok(false)
 }
 
-pub fn map_increment(curr_player_id: i32) -> Result<i32> {
+pub async fn map_increment(curr_player_id: i32) -> Result<i32> {
     // Check if there is a consecutive grouping larger than 1144 players.
     // If so, that means we probably reached the last page of players.
-    if check_if_large_consecutive_playerid_grouping_exists()? {
+    if check_if_large_consecutive_playerid_grouping_exists().await? {
         tracing::info!("🏁 reached the end of the player list!");
         tracing::info!("🗑️ deleting large consecutive player id grouping...");
         tracing::info!("🔁 restarting from largest player id...");
-        delete_large_consecutive_playerid_grouping()?;
-        get_max_player_id()
+        delete_large_consecutive_playerid_grouping().await?;
+        get_max_player_id().await
     }
     // If not, increment the player id by 1.
     else {

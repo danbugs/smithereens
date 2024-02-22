@@ -1,4 +1,5 @@
 use anyhow::Result;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use startgg::Set as SGGSet;
 
 use diesel::prelude::*;
@@ -57,19 +58,21 @@ pub fn maybe_get_games_from_set(
 }
 
 // delete a player's games given a requester id
-pub fn delete_games_from_requester_id(player_id: i32) -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
-    delete_games_from_requester_id_provided_connection(player_id, &mut db_connection)?;
+pub async fn delete_games_from_requester_id(player_id: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
+    delete_games_from_requester_id_provided_connection(player_id, &mut db_connection).await?;
 
     Ok(())
 }
 
 // delete a player's games given a requester id
-fn delete_games_from_requester_id_provided_connection(
+async fn delete_games_from_requester_id_provided_connection(
     player_id: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<()> {
-    diesel::delete(player_games.filter(requester_id.eq(player_id))).execute(db_connection)?;
+    diesel::delete(player_games.filter(requester_id.eq(player_id)))
+        .execute(db_connection)
+        .await?;
     Ok(())
 }
 
@@ -78,29 +81,40 @@ mod tests {
     #![allow(unused)]
     use super::*;
     use anyhow::Result;
+    use diesel_async::scoped_futures::ScopedFutureExt;
+    use diesel_async::AsyncConnection;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
     // test delete_games_from_requester_id w/ transactions
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_delete_games_from_requester_id() -> Result<()> {
-        let mut db_connection = smithe_database::connect().unwrap();
+    async fn test_delete_games_from_requester_id() -> Result<()> {
+        let mut db_connection = smithe_database::connect().await?;
 
-        let err = db_connection.transaction::<(), _, _>(|db_connection| {
-            delete_games_from_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
-                .expect("failed to delete games");
-            assert_eq!(
-                player_games
-                    .filter(requester_id.eq(DANTOTTO_PLAYER_ID))
-                    .count()
-                    .get_result::<i64>(db_connection)
-                    .unwrap(),
-                0
-            );
+        let err = db_connection
+            .transaction::<(), _, _>(|db_connection| {
+                async {
+                    delete_games_from_requester_id_provided_connection(
+                        DANTOTTO_PLAYER_ID,
+                        db_connection,
+                    )
+                    .await
+                    .expect("failed to delete games");
+                    assert_eq!(
+                        player_games
+                            .filter(requester_id.eq(DANTOTTO_PLAYER_ID))
+                            .count()
+                            .get_result::<i64>(db_connection)
+                            .await?,
+                        0
+                    );
 
-            Err(diesel::result::Error::RollbackTransaction)
-        });
+                    Err(diesel::result::Error::RollbackTransaction)
+                }
+                .scope_boxed()
+            })
+            .await;
 
         assert!(err.is_err());
 
@@ -110,7 +124,7 @@ mod tests {
                 .filter(requester_id.eq(DANTOTTO_PLAYER_ID))
                 .count()
                 .get_result::<i64>(&mut db_connection)
-                .unwrap(),
+                .await?,
             0
         );
 

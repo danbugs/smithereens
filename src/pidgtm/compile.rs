@@ -15,7 +15,7 @@ pub async fn handle_compile(
         let highest_id = get_highest_id_with_sets_between(
             start_at_player_id.unwrap(),
             end_at_player_id.unwrap(),
-        )?;
+        ).await?;
 
         if let Some(highest_id) = highest_id {
             tracing::info!(
@@ -62,12 +62,12 @@ pub async fn handle_compile(
                 "⛔ record not found for player id: {}, moving on...",
                 rid.unwrap()
             );
-            rid = Some(map_increment(rid.unwrap())?);
+            rid = Some(map_increment(rid.unwrap()).await?);
         } else if res.is_err() {
             // any other error is a problem
             panic!("Error: {:?}", res);
         } else {
-            rid = Some(map_increment(rid.unwrap())?);
+            rid = Some(map_increment(rid.unwrap()).await?);
         }
 
         // end timer
@@ -75,7 +75,7 @@ pub async fn handle_compile(
 
         // get time in seconds
         let tis = elapsed.as_secs();
-        insert_pidgtm_compile_time(tis as i32)?; // insert time into db
+        insert_pidgtm_compile_time(tis as i32).await?; // insert time into db
     }
 
     tracing::info!("🏁 finished compiling player data to pidgtm db");

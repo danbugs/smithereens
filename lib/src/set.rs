@@ -4,6 +4,7 @@ use diesel::{
     prelude::*,
     sql_types::{BigInt, Integer, VarChar},
 };
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
 use serde::Serialize;
 use smithe_database::{db_models::set::Set, schema::player_sets::dsl::*};
@@ -22,8 +23,8 @@ pub struct HeadToHeadResult {
     pub losses: i64,
 }
 
-pub fn get_head_to_head_record(requester_id_param: i32) -> Result<Vec<HeadToHeadResult>> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_head_to_head_record(requester_id_param: i32) -> Result<Vec<HeadToHeadResult>> {
+    let mut db_connection = smithe_database::connect().await?;
 
     let results = diesel::sql_query(
         "SELECT opponent_tag_with_prefix AS opponent_tag, COUNT(*) AS total_sets, 
@@ -35,23 +36,25 @@ pub fn get_head_to_head_record(requester_id_param: i32) -> Result<Vec<HeadToHead
         ORDER BY random()",
     )
     .bind::<Integer, _>(requester_id_param)
-    .load::<HeadToHeadResult>(&mut db_connection)?;
+    .load::<HeadToHeadResult>(&mut db_connection)
+    .await?;
 
     Ok(results)
 }
 
-pub fn get_all_from_player_id(player_id: i32) -> Result<Vec<Set>> {
-    let mut db_connection = smithe_database::connect()?;
-    get_all_from_player_id_provided_connection(player_id, &mut db_connection)
+pub async fn get_all_from_player_id(player_id: i32) -> Result<Vec<Set>> {
+    let mut db_connection = smithe_database::connect().await?;
+    get_all_from_player_id_provided_connection(player_id, &mut db_connection).await
 }
 
-fn get_all_from_player_id_provided_connection(
+async fn get_all_from_player_id_provided_connection(
     player_id: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<Vec<Set>> {
     let cache = player_sets
         .filter(requester_id.eq(player_id))
-        .load::<Set>(db_connection)?;
+        .load::<Set>(db_connection)
+        .await?;
 
     Ok(cache)
 }
@@ -111,60 +114,66 @@ pub fn get_opponent_set_slot(requester_entrant_id: i32, s: &SGGSet) -> Option<SG
         .cloned()
 }
 
-pub fn get_set_wins_without_dqs(player_id: i32) -> Result<i64> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_set_wins_without_dqs(player_id: i32) -> Result<i64> {
+    let mut db_connection = smithe_database::connect().await?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(2))
         .count()
-        .get_result::<i64>(&mut db_connection)?)
+        .get_result::<i64>(&mut db_connection)
+        .await?)
 }
 
 // delete a player's sets given a requester_id
-pub fn delete_sets_by_requester_id(player_id: i32) -> Result<()> {
-    let mut db_connection = smithe_database::connect()?;
-    delete_sets_by_requester_id_provided_connection(player_id, &mut db_connection)?;
+pub async fn delete_sets_by_requester_id(player_id: i32) -> Result<()> {
+    let mut db_connection = smithe_database::connect().await?;
+    delete_sets_by_requester_id_provided_connection(player_id, &mut db_connection).await?;
     Ok(())
 }
 
-fn delete_sets_by_requester_id_provided_connection(
+async fn delete_sets_by_requester_id_provided_connection(
     player_id: i32,
-    db_connection: &mut PgConnection,
+    db_connection: &mut AsyncPgConnection,
 ) -> Result<()> {
-    diesel::delete(player_sets.filter(requester_id.eq(player_id))).execute(db_connection)?;
+    diesel::delete(player_sets.filter(requester_id.eq(player_id)))
+        .execute(db_connection)
+        .await?;
     Ok(())
 }
 
-pub fn get_set_losses_without_dqs(player_id: i32) -> Result<i64> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_set_losses_without_dqs(player_id: i32) -> Result<i64> {
+    let mut db_connection = smithe_database::connect().await?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(-2))
         .count()
-        .get_result::<i64>(&mut db_connection)?)
+        .get_result::<i64>(&mut db_connection)
+        .await?)
 }
 
-pub fn get_set_wins_by_dq(player_id: i32) -> Result<i64> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_set_wins_by_dq(player_id: i32) -> Result<i64> {
+    let mut db_connection = smithe_database::connect().await?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(1))
         .count()
-        .get_result::<i64>(&mut db_connection)?)
+        .get_result::<i64>(&mut db_connection)
+        .await?)
 }
 
-pub fn get_set_losses_by_dq(player_id: i32) -> Result<i64> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_set_losses_by_dq(player_id: i32) -> Result<i64> {
+    let mut db_connection = smithe_database::connect().await?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
         .filter(result_type.eq(-1))
         .count()
-        .get_result::<i64>(&mut db_connection)?)
+        .get_result::<i64>(&mut db_connection)
+        .await?)
 }
 
-pub fn get_winrate(player_id: i32) -> Result<f32> {
-    let set_wins_without_dqs = get_set_wins_without_dqs(player_id)?;
-    let set_losses_without_dqs = get_set_losses_without_dqs(player_id)?;
+pub async fn get_winrate(player_id: i32) -> Result<f32> {
+    let set_wins_without_dqs = get_set_wins_without_dqs(player_id).await?;
+    let set_losses_without_dqs = get_set_losses_without_dqs(player_id).await?;
     Ok(
         ((set_wins_without_dqs as f32) / ((set_wins_without_dqs + set_losses_without_dqs) as f32))
             .abs()
@@ -173,15 +182,16 @@ pub fn get_winrate(player_id: i32) -> Result<f32> {
 }
 
 // get sets per player id
-pub fn get_sets_per_player_id(player_id: i32) -> Result<Vec<Set>> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_sets_per_player_id(player_id: i32) -> Result<Vec<Set>> {
+    let mut db_connection = smithe_database::connect().await?;
     Ok(player_sets
         .filter(smithe_database::schema::player_sets::requester_id.eq(player_id))
-        .get_results::<Set>(&mut db_connection)?)
+        .get_results::<Set>(&mut db_connection)
+        .await?)
 }
 
-pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
-    let mut db_connection = smithe_database::connect()?;
+pub async fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
+    let mut db_connection = smithe_database::connect().await?;
     let raw_player_results = player_sets
         .filter(requester_id.eq(player_id))
         .group_by(event_id)
@@ -190,8 +200,8 @@ pub fn get_competitor_type(player_id: i32) -> Result<(u32, u32)> {
             sql::<BigInt>("COUNT(result_type>1 OR NULL)"),
             sql::<BigInt>("COUNT(result_type<-1 OR NULL)"),
         ))
-        .get_results::<(i32, i64, i64)>(&mut db_connection)?;
-    // ^^^ not sure why but have to get the count as text
+        .get_results::<(i32, i64, i64)>(&mut db_connection)
+        .await?;
 
     let player_results = raw_player_results
         .iter()
@@ -221,27 +231,29 @@ mod tests {
     use crate::common::get_sggset_test_data;
 
     use super::*;
+    use diesel_async::scoped_futures::ScopedFutureExt;
+    use diesel_async::AsyncConnection;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_head_to_head_record() -> Result<()> {
-        get_head_to_head_record(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_head_to_head_record() -> Result<()> {
+        get_head_to_head_record(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_all_from_player_id() -> Result<()> {
-        get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_all_from_player_id() -> Result<()> {
+        get_all_from_player_id(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_last_completed_at() -> Result<()> {
-        let cache = get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_last_completed_at() -> Result<()> {
+        let cache = get_all_from_player_id(DANTOTTO_PLAYER_ID).await?;
         get_last_completed_at(cache).expect("failed to get last completed_at");
         Ok(())
     }
@@ -260,78 +272,80 @@ mod tests {
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_set_wins_without_dqs() -> Result<()> {
-        get_set_wins_without_dqs(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_set_wins_without_dqs() -> Result<()> {
+        get_set_wins_without_dqs(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_delete_sets_by_requester_id() -> Result<()> {
-        let mut db_connection = smithe_database::connect()?;
-        let err = db_connection.transaction::<(), _, _>(|db_connection| {
+    async fn test_delete_sets_by_requester_id() -> Result<()> {
+        let mut db_connection = smithe_database::connect().await?;
+        let err = db_connection.transaction::<(), _, _>(|db_connection| async {
             delete_sets_by_requester_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                .await
                 .expect("failed to delete sets by requester id");
 
             // check that there are no sets for the player
             let sets =
                 get_all_from_player_id_provided_connection(DANTOTTO_PLAYER_ID, db_connection)
+                    .await
                     .expect("failed to get sets");
             assert!(sets.is_empty());
 
             Err(diesel::result::Error::RollbackTransaction)
-        });
+        }.scope_boxed()).await;
 
         assert!(err.is_err());
 
         // check that there are sets for the player
-        let sets = get_all_from_player_id(DANTOTTO_PLAYER_ID)?;
+        let sets = get_all_from_player_id(DANTOTTO_PLAYER_ID).await?;
         assert!(!sets.is_empty());
 
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_set_losses_without_dqs() -> Result<()> {
-        get_set_losses_without_dqs(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_set_losses_without_dqs() -> Result<()> {
+        get_set_losses_without_dqs(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_set_wins_by_dq() -> Result<()> {
-        get_set_wins_by_dq(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_set_wins_by_dq() -> Result<()> {
+        get_set_wins_by_dq(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_set_losses_by_dq() -> Result<()> {
-        get_set_losses_by_dq(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_set_losses_by_dq() -> Result<()> {
+        get_set_losses_by_dq(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_winrate() -> Result<()> {
-        get_winrate(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_winrate() -> Result<()> {
+        get_winrate(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_sets_per_player_id() -> Result<()> {
-        get_sets_per_player_id(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_sets_per_player_id() -> Result<()> {
+        get_sets_per_player_id(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 
-    #[test]
+    #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
-    fn test_get_competitor_type() -> Result<()> {
-        get_competitor_type(DANTOTTO_PLAYER_ID)?;
+    async fn test_get_competitor_type() -> Result<()> {
+        get_competitor_type(DANTOTTO_PLAYER_ID).await?;
         Ok(())
     }
 }
