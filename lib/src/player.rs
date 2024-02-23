@@ -72,6 +72,17 @@ pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     Ok(matching_players)
 }
 
+pub async fn get_player_from_slug(slug: &str) -> Result<Player> {
+    let mut db_connection = smithe_database::connect().await?;
+    let db_user_slug = format!("user/{}", slug);
+    let matched_player = players
+        .filter(smithe_database::schema::players::user_slug.eq(db_user_slug))
+        .get_result::<Player>(&mut db_connection)
+        .await?;
+
+    Ok(matched_player)
+}
+
 pub async fn get_player(pid: i32) -> Result<Player> {
     let mut db_connection = smithe_database::connect().await?;
     let matched_player = players
@@ -533,6 +544,7 @@ mod tests {
     use diesel_async::AsyncConnection;
 
     const DANTOTTO_PLAYER_ID: i32 = 1178271;
+    const DANTOTTO_PLAYER_SLUG: &str = "566b1fb5";
 
     #[tokio::test]
     #[cfg(feature = "skip_db_tests")]
@@ -700,6 +712,14 @@ mod tests {
     #[cfg(feature = "skip_db_tests")]
     async fn test_get_player() {
         let res = get_player(DANTOTTO_PLAYER_ID).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().player_id, DANTOTTO_PLAYER_ID);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
+    async fn test_get_player_from_slug() {
+        let res = get_player_from_slug(DANTOTTO_PLAYER_SLUG).await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().player_id, DANTOTTO_PLAYER_ID);
     }
