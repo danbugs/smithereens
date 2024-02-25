@@ -62,13 +62,29 @@ pub async fn get_highest_id_with_sets_between(start_id: i32, end_id: i32) -> Res
 pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
     // ^^^ transform spaces into wildcards to make search more inclusive
-
     let mut db_connection = smithe_database::connect().await?;
-    let matching_players: Vec<Player> = players
-        .filter(gamer_tag.ilike(format!("%{}%", processed_tag))) // case-insensitive like
-        .get_results::<Player>(&mut db_connection)
-        .await?;
 
+    //NOTE
+    //the tags are re-sorted by id on the frontend and cli, so this part doesn't work yet (will probably work just by removing the sorts on them)
+    let mut matching_players: Vec<Player> = sql_query(format!(
+        "SELECT * FROM players WHERE gamer_tag ILIKE '%{}%' ORDER BY LENGTH(gamer_tag) ASC;",
+        processed_tag
+    ))
+    .get_results::<Player>(&mut db_connection)
+    .await?;
+    //ID and slug exact matching.
+    match tag.parse::<i32>() {
+        Ok(pid) => {
+            if let Ok(exact_id_match) = get_player(pid).await {
+                matching_players.insert(0, exact_id_match);
+            }
+        }
+        Err(_) => {
+            if let Ok(exact_slug_match) = get_player_from_slug(&processed_tag).await {
+                matching_players.insert(0, exact_slug_match);
+            }
+        }
+    }
     Ok(matching_players)
 }
 
