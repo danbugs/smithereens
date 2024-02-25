@@ -59,8 +59,7 @@ pub async fn handle_id(id: &i32) -> Result<()> {
 
 pub async fn handle_player(tag: &str) -> Result<()> {
     tracing::info!("🔍 looking for players with tags similar to the provided one...");
-    let mut matching_players: Vec<Player> = get_all_like(tag).await?;
-    matching_players.sort_by_key(|e| e.player_id);
+    let matching_players: Vec<Player> = get_all_like(tag).await?;
 
     // cli display
     let selection = Select::with_theme(&ColorfulTheme::default())

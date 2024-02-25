@@ -64,15 +64,13 @@ pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     // ^^^ transform spaces into wildcards to make search more inclusive
     let mut db_connection = smithe_database::connect().await?;
 
-    //NOTE
-    //the tags are re-sorted by id on the frontend and cli, so this part doesn't work yet (will probably work just by removing the sorts on them)
     let mut matching_players: Vec<Player> = sql_query(format!(
-        "SELECT * FROM players WHERE gamer_tag ILIKE '%{}%' ORDER BY LENGTH(gamer_tag) ASC;",
+        "SELECT * FROM players WHERE gamer_tag ILIKE '%{}%' ORDER BY LENGTH(gamer_tag) ASC, player_id ASC;",
         processed_tag
     ))
     .get_results::<Player>(&mut db_connection)
     .await?;
-    //ID and slug exact matching.
+
     match tag.parse::<i32>() {
         Ok(pid) => {
             if let Ok(exact_id_match) = get_player(pid).await {
@@ -85,6 +83,7 @@ pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
             }
         }
     }
+
     Ok(matching_players)
 }
 
@@ -722,6 +721,22 @@ mod tests {
         let res = get_all_like("dantotto").await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
+    async fn test_get_all_like_id() {
+        let res = get_all_like("1178271").await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap()[0].user_slug, format!("user/{}", DANTOTTO_PLAYER_SLUG));
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
+    async fn test_get_all_like_slug() {
+        let res = get_all_like(DANTOTTO_PLAYER_SLUG).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap()[0].player_id, DANTOTTO_PLAYER_ID);
     }
 
     #[tokio::test]
