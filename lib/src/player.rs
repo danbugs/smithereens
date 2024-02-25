@@ -728,7 +728,10 @@ mod tests {
     async fn test_get_all_like_id() {
         let res = get_all_like("1178271").await;
         assert!(res.is_ok());
-        assert_eq!(res.unwrap()[0].user_slug, format!("user/{}", DANTOTTO_PLAYER_SLUG));
+        assert_eq!(
+            res.unwrap()[0].user_slug,
+            format!("user/{}", DANTOTTO_PLAYER_SLUG)
+        );
     }
 
     #[tokio::test]
