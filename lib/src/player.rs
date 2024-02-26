@@ -18,7 +18,9 @@ use diesel::{
     insert_into,
     prelude::*,
     result::{DatabaseErrorKind, Error as DieselError},
-    sql_query, update,
+    sql_query,
+    sql_types::Text,
+    update,
 };
 use smithe_database::{
     db_models::empty_player_ids::EmptyPlayerId, schema::empty_player_ids::dsl::*,
@@ -64,12 +66,9 @@ pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     // ^^^ transform spaces into wildcards to make search more inclusive
     let mut db_connection = smithe_database::connect().await?;
 
-    let mut matching_players: Vec<Player> = sql_query(format!(
-        "SELECT * FROM players WHERE gamer_tag ILIKE '%{}%' ORDER BY LENGTH(gamer_tag) ASC, player_id ASC;",
-        processed_tag
-    ))
-    .get_results::<Player>(&mut db_connection)
-    .await?;
+    let query = diesel::sql_query("SELECT * FROM players WHERE gamer_tag ILIKE $1 ORDER BY LENGTH(gamer_tag) ASC, player_id ASC")
+    .bind::<Text, _>(format!("%{}%", processed_tag));
+    let mut matching_players: Vec<Player> = query.get_results::<Player>(&mut db_connection).await?;
 
     match tag.parse::<i32>() {
         Ok(pid) => {
