@@ -18,7 +18,9 @@ use diesel::{
     insert_into,
     prelude::*,
     result::{DatabaseErrorKind, Error as DieselError},
-    sql_query, update,
+    sql_query,
+    sql_types::Text,
+    update,
 };
 use smithe_database::{
     db_models::empty_player_ids::EmptyPlayerId, schema::empty_player_ids::dsl::*,
@@ -62,12 +64,24 @@ pub async fn get_highest_id_with_sets_between(start_id: i32, end_id: i32) -> Res
 pub async fn get_all_like(tag: &str) -> Result<Vec<Player>> {
     let processed_tag = tag.replace(' ', "%");
     // ^^^ transform spaces into wildcards to make search more inclusive
-
     let mut db_connection = smithe_database::connect().await?;
-    let matching_players: Vec<Player> = players
-        .filter(gamer_tag.ilike(format!("%{}%", processed_tag))) // case-insensitive like
-        .get_results::<Player>(&mut db_connection)
-        .await?;
+
+    let query = diesel::sql_query("SELECT * FROM players WHERE gamer_tag ILIKE $1 ORDER BY LENGTH(gamer_tag) ASC, player_id ASC")
+    .bind::<Text, _>(format!("%{}%", processed_tag));
+    let mut matching_players: Vec<Player> = query.get_results::<Player>(&mut db_connection).await?;
+
+    match tag.parse::<i32>() {
+        Ok(pid) => {
+            if let Ok(exact_id_match) = get_player(pid).await {
+                matching_players.insert(0, exact_id_match);
+            }
+        }
+        Err(_) => {
+            if let Ok(exact_slug_match) = get_player_from_slug(&processed_tag).await {
+                matching_players.insert(0, exact_slug_match);
+            }
+        }
+    }
 
     Ok(matching_players)
 }
@@ -706,6 +720,25 @@ mod tests {
         let res = get_all_like("dantotto").await;
         assert!(res.is_ok());
         assert_eq!(res.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
+    async fn test_get_all_like_id() {
+        let res = get_all_like("1178271").await;
+        assert!(res.is_ok());
+        assert_eq!(
+            res.unwrap()[0].user_slug,
+            format!("user/{}", DANTOTTO_PLAYER_SLUG)
+        );
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "skip_db_tests")]
+    async fn test_get_all_like_slug() {
+        let res = get_all_like(DANTOTTO_PLAYER_SLUG).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap()[0].player_id, DANTOTTO_PLAYER_ID);
     }
 
     #[tokio::test]

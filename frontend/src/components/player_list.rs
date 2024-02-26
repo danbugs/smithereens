@@ -42,15 +42,13 @@ pub fn player_list(props: &Props) -> Html {
                 loading.set(true);
 
                 let endpoint = format!("{}/players/{}", env!("SERVER_ADDRESS"), gamer_tag);
-                let mut fetched_players: Vec<Player> = Request::get(&endpoint)
+                let fetched_players: Vec<Player> = Request::get(&endpoint)
                     .send()
                     .await
                     .unwrap()
                     .json()
                     .await
                     .unwrap();
-
-                fetched_players.sort_by_key(|e| e.player_id);
 
                 total_pages.set((fetched_players.len() as f32 / PAGE_SIZE as f32).ceil() as usize);
                 search_results.set(fetched_players.clone());
