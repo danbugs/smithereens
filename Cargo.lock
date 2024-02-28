@@ -2454,6 +2454,7 @@ dependencies = [
  "rocket_cors",
  "serde_json",
  "smithe_lib",
+ "startgg",
  "thiserror",
  "tokio",
 ]
