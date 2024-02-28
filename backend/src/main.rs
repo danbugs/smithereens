@@ -10,7 +10,7 @@ use rocket::{
 use rocket_cors::{AllowedHeaders, AllowedOrigins};
 use rocket_governor::{Quota, RocketGovernable, RocketGovernor};
 use smithe_lib::{
-    player::{get_all_like, get_player, get_top_two_characters},
+    player::{add_new_player_to_pidgtm_db, get_all_like, get_player, get_top_two_characters},
     set::{
         get_competitor_type, get_head_to_head_record, get_set_losses_by_dq,
         get_set_losses_without_dqs, get_set_wins_by_dq, get_set_wins_without_dqs,
@@ -19,6 +19,10 @@ use smithe_lib::{
     tournament::get_tournaments_from_requester_id,
 };
 use thiserror::Error;
+
+use startgg::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterVars};
+
+use std::sync::{Arc, Mutex};
 
 pub const DEV_ADDRESS: &str = "http://localhost:8080/";
 pub const DEV_ADDRESS_2: &str = "http://127.0.0.1:8080/";
@@ -58,6 +62,14 @@ async fn view_player(
     id: i32,
     _limitguard: RocketGovernor<'_, RateLimitGuard>,
 ) -> Result<String, Error> {
+    //Try to update if can but still serve old data otherwise
+    if let Ok(player_data) =
+        make_pidgtm_player_getter_query(id, Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())))
+            .await
+    {
+        add_new_player_to_pidgtm_db(&player_data.player.unwrap()).await?;
+    }
+
     // insert player page view
     smithe_lib::player_page_views::insert_player_page_view(id)
         .await
