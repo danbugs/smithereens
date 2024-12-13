@@ -6,3 +6,4 @@ id_ranges.txt
 coverage.lcov
 **.env
 **.pem
+.idea/
