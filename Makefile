@@ -59,12 +59,6 @@ buildx-frontend:
 setup-backend-secrets:
 	kubectl create secret generic backend-secrets --from-env-file=backend-secrets.env
 
-.PHONY: deploy-backend
-deploy-backend:
-	# setup-backend-secrets
-	kubectl apply -f ./backend-deployment.yml
-	kubectl apply -f ./backend-service.yml
-
 .PHONY: deploy-frontend
 deploy-frontend:
 	kubectl apply -f ./frontend-deployment.yml
