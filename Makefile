@@ -55,10 +55,6 @@ buildx-frontend:
 	docker buildx build --platform linux/arm64 -t danstaken/smithe-frontend:latest -f Dockerfile-SmitheFrontend --push .
 
 # KUBERNETES
-.PHONY: setup-backend-secrets
-setup-backend-secrets:
-	kubectl create secret generic backend-secrets --from-env-file=backend-secrets.env
-
 .PHONY: deploy-frontend
 deploy-frontend:
 	kubectl apply -f ./frontend-deployment.yml
@@ -86,23 +82,3 @@ serve-frontend:
 .PHONY: run-image-backend
 run-image-backend:
 	node ./image-upload-backend/app.js
-
-# PYTHON
-.PHONY: py-install-reqs
-py-install-reqs:
-	py -m pip install -r TokenGenerationBot-requirements.txt
-
-.PHONY: py-run
-py-run:
-	py TokenGenerationBot.py
-
-# DIGITAL OCEAN
-.PHONY: build-do # build on WSL
-build-do:
-	cargo build --release --all --target x86_64-unknown-linux-gnu
-
-.PHONY: deploy-do
-deploy-do:
-	docker build -t danstaken/smithe-backend-do -f Dockerfile-SmitheBackend-Do .
-	docker push danstaken/smithe-backend-do
-
