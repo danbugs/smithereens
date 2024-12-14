@@ -19,16 +19,18 @@ sudo systemctl restart k3s
 
 ### pidgtm deployment
 
-> Last updated: 2024-12-12
+> Last updated: 2024-12-13
 
 - Create new token (in Dantotto account), call it `STARTGG_TOKEN`, and copy it.
-- In `rpi-master`, run: `echo -n "your-new-token-value" | base64`, and copy the encoded value.
-- Then: `kubectl edit secret pidgtm-secrets`, and replace the `STARTGG_TOKEN` value.
+- In `rpi-master`, edit the `pidgtm-map-deployment.yml` file (i.e., `sudo nano pidgtm-map-deployment.yml`) secret entries (i.e., `STARTGG_TOKEN`, `STARTGG_TOKEN_1`, `STARTGG_TOKEN_2`, `STARTGG_TOKEN_3`, `STARTGG_TOKEN_4`, `STARTGG_TOKEN_5`, and `STARTGG_TOKEN_6`) to be equal to the value of the `STARTGG_TOKEN` you created.
+- Then: `kubectl apply -f ./pidgtm-map-deployment.yml`
 - You can check the pidgtm is still working fine with:
 ```shell
-kubectl get pods # should show `deployment-pidgtm-map-7c4d9b849f-gc2nk` running
-kubectl logs deployment-pidgtm-map-7c4d9b849f-gc2nk
+kubectl get pods # should show `deployment-pidgtm-map-xxx...` running
+kubectl logs deployment-pidgtm-map-xxx...
 ```
+
+> Note: On 2024-12-13, I also deployed a job to map player IDs from 1000 to 4463760 (highest at the time). This job should hopefully be complete before the expiry of the token (created on that same date under the name STARTGG_TOKEN-2 in the Dantotto profile). You can view the yaml file for that deployment at `./pidgtm-map-job.yml`.
 
 ### `backend-process`
 
@@ -47,7 +49,7 @@ pm2 grabs a copy of the environment variables at the time the process starts, so
 
 > Last updated: 2024-12-12
 
-Locally, I have 6 enviroment variables set: `STARTGG_TOKEN`, `STARTGG_TOKEN_1`, `STARTGG_TOKEN_2`, `STARTGG_TOKEN_3`, `STARTGG_TOKEN_4`, and `STARTGG_TOKEN_5`. They are all set to a single token I have created in my Dantotto account called `LOCAL_STARTGG_TOKEN`.
+Locally, I have 6 enviroment variables set: `STARTGG_TOKEN`, `STARTGG_TOKEN_1`, `STARTGG_TOKEN_2`, `STARTGG_TOKEN_3`, `STARTGG_TOKEN_4`, and `STARTGG_TOKEN_5`. They are all set to a single token I have created in my Dantotto account called `LOCAL_STARTGG_TOKEN`. 
 
 ## Useful `pidgtm` database queries
 
