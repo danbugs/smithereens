@@ -173,7 +173,8 @@ fn rocket() -> Rocket<Build> {
     // let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
     //
     // #[cfg(not(debug_assertions))]
-    let allowed_origins = AllowedOrigins::some_exact(&[PROD_ADDRESS, PROD_ADDRESS_2, PROD_ADDRESS_3, PROD_ADDRESS_4]);
+    let allowed_origins =
+        AllowedOrigins::some_exact(&[PROD_ADDRESS, PROD_ADDRESS_2, PROD_ADDRESS_3, PROD_ADDRESS_4]);
 
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
