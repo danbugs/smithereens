@@ -20,7 +20,7 @@ on:
 jobs:
   lint-and-format:
     name: Lint with clippy and check formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
