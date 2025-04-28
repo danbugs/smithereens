@@ -169,7 +169,7 @@ async fn get_player_head_to_head(
 fn rocket() -> Rocket<Build> {
     // #[cfg(debug_assertions)]
     // let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
-
+    //
     // #[cfg(not(debug_assertions))]
     let allowed_origins = AllowedOrigins::some_exact(&[PROD_ADDRESS, PROD_ADDRESS_2]);
 
@@ -222,7 +222,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 pub struct RateLimitGuard;
 
-impl<'r> RocketGovernable<'r> for RateLimitGuard {
+impl RocketGovernable<'_> for RateLimitGuard {
     fn quota(_method: Method, _route_name: &str) -> Quota {
         Quota::per_minute(Self::nonzero(60u32))
     }

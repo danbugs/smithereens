@@ -17,6 +17,8 @@ sudo systemctl restart k3s
 
 ![architecture](./docs/imgs/architecture.png)
 
+> Note: Don't forget to update repo secrets!
+
 ### pidgtm deployment
 
 > Last updated: 2024-12-13

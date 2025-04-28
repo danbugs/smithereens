@@ -73,7 +73,7 @@ run-backend:
 # FRONTEND
 .PHONY: build-frontend
 build-frontend:
-	trunk build --release ./frontend/index.html
+	trunk build ./frontend/index.html --release
 
 .PHONY: serve-frontend
 serve-frontend:

@@ -11,7 +11,11 @@ pub mod schema;
 use std::{env, io::Write};
 
 use anyhow::Result;
-use diesel_async::{AsyncConnection, AsyncPgConnection};
+use diesel::ConnectionError;
+use diesel_async::AsyncPgConnection;
+use rustls::{ClientConfig, RootCertStore};
+use tokio::spawn;
+use tokio_postgres_rustls::MakeRustlsConnect;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
@@ -48,19 +52,64 @@ pub async fn connect() -> Result<AsyncPgConnection> {
     ))
 }
 
+// async fn try_connect() -> Result<AsyncPgConnection> {
+//     println!("Connecting to database...");
+//     std::io::stdout().flush().unwrap();
+//
+//     AsyncPgConnection::establish(
+//         &env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).unwrap_or_else(|_| {
+//             panic!(
+//                 "{} environment variable not set",
+//                 PIDGTM_DATABASE_URL_ENVVAR_NAME
+//             )
+//         }),
+//     )
+//     .await
+//     .map_err(|e| anyhow::anyhow!(e))
+// }
+
 async fn try_connect() -> Result<AsyncPgConnection> {
     println!("Connecting to database...");
     std::io::stdout().flush().unwrap();
-    AsyncPgConnection::establish(
-        &env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).unwrap_or_else(|_| {
-            panic!(
-                "{} environment variable not set",
-                PIDGTM_DATABASE_URL_ENVVAR_NAME
-            )
-        }),
-    )
-    .await
-    .map_err(|e| anyhow::anyhow!(e))
+
+    let db_url = env::var(PIDGTM_DATABASE_URL_ENVVAR_NAME).unwrap_or_else(|_| {
+        panic!(
+            "{} environment variable not set",
+            PIDGTM_DATABASE_URL_ENVVAR_NAME
+        )
+    });
+
+    // Set up rustls TLS config
+    let rustls_config = ClientConfig::builder()
+        .with_safe_defaults()
+        .with_root_certificates(root_certs())
+        .with_no_client_auth();
+    let tls = MakeRustlsConnect::new(rustls_config);
+
+    // Connect manually
+    let (client, conn) = tokio_postgres::connect(&db_url, tls)
+        .await
+        .map_err(|e| ConnectionError::BadConnection(e.to_string()))?;
+
+    // Spawn connection handling in background
+    spawn(async move {
+        if let Err(e) = conn.await {
+            eprintln!("Database connection error: {e}");
+        }
+    });
+
+    // Build AsyncPgConnection
+    AsyncPgConnection::try_from(client)
+        .await
+        .map_err(|e| anyhow::anyhow!(e))
+}
+
+fn root_certs() -> RootCertStore {
+    let mut roots = RootCertStore::empty();
+    let certs = rustls_native_certs::load_native_certs().expect("Could not load platform certs");
+    let certs: Vec<_> = certs.into_iter().map(|cert| cert.0).collect();
+    roots.add_parsable_certificates(&certs);
+    roots
 }
 
 #[cfg(test)]

@@ -40,226 +40,88 @@ jobs:
 
   build:
     needs: lint-and-format
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: macos-latest
-            target: x86_64-apple-darwin
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - if: matrix.os == 'windows-latest'
-      name: Install PostgreSQL
-      uses: ikalnytskyi/action-setup-postgres@v4  
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
 
-    # This test is necessary to run cross build
-    - if: matrix.os == 'ubuntu-latest'
-      name: Install QEMU user emulation
-      run: docker run --rm --privileged tonistiigi/binfmt --install all
+      - name: Install llvm-tools-preview for cargo-llvm-cov
+        run: rustup component add llvm-tools-preview
 
-    - if: matrix.os == 'ubuntu-latest'
-      name: Install cross
-      run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v1
+        with:
+          tool: cargo-llvm-cov
 
-    - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-        target: ${{ matrix.target }}
+      - name: Install trunk
+        run: cargo install trunk
 
-    # We use cargo-llvm-cov for tests rather than cargo test to also evaluate test coverage
-    - name: Install cargo-llvm-cov
-      uses: taiki-e/install-action@v1
-      with:
-        tool: cargo-llvm-cov
-    - name: Install llvm-tools-preview for cargo-llvm-cov
-      run: rustup component add llvm-tools-preview
+      - name: Cache Rust targets
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
-    - name: Install trunk
-      run: cargo install trunk
+      - name: Build
+        run: cargo build --release --all
+        env:
+          SERVER_ADDRESS: 'http://127.0.0.1:8080'
+          SERVER_ADDRESS_2: ${{ secrets.SERVER_ADDRESS_2 }}
 
-    # If Linux, install openssl
-    - if: matrix.os == 'ubuntu-latest'
-      name: Install openssl
-      run: sudo apt-get install openssl
+      - name: Run tests and get coverage
+        run: |
+          cargo llvm-cov clean --workspace
+          cargo llvm-cov --no-report --package smithe_lib --no-default-features -- --exact --nocapture --test-threads=1
+          cargo llvm-cov report --lcov --output-path ./coverage.lcov
+        env:
+          PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
+          STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
+          STARTGG_TOKEN_1: ${{ secrets.STARTGG_TOKEN_1 }}
+          STARTGG_TOKEN_2: ${{ secrets.STARTGG_TOKEN_2 }}
+          STARTGG_TOKEN_3: ${{ secrets.STARTGG_TOKEN_3 }}
+          STARTGG_TOKEN_4: ${{ secrets.STARTGG_TOKEN_4 }}
+          STARTGG_TOKEN_5: ${{ secrets.STARTGG_TOKEN_5 }}
+          STARTGG_TOKEN_6: ${{ secrets.STARTGG_TOKEN_6 }}
 
-    - name: Cache Rust targets
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-   
+      - name: Upload Code Coverage Results
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.lcov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: Build
-      run: cargo build --release --all
-      env:
-        SERVER_ADDRESS: 'http://127.0.0.1:8080'
-        SERVER_ADDRESS_2: ${{ secrets.SERVER_ADDRESS_2 }}
-        RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
-        # ^^^ the front-end looks for keys at compile time, so we need these in
-
-    # We need `--test-threads=1` due to a Diesel/postgres bug
-    - name: Run tests and get coverage
-      run: |
-        cargo llvm-cov clean --workspace
-        cargo llvm-cov --no-report --package smithe_lib --no-default-features -- --exact --nocapture --test-threads=1
-        cargo llvm-cov report --lcov --output-path ./coverage.lcov
-      env:
-        PIDGTM_DATABASE_URL: ${{ secrets.PIDGTM_DATABASE_URL }}
-        STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
-        STARTGG_TOKEN_1: ${{ secrets.STARTGG_TOKEN_1 }}
-        STARTGG_TOKEN_2: ${{ secrets.STARTGG_TOKEN_2 }}
-        STARTGG_TOKEN_3: ${{ secrets.STARTGG_TOKEN_3 }}
-        STARTGG_TOKEN_4: ${{ secrets.STARTGG_TOKEN_4 }}
-        STARTGG_TOKEN_5: ${{ secrets.STARTGG_TOKEN_5 }}
-        STARTGG_TOKEN_6: ${{ secrets.STARTGG_TOKEN_6 }}
-
-    - name: Upload Code Coverage Results
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.lcov
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}        
-
-    # Conditional step for standard Rust build for non-arm64 targets
-    - if: matrix.os == 'ubuntu-latest'
-      name: Cross build pidgtm for arm64
-      run: |
-        cross build --release --target aarch64-unknown-linux-gnu
-        ls -la target/aarch64-unknown-linux-gnu/
-      env:
-        SERVER_ADDRESS: 'http://127.0.0.1:8080'
-        CROSS_CONTAINER_OPTS: '--platform linux/arm64'
-    - if: matrix.os == 'ubuntu-latest'
-      name: Upload arm64 pidgtm artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: pidgtm-aarch64-unknown-linux-gnu
-        path: target/aarch64-unknown-linux-gnu/release/pidgtm
-    
-    - if: matrix.os == 'ubuntu-latest'
-      name: Cross build smithe-backend for arm64
-      run: |
-        cross build --release -p smithe_backend --target aarch64-unknown-linux-gnu
-        ls -la target/aarch64-unknown-linux-gnu/release/
-    - if: matrix.os == 'ubuntu-latest'
-      name: Upload arm64 smithe-backend artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: smithe-backend-aarch64-unknown-linux-gnu
-        path: target/aarch64-unknown-linux-gnu/release/smithe_backend
-
-    # Install wasm32-unknown-unknown target for smithe-frontend
-    - name: Install wasm32-unknown-unknown target
-      run: rustup target add wasm32-unknown-unknown
-
-    # Trunk build for smithe-frontend
-    - name: Build smithe-frontend
-      run: trunk build --release ./frontend/index.html
-      env:
-        SERVER_ADDRESS: ${{ secrets.SERVER_ADDRESS_KUBERNETES }}
-        SERVER_ADDRESS_2: ${{ secrets.SERVER_ADDRESS_2 }}
-        RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
-    - if: matrix.os == 'ubuntu-latest'
-      name: Upload Trunk smithe-frontend artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: smithe-frontend-trunk
-        path: ./frontend/dist
-
-  docker-deploy:
+  docker-backend-deploy:
     needs: build
     runs-on: ubuntu-latest
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Download pidgtm artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: pidgtm-aarch64-unknown-linux-gnu
-          path: target/aarch64-unknown-linux-gnu/release/
-      - name: Display pidgtm artifact
-        run: ls -la target/aarch64-unknown-linux-gnu/release/pidgtm
-      - name: Set Executable Permissions
-        run: chmod +x target/aarch64-unknown-linux-gnu/release/pidgtm
-
-      - name: Download smithe-backend artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: smithe-backend-aarch64-unknown-linux-gnu
-          path: target/aarch64-unknown-linux-gnu/release/
-      - name: Display smithe-backend artifact
-        run: ls -la target/aarch64-unknown-linux-gnu/release/smithe_backend
-      - name: Set Executable Permissions
-        run: chmod +x target/aarch64-unknown-linux-gnu/release/smithe_backend
-
-      - name: Download smithe-frontend artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: smithe-frontend-trunk
-          path: ./frontend/dist
-      - name: Display smithe-frontend artifact
-        run: ls -la ./frontend/dist
-
-      - name: Login to DockerHub
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: danstaken
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
 
-      - name: Build and push multi-architecture Docker pidgtm image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile-Pidgtm
-          push: true
-          tags: danstaken/pidgtm:latest
-          platforms: linux/arm64
+      - name: Build backend Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/smithe-backend:latest -f backend/Dockerfile .
 
-      - name: Build and push multi-architecture Docker rust-build-env-arm64 image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile-RustBuildEnvArm64
-          push: true
-          tags: danstaken/rust-build-env-arm64:latest
-          platforms: linux/arm64
-
-      - name: Build and push multi-architecture Docker smithe-backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile-SmitheBackend
-          push: true
-          tags: danstaken/smithe-backend:latest
-          platforms: linux/arm64
-
-      - name: Build and push multi-architecture Docker smithe-frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile-SmitheFrontend
-          push: true
-          tags: danstaken/smithe-frontend:latest
-          platforms: linux/arm64         
-
+      - name: Push backend Docker image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/smithe-backend:latest

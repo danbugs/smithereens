@@ -1,0 +1,5 @@
+# Don't copy these into Docker context
+.git
+target
+.env
+*.rs.bk
