@@ -8,7 +8,7 @@ Smithereens is a digested open-source data visualizer tool for your Smash Ultima
 
 - Smithereens is accessible both via CLI, and web app.
 - Smithereens is open-source, meaning there is no barrier to entry to contribute and improve it based on what you want to see in the app.
-- Smithereens is not afilliated with any organization or sponsor, which I hope will increase the resilience of the project in the scene.
+- Smithereens is not affiliated with any organization or sponsor, which I hope will increase the resilience of the project in the scene.
 - Smithereens is free and there are no ads anywhere in the platform.
 - Smithereens was thoroughly tested. First, by ensuring we're always at over 50% local test coverage, and, second, by running it via CLI non-stop for multiple days as 300 parallel jobs on a Kubernetes cluster without failure while aggregating player results. This allowed me to ensure we handle all edge cases (e.g., even load intensive requests for players like rm8, whose profile actually does not load on platforms similar to this).
 - Smithereens has cool features like:
