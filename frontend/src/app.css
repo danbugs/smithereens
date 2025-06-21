@@ -1,0 +1,246 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
+
+:root {
+  --crimson: #b72035;
+  --crimson-light: #ce3749;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-600: #4b5563;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Reset + base ----------------------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100vh;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  font-family:
+    'Open Sans',
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Noto Color Emoji',
+    sans-serif;
+  color: var(--gray-600);
+  background: #fff;
+  line-height: 1.55;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-inline: 1rem;
+}
+
+/* Links ------------------------------------------------------------ */
+a {
+  color: var(--crimson);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  opacity: .85;
+}
+
+/* Header ----------------------------------------------------------- */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: var(--crimson);
+}
+
+.search-form {
+  margin-left: auto;
+  width: 260px;
+}
+
+.search-input {
+  width: 100%;
+  padding: .5rem .75rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  font-size: .9rem;
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(183 32 53 / 30%);
+}
+
+/* Hero ------------------------------------------------------------- */
+.hero {
+  position: relative;
+  background: var(--crimson);
+  padding: 8rem 0 6.5rem;
+  /* slightly less height */
+  color: #fff;
+  overflow: hidden;
+  text-align: center;
+}
+
+.dot-grid {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+}
+
+.hero-slogan {
+  max-width: 1000px;
+  margin-inline: auto;
+  background: #fff;
+  padding: 3rem 4rem;
+  /* tighter */
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--crimson);
+  font-weight: 800;
+  font-size: clamp(2.75rem, 5.5vw + 1rem, 4.5rem);
+  /* smaller top bound */
+  line-height: 1.25;
+}
+
+/* Info grid -------------------------------------------------------- */
+.page-section {
+  padding: 4rem 0;
+  flex: 1 0 auto;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 3rem;
+  align-items: start;
+}
+
+.card {
+  background: var(--gray-50);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Buttons ---------------------------------------------------------- */
+.btn {
+  display: inline-block;
+  background: var(--crimson);
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: var(--radius);
+  transition: background .15s;
+}
+
+.btn:hover {
+  background: var(--crimson-light);
+}
+
+/* Footer ----------------------------------------------------------- */
+.site-footer {
+  margin-top: auto;
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem 0;
+  text-align: center;
+  font-size: .875rem;
+}
+
+/* Utility ---------------------------------------------------------- */
+.list-reset {
+  list-style: none;
+  padding: 0;
+}
+
+.text-bold {
+  font-weight: 700;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.space-y-2>*+* {
+  margin-top: .5rem;
+}
+
+/* ─── Mobile adjustments (≤480px) ───────────────────────────────── */
+@media (max-width: 480px) {
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+  }
+
+  .brand {
+    margin-bottom: .25rem;
+  }
+
+  .search-form {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .hero {
+    padding: 5rem 0 4rem;
+  }
+
+  .dot-grid {
+    width: 120px;
+    height: 120px;
+  }
+
+  .hero-slogan {
+    font-size: 1.1rem;
+    line-height: 1.4;
+    padding: 1.25rem 1rem;
+    max-width: 320px;
+  }
+
+  .info-grid {
+    gap: 2rem;
+  }
+
+  .card {
+    padding: 1.5rem;
+  }
+}

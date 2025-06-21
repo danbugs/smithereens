@@ -1,232 +1,217 @@
-#![allow(non_snake_case)]
-#[macro_use]
-extern crate rocket;
-
-use rocket::{
-    http::{Method, Status},
-    response::{self, Responder},
-    Build, Request, Rocket,
+use axum::{
+    extract::{Path, Query, State},
+    http,
+    routing::{get, post},
+    serve, Json, Router,
 };
-use rocket_cors::{AllowedHeaders, AllowedOrigins};
-use rocket_governor::{Quota, RocketGovernable, RocketGovernor};
-use smithe_lib::{
-    player::{add_new_player_to_pidgtm_db, get_all_like, get_player, get_top_two_characters},
-    set::{
-        get_competitor_type, get_head_to_head_record, get_set_losses_by_dq,
-        get_set_losses_without_dqs, get_set_wins_by_dq, get_set_wins_without_dqs,
-        get_sets_per_player_id, get_winrate,
-    },
-    tournament::get_tournaments_from_requester_id,
-};
-use thiserror::Error;
+use serde::{Deserialize, Serialize};
+use tracing::{info, instrument};
+use tracing_subscriber::prelude::*;
 
-use startgg::queries::player_getter::{make_pidgtm_player_getter_query, PIDGTM_PlayerGetterVars};
+mod startgg;
+use startgg::{StartggClient, StartggError};
 
-use std::sync::{Arc, Mutex};
-
-pub const DEV_ADDRESS: &str = "http://localhost:8080/";
-pub const DEV_ADDRESS_2: &str = "http://127.0.0.1:8080/";
-pub const PROD_ADDRESS: &str = "http://www.smithe.net";
-pub const PROD_ADDRESS_2: &str = "https://www.smithe.net";
-pub const PROD_ADDRESS_3: &str = "http://smithe.net";
-pub const PROD_ADDRESS_4: &str = "https://smithe.net";
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error(transparent)]
-    SmitheLib(#[from] anyhow::Error),
-    #[error(transparent)]
-    SerdeJson(#[from] serde_json::Error),
+#[derive(Debug, Deserialize)]
+struct SearchRequest {
+    gamer_tag: String,
+    page: Option<u32>,     // optional, defaults to 1
+    per_page: Option<u32>, // optional, defaults to 25
 }
 
-impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
-    fn respond_to(self, req: &Request<'_>) -> response::Result<'o> {
-        // todo: use open telemetry at this point
-        Status::InternalServerError.respond_to(req)
+#[derive(Debug, Deserialize)]
+struct ProfilePath {
+    slug: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProfileQuery {
+    page: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SetsPath {
+    event_slug: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct SetsQuery {
+    user_id: i64,
+}
+
+#[derive(Serialize)]
+struct ApiError {
+    message: String,
+}
+
+type ApiResult<T> = Result<Json<T>, (http::StatusCode, Json<ApiError>)>;
+
+#[instrument]
+// -------------------------------------------------------------------
+// GET /api
+// Returns a simple "Hello, world!" message.
+// Example cURL:
+// curl http://localhost:3000/api
+// -------------------------------------------------------------------
+async fn hello_handler() -> &'static str {
+    "Hello, world!"
+}
+
+#[instrument]
+// -------------------------------------------------------------------
+// POST /api/search
+// Uses JSON body: { "gamer_tag": "MkLeo" }
+// Example cURL:
+// curl -X POST http://localhost:3000/api/search \
+//      -H 'content-type: application/json' \
+//      -d '{"gamer_tag":"MkLeo"}' | jq
+// -------------------------------------------------------------------
+async fn search_handler(
+    State(client): State<StartggClient>,
+    Json(req): Json<SearchRequest>,
+) -> ApiResult<serde_json::Value> {
+    let gamer_tag = req.gamer_tag.trim().to_string();
+    let pg = req.page.unwrap_or(1);
+    let pp = req.per_page.unwrap_or(25);
+
+    match client.search_players(&gamer_tag, pg, pp).await {
+        Ok(data) => Ok(Json(data)),
+        Err(StartggError::RateLimited) => Err((
+            http::StatusCode::TOO_MANY_REQUESTS,
+            Json(ApiError {
+                message: "Rate limit exceeded".into(),
+            }),
+        )),
+        Err(StartggError::GraphQl(msg)) => Err((
+            http::StatusCode::BAD_GATEWAY,
+            Json(ApiError { message: msg }),
+        )),
+        Err(StartggError::Upstream(code)) => Err((
+            code,
+            Json(ApiError {
+                message: "Upstream error".into(),
+            }),
+        )),
+        Err(e) => {
+            tracing::error!(?e, "internal error");
+            Err((
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiError {
+                    message: "Internal error".into(),
+                }),
+            ))
+        }
     }
 }
 
-#[get("/")]
-fn index(_limitguard: RocketGovernor<'_, RateLimitGuard>) -> &'static str {
-    "Hello, world! (backend)"
-}
-
-#[get("/<tag>")]
-async fn search_players(
-    tag: String,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_all_like(&tag).await?)?)
-}
-
-#[get("/<id>")]
-async fn view_player(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    //Try to update if can but still serve old data otherwise
-    if let Ok(player_data) =
-        make_pidgtm_player_getter_query(id, Arc::new(Mutex::new(PIDGTM_PlayerGetterVars::empty())))
-            .await
-    {
-        //Updates profile data or creates if not found
-        add_new_player_to_pidgtm_db(&player_data.player.unwrap()).await?;
+#[instrument]
+// -------------------------------------------------------------------
+// GET /api/profile/:slug
+// Returns the profile of a player by their slug.
+// Example cURL:
+// curl http://localhost:3000/api/profile/mkleo
+// -------------------------------------------------------------------
+async fn profile_handler(
+    State(client): State<StartggClient>,
+    Path(path): Path<ProfilePath>,
+    Query(q): Query<ProfileQuery>,
+) -> ApiResult<serde_json::Value> {
+    let pg = q.page.unwrap_or(1);
+    match client.user_profile(&path.slug, pg).await {
+        Ok(data) => Ok(Json(data)),
+        Err(StartggError::RateLimited) => Err((
+            http::StatusCode::TOO_MANY_REQUESTS,
+            Json(ApiError {
+                message: "Rate limit exceeded".into(),
+            }),
+        )),
+        Err(StartggError::GraphQl(msg)) => Err((
+            http::StatusCode::BAD_GATEWAY,
+            Json(ApiError { message: msg }),
+        )),
+        Err(StartggError::Upstream(code)) => Err((
+            code,
+            Json(ApiError {
+                message: "Upstream error".into(),
+            }),
+        )),
+        Err(e) => {
+            tracing::error!(?e, "internal error");
+            Err((
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiError {
+                    message: "Internal error".into(),
+                }),
+            ))
+        }
     }
-
-    // insert player page view
-    smithe_lib::player_page_views::insert_player_page_view(id)
-        .await
-        .unwrap();
-    Ok(serde_json::to_string(&get_player(id).await?)?)
 }
 
-#[get("/<id>")]
-async fn get_player_tournaments(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(
-        &get_tournaments_from_requester_id(id).await?,
-    )?)
-}
-
-#[get("/<id>/wins_without_dqs")]
-async fn get_player_set_wins_without_dqs(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_wins_without_dqs(id).await?)?)
-}
-
-#[get("/<id>/losses_without_dqs")]
-async fn get_player_set_losses_without_dqs(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(
-        &get_set_losses_without_dqs(id).await?,
-    )?)
-}
-
-#[get("/<id>/wins_by_dqs")]
-async fn get_player_set_wins_by_dqs(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_wins_by_dq(id).await?)?)
-}
-
-#[get("/<id>/losses_by_dqs")]
-async fn get_player_set_losses_by_dqs(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_set_losses_by_dq(id).await?)?)
-}
-
-#[get("/<id>/winrate")]
-async fn get_player_winrate(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_winrate(id).await?)?)
-}
-
-#[get("/<id>/competitor_type")]
-async fn get_player_competitor_type(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    let ct = get_competitor_type(id).await?;
-    Ok(serde_json::to_string(&format!("{}-{}er", ct.0, ct.1))?)
-}
-
-// endpoint to get_top_two_characters
-#[get("/<id>/top_two_characters")]
-async fn get_player_top_two_characters(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_top_two_characters(id).await?)?)
-}
-
-// get sets by player id
-#[get("/<id>")]
-async fn get_player_sets(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_sets_per_player_id(id).await?)?)
-}
-
-// get head to head by player id
-#[get("/<id>/head_to_head")]
-async fn get_player_head_to_head(
-    id: i32,
-    _limitguard: RocketGovernor<'_, RateLimitGuard>,
-) -> Result<String, Error> {
-    Ok(serde_json::to_string(&get_head_to_head_record(id).await?)?)
-}
-
-fn rocket() -> Rocket<Build> {
-    // #[cfg(debug_assertions)]
-    // let allowed_origins = AllowedOrigins::some_exact(&[DEV_ADDRESS, DEV_ADDRESS_2]);
-    //
-    // #[cfg(not(debug_assertions))]
-    let allowed_origins =
-        AllowedOrigins::some_exact(&[PROD_ADDRESS, PROD_ADDRESS_2, PROD_ADDRESS_3, PROD_ADDRESS_4]);
-
-    let cors = rocket_cors::CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Method::Get, Method::Post, Method::Delete, Method::Put]
-            .into_iter()
-            .map(From::from)
-            .collect(),
-        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept"]),
-        allow_credentials: true,
-        ..Default::default()
+#[instrument]
+// -------------------------------------------------------------------
+// GET /api/event-sets/:event_slug
+// Returns the sets for a player in a specific event.
+// Example cURL:
+// curl "http://localhost:3000/api/event-sets/tournament%2Fmicrospacing-vancouver-93%2Fevent%2Fultimate-singles?user_id=747662"
+// -------------------------------------------------------------------
+async fn event_sets_handler(
+    State(client): State<StartggClient>,
+    Path(path): Path<SetsPath>,
+    Query(q): Query<SetsQuery>,
+) -> ApiResult<serde_json::Value> {
+    match client.player_event_sets(q.user_id, &path.event_slug).await {
+        Ok(val) => Ok(Json(val)),
+        Err(StartggError::RateLimited) => Err((
+            http::StatusCode::TOO_MANY_REQUESTS,
+            Json(ApiError {
+                message: "Rate limit exceeded".into(),
+            }),
+        )),
+        Err(StartggError::GraphQl(msg)) => Err((
+            http::StatusCode::BAD_GATEWAY,
+            Json(ApiError { message: msg }),
+        )),
+        Err(StartggError::Upstream(code)) => Err((
+            code,
+            Json(ApiError {
+                message: "Upstream error".into(),
+            }),
+        )),
+        Err(e) => {
+            tracing::error!(?e, "internal error");
+            Err((
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiError {
+                    message: "Internal error".into(),
+                }),
+            ))
+        }
     }
-    .to_cors()
-    .expect("failed to set cors");
-
-    rocket::build()
-        .mount("/", routes![index])
-        .mount("/players", routes![search_players])
-        .mount(
-            "/player",
-            routes![
-                view_player,
-                get_player_top_two_characters,
-                get_player_head_to_head
-            ],
-        )
-        .mount("/tournaments", routes![get_player_tournaments])
-        .mount(
-            "/sets",
-            routes![
-                get_player_sets,
-                get_player_set_wins_without_dqs,
-                get_player_set_losses_without_dqs,
-                get_player_set_wins_by_dqs,
-                get_player_set_losses_by_dqs,
-                get_player_winrate,
-                get_player_competitor_type,
-            ],
-        )
-        .register("/", catchers!(rocket_governor::rocket_governor_catcher))
-        .attach(cors)
 }
 
-#[rocket::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = rocket().launch().await?;
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
+    dotenvy::dotenv().ok();
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new("info"))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    let client = StartggClient::from_env()?;
+
+    let app = Router::new()
+        .route("/api", get(hello_handler))
+        .route("/api/search", post(search_handler))
+        .route("/api/profile/:slug", get(profile_handler))
+        .route("/api/event-sets/:event_slug", get(event_sets_handler))
+        .with_state(client.clone());
+
+    let port: u16 = std::env::var("PORT")
+        .unwrap_or_else(|_| "3000".into())
+        .parse()?;
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    info!("listening on {}", addr);
+    serve(listener, app).await?;
     Ok(())
-}
-
-pub struct RateLimitGuard;
-
-impl RocketGovernable<'_> for RateLimitGuard {
-    fn quota(_method: Method, _route_name: &str) -> Quota {
-        Quota::per_minute(Self::nonzero(60u32))
-    }
 }
