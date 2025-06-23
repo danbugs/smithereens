@@ -1,16 +1,38 @@
 [package]
-name = "smithe_backend"
+name = "backend"
 version = "0.1.0"
 edition = "2021"
-authors = ["Dan Chiarlone"]
+
+# --- shared lib so integration tests can `use backend::…` -------------
+[lib]
+name = "backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
 
 [dependencies]
-anyhow = "1"
-rocket = "0.5.0"
-rocket_cors = "0.6.0"
+axum = { version = "0.7", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+reqwest = { version = "0.11", features = [
+    "json",
+    "gzip",
+    "brotli",
+    "deflate",
+    "rustls-tls",
+] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = [
+    "fmt",
+    "env-filter",
+    "std",
+] }
 thiserror = "1"
-smithe_lib = { path = "../lib" }
-rocket-governor = "0.2.0-rc.1"
-tokio = { version = "1", features = ["full"] }
-startgg = { path = "../startgg_api/" }
+dotenvy = "0.15"
+anyhow = "1"
+
+[dev-dependencies]
+futures = "0.3"

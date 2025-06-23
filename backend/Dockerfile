@@ -1,36 +1,55 @@
-# --------------------------------------
-# Stage 1: Build the app
-# --------------------------------------
-FROM rust:1.84-slim as builder
+# Build stage
+FROM rust:1.84-alpine AS builder
 
-# Install needed build libraries
-RUN apt-get update && apt-get install -y libpq-dev pkg-config build-essential
+# Install build dependencies including static OpenSSL
+RUN apk add --no-cache \
+    musl-dev \
+    pkgconfig \
+    openssl-dev \
+    openssl-libs-static
 
-# Set working directory at the workspace root
-WORKDIR /usr/src/smithereens
+# Set environment variables for static linking
+ENV OPENSSL_STATIC=1
+ENV OPENSSL_LIB_DIR=/usr/lib
+ENV OPENSSL_INCLUDE_DIR=/usr/include
 
-# Copy the whole workspace (excluding files from .dockerignore)
-COPY . .
+WORKDIR /app
 
-# Build the real application
-RUN cargo build --manifest-path ./backend/Cargo.toml --release
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
 
-# --------------------------------------
-# Stage 2: Create runtime container
-# --------------------------------------
-FROM debian:bookworm-slim
+# Build dependencies (this is cached if manifests don't change)
+# Create dummy files for both lib.rs and main.rs based on your Cargo.toml structure
+RUN mkdir src && \
+    echo "// dummy lib" > src/lib.rs && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
 
-# Install only runtime libraries needed
-RUN apt-get update && apt-get install -y libpq5 ca-certificates && apt-get clean
+# Copy source code
+COPY src ./src
 
-# Set working directory
-WORKDIR /usr/src/smithereens
+# Build the application
+RUN touch src/main.rs src/lib.rs && \
+    cargo build --release
 
-# Copy the built binary from the builder stage
-COPY --from=builder /usr/src/smithereens/target/release/smithe_backend .
+# Runtime stage
+FROM alpine:latest
 
-# Expose the port Rocket will listen on
-EXPOSE 8000
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates libgcc
 
-# Command to run the app
-CMD ["./smithe_backend"]
+WORKDIR /app
+
+# Copy the binary from builder
+# Note: The binary name is "server" based on the error message
+COPY --from=builder /app/target/release/server /app/server
+
+# Make it executable
+RUN chmod +x /app/server
+
+# Expose port
+EXPOSE 3000
+
+# Run the binary
+CMD ["./server"]
