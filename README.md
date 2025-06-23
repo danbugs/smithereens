@@ -2,8 +2,6 @@
 
 # Smithereens 🎮
 
-A modern web application for tracking and analyzing Super Smash Bros. tournament data from start.gg. Built with Svelte, Rust, and love for the competitive Smash community.
-
 ## Features
 
 - 🏆 **Player Profiles** - View comprehensive player statistics, tournament history, and character usage
@@ -22,7 +20,7 @@ A modern web application for tracking and analyzing Super Smash Bros. tournament
 
 ### Prerequisites
 
-- Docker and Docker Compose (v2)
+- Docker and Docker Compose
 - A start.gg API token
 
 ### Getting a start.gg API Token
@@ -101,11 +99,6 @@ make build-backend
 ## Configuration
 
 ### Environment Variables
-
-**Frontend** (`.env.development` / `.env.production`):
-```
-VITE_API_BASE=/api
-```
 
 **Backend** (environment variables):
 ```
