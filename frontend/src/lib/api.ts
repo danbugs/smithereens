@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 
-export const API_BASE: string =
-  import.meta.env.VITE_API_BASE || '/api';
+export const API_BASE: string = '/api';
 
 export async function fetchEventSets(
   userId: number,

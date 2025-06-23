@@ -14,7 +14,6 @@
             characters?: { user?: string[]; opponent?: string[] };
         }>;
     };
-    export let userName: string;
 
     let expanded = false;
 
@@ -215,10 +214,6 @@
         font-size: 0.75rem;
         color: #9ca3af;
         transition: transform 0.2s;
-    }
-
-    .expand-icon.rotated {
-        transform: rotate(180deg);
     }
 
     .h2h-details {
