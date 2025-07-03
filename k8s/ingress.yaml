@@ -5,7 +5,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: smithe.westus2.cloudapp.azure.com
+    - host: smithereens.westus2.cloudapp.azure.com
       http:
         paths:
           - path: /api

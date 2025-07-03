@@ -26,9 +26,6 @@ push-backend:
 # Push all Docker images to GitHub Container Registry
 push-all: push-frontend push-backend
 
-setup-k8s:
-	kubectl apply -f k8s/cluster-issuer.yaml
-
 # Deploy to Kubernetes (backend, frontend, ingress).
 # - Note: for local ingress setup, see k8s/ingress.local.yaml
 deploy-k8s:
@@ -60,8 +57,12 @@ clean-k8s:
 	kubectl delete -f k8s/backend.yaml --ignore-not-found
 	kubectl delete -f k8s/secrets.yaml --ignore-not-found
 
+# Build locally with docker compose
+local-build:
+	docker compose build
+
 # Run locally with docker compose
-local:
+local-run:
 	docker compose up -d --remove-orphans
 
 # Stop local environment

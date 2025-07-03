@@ -13,7 +13,7 @@
             href="https://github.com/danbugs/smithereens"
             target="_blank"
             rel="noopener">here</a
-        >.
+        > (last release: 2025-07-02).
     </div>
 </footer>
 

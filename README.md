@@ -41,17 +41,14 @@
 2. **Set up your environment**
    ```bash
    # Create a .env file in the root directory
-   echo "STARTGG_TOKEN=your_token_here" > .env
-   
-   # Or export it as an environment variable
-   export STARTGG_TOKEN=your_token_here
+   echo "STARTGG_TOKEN=Bearer your_token_here" > .env
    ```
 
 3. **Build and start the application**
    ```bash
    # Using make
-   make build-all
-   make local
+   make local-build
+   make local-run
    ```
 
 4. **Access the application**
@@ -90,21 +87,6 @@ The frontend development server will proxy API requests to the backend automatic
 ```bash
 # Build both images
 make build-all
-
-# Build individually
-make build-frontend
-make build-backend
-```
-
-## Configuration
-
-### Environment Variables
-
-**Backend** (environment variables):
-```
-SMITHE_STARTGG_TOKEN=Bearer YOUR_TOKEN_HERE
-SMITHE_CLIENT_VERSION=20
-SMITHE_PORT=3000
 ```
 
 ## Project Structure
@@ -162,6 +144,9 @@ docker compose logs -f frontend
 
 # Restart services
 docker compose restart
+
+# Rebuild images without cache
+docker compose build --no-cache
 ```
 
 ## License
